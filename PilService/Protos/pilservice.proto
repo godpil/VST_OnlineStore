@@ -1,0 +1,89 @@
+/*
+ * This is handcode protobuf definition for the PilService, which provides various functionalities such 
+ * as retrieving service information, getting current date and time, and saving/loading data. The service 
+ * is defined using Protocol Buffers (protobuf) syntax and is intended to be used in a C# environment.
+ * source: pilservice.proto
+ */
+
+syntax = "proto3";
+
+option csharp_namespace = "PilService";
+
+package pilservice;
+
+//Servicefunktionen (RemoteProcedureCalls)
+service PilService {
+
+	//rpc GetPilServiceInfo() returns (PilServiceInfoResponse);
+	rpc GetPilServiceInfo (PilServiceInfoRequest) returns (PilServiceInfoResponse);
+
+	//rpc	GetAktuelleUhrzeit() returns (AktuelleUhrzeitResponse);
+	rpc	GetAktuelleUhrzeit(AktuelleUhrzeitRequest) returns (AktuelleUhrzeitResponse);
+
+	//rpc GetAktuellesDatum() returns (AktuellesDatumResponse);
+	rpc GetAktuellesDatum(AktuellesDatumRequest) returns (AktuellesDatumResponse);
+
+	rpc SetDatum(SpeichernRequest) returns (SpeichernResonpse);
+	rpc GetDatum(LadenRequest) returns (LadenResponse);
+
+}
+
+//Infos über den Service, mit oder ohne Parameter
+message PilServiceInfoRequest {
+	optional string params = 1;//oder leer für alles
+}
+message PilServiceInfoResponse {
+	string info = 1;//Infos
+}
+
+//Datum und Datumsformatservice
+message AktuellesDatumRequest {
+	optional string format = 1;//falls leer,short-form
+}
+message AktuellesDatumResponse {
+	string aktuellesDatum = 1;
+}
+
+//Uhrzeit und Uhrzeitformatservice
+message AktuelleUhrzeitRequest {
+	optional bool Is24Stunden = 1;//24h Format oder 12h Format, default 24h
+	optional bool IsSommerzeit = 2;//Sommerzeit aktiv oder nicht, default false
+	optional bool IsShowSeconds = 3;//Sekunden anzeigen oder nicht, default false
+}
+message AktuelleUhrzeitResponse {
+	string aktuelleUhrzeit = 1;
+}
+
+//Ein Datum an den Service übergeben und speichern
+message SpeichernRequest {
+	bytes content = 1;//max 4gb C# Typ ByteString
+	PilServiceFileType filetype = 2;//Typ
+}
+message SpeichernResonpse
+{	
+	bool success = 1;
+	string guid = 2;//GUID zu entsprechendem Datum
+}
+message LadenRequest {
+	string loadId = 1;
+}
+message LadenResponse {
+	bool success = 1;
+	bytes content = 2;//max 4gb C# Typ ByteString
+	PilServiceFileType filetype = 3;//s. PilServiceFileType
+}
+
+//Filetype Enum zur Formatwahrung
+enum PilServiceFileType {
+	RAW_BYTE = 0;
+	TXT = 1;
+	JSON = 2;
+	XML = 3;
+	CSV = 4;
+	DOCX = 5;
+	DOC = 6;
+	XLS = 7;
+	XLSX = 8;
+	LOG = 9;
+};
+

@@ -12,7 +12,7 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<Protobuf Include="C:\MASTER\VST_OnlineStore\SimpleGRPCService\Protos\pilservice.proto" GrpcServices="Server" />
+		<Protobuf Include="C:\MASTER\VST_OnlineStore\PilService\Protos\pilservice.proto" GrpcServices="Server" />
 	</ItemGroup>
 
 	<ItemGroup>

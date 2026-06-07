@@ -1,6 +1,6 @@
 <Solution>
   <Folder Name="/Dokumentation/">
-    <File Path="../Dokumentation/HappyPath.drawio" />
+    <File Path="Dokumentation/HappyPath.drawio" />
   </Folder>
   <Folder Name="/Frontend/" />
   <Folder Name="/Frontend/Website/">

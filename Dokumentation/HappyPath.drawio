@@ -1,6 +1,6 @@
 <mxfile host="Electron">
   <diagram name="Seite-1" id="Ee26gHx2bVG5kNregx73">
-    <mxGraphModel dx="1636" dy="2318" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="2540" dy="2327" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -115,10 +115,10 @@
         <mxCell id="HqzzmyD6XFuR1QTdJvPv-41" parent="1" style="shape=card;whiteSpace=wrap;html=1;align=left;" value="- Audit- und Snapshotsystem&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;-Jeder Übergang des Bestellvorgangs wird als unveränderlicher DS in&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;der Datenbank(?) gespeichert werden (Snapshot).&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;-Snapshot soll umfassen:&amp;nbsp;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;correlationID UUID (guid wird wohl auch gehen)&amp;nbsp;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;Eindeutige ID des gesamten Bestellvorgangs;&amp;nbsp;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;verbindet alle Snapshots einer Bestellung&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;eventType String (Enum) {ORDER_PLACED,&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&amp;nbsp;PAYMENT_INITIATED, PAYMENT_FAILED,&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;ROLLBACK_COMPLETED}&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;service String Herkunft des Events (shopService, BillingService,&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;InvoiceService, WarehouseService)&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;timestamp Timestamp Exakter Zeitpunkt UTC&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;-&amp;gt; Ist der Typ hier wirklich so konkret notwendig?&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;payload JSON Zustandsabbild: relevante Felder des Domainobjekts&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;zZd. Events (???)&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;previousEventID UUID (guid?) nullable Verkettung: Referenz auf &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;den unmittelbar vorherigen Snapshot&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;actor String Systemkomponenete oder User, der das Event &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;getriggert hat&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;statusCode String (Enum?) {SUCCESS, FAILURE, &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;COMPENSATING, COMPENSATED}&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&amp;nbsp;&amp;gt; Snapshot sind readonly (kein Update oder Delete auf DB-Tabelle)&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&amp;nbsp;&amp;gt; REST-Endpunkt GET /audit/orders/{correlationID} liefert alle Snpas einer &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;Bestellung chron. sortiert&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&amp;nbsp;&amp;gt; AuditService ist eigener Microservice (kein Wissen über Shop oder &lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;Zahlungen haben&lt;/span&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="520" width="420" x="-320" y="-150" as="geometry" />
         </mxCell>
-        <mxCell id="0qcQg6pG9izCyC9LrqL0-1" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="Services" vertex="1">
-          <mxGeometry height="700" width="500" x="1810" y="10" as="geometry" />
+        <mxCell id="0qcQg6pG9izCyC9LrqL0-1" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="gRPC-Services" vertex="1">
+          <mxGeometry height="700" width="500" x="1710" y="70" as="geometry" />
         </mxCell>
-        <mxCell id="0qcQg6pG9izCyC9LrqL0-2" parent="0qcQg6pG9izCyC9LrqL0-1" style="align=left;overflow=fill;html=1;dropTarget=0;whiteSpace=wrap;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;Shop-Service&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;(BFF)&lt;br&gt;&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;+ REST API&lt;/p&gt;" vertex="1">
+        <mxCell id="0qcQg6pG9izCyC9LrqL0-2" parent="0qcQg6pG9izCyC9LrqL0-1" style="align=left;overflow=fill;html=1;dropTarget=0;whiteSpace=wrap;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;Shop-Service&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;ASP.NET BFF&lt;br&gt;&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;br&gt;&lt;/p&gt;" vertex="1">
           <mxGeometry height="90" width="180" x="20" y="40" as="geometry" />
         </mxCell>
         <mxCell id="0qcQg6pG9izCyC9LrqL0-3" parent="0qcQg6pG9izCyC9LrqL0-2" style="shape=component;jettyWidth=8;jettyHeight=4;" value="" vertex="1">
@@ -184,14 +184,128 @@
             <mxPoint x="-24" y="4" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="0qcQg6pG9izCyC9LrqL0-14" edge="1" parent="1" source="0qcQg6pG9izCyC9LrqL0-2" style="endArrow=classic;startArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" value="">
+        <mxCell id="0qcQg6pG9izCyC9LrqL0-14" edge="1" parent="0qcQg6pG9izCyC9LrqL0-1" source="0qcQg6pG9izCyC9LrqL0-2" style="endArrow=classic;startArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="0qcQg6pG9izCyC9LrqL0-8" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
             <Array as="points">
-              <mxPoint x="1920" y="400" />
+              <mxPoint x="110" y="415" />
             </Array>
-            <mxPoint x="2030" y="450" as="sourcePoint" />
-            <mxPoint x="2080" y="400" as="targetPoint" />
+            <mxPoint x="20" y="440" as="sourcePoint" />
+            <mxPoint x="70" y="390" as="targetPoint" />
           </mxGeometry>
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-8" edge="1" parent="1" source="0qcQg6pG9izCyC9LrqL0-1" style="shape=flexArrow;endArrow=classic;startArrow=classic;html=1;rounded=0;exitX=0.25;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;" target="dfNbPa-shav-T7dOVKYK-19" value="">
+          <mxGeometry height="100" relative="1" width="100" as="geometry">
+            <mxPoint x="2070" y="290" as="sourcePoint" />
+            <mxPoint x="1846" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-10" edge="1" parent="1" source="0qcQg6pG9izCyC9LrqL0-1" style="shape=flexArrow;endArrow=classic;startArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="dfNbPa-shav-T7dOVKYK-20" value="">
+          <mxGeometry height="100" relative="1" width="100" as="geometry">
+            <mxPoint x="2430" y="440" as="sourcePoint" />
+            <mxPoint x="2310" y="420" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-12" parent="1" style="align=left;overflow=fill;html=1;dropTarget=0;whiteSpace=wrap;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;&lt;br&gt;BrowserView&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;&amp;lt;Interaktor&amp;gt;&lt;br&gt;(HTML/CSS)&lt;/b&gt;&lt;/p&gt;" vertex="1">
+          <mxGeometry height="90" width="180" x="2340" y="-260" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-13" parent="dfNbPa-shav-T7dOVKYK-12" style="shape=component;jettyWidth=8;jettyHeight=4;" value="" vertex="1">
+          <mxGeometry height="20" relative="1" width="20" x="1" as="geometry">
+            <mxPoint x="-24" y="4" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-14" edge="1" parent="1" source="dfNbPa-shav-T7dOVKYK-6" style="endArrow=none;dashed=1;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="dfNbPa-shav-T7dOVKYK-12" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="2200" y="250" as="sourcePoint" />
+            <mxPoint x="2250" y="200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-18" edge="1" parent="1" source="dfNbPa-shav-T7dOVKYK-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="dfNbPa-shav-T7dOVKYK-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-15" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" value="Actor" vertex="1">
+          <mxGeometry height="60" width="30" x="2620" y="-245" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-19" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="REACT-Frontend" vertex="1">
+          <mxGeometry height="310" width="500" x="1710" y="-320" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-4" parent="dfNbPa-shav-T7dOVKYK-19" style="align=left;overflow=fill;html=1;dropTarget=0;whiteSpace=wrap;" value="&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;REST Connector&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;margin:0px;margin-top:6px;text-align:center;&quot;&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/p&gt;" vertex="1">
+          <mxGeometry height="60" width="180" x="50" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-5" parent="dfNbPa-shav-T7dOVKYK-4" style="shape=component;jettyWidth=8;jettyHeight=4;" value="" vertex="1">
+          <mxGeometry height="20" relative="1" width="20" x="1" as="geometry">
+            <mxPoint x="-24" y="4" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-6" parent="dfNbPa-shav-T7dOVKYK-19" style="html=1;dropTarget=0;whiteSpace=wrap;" value="Website&lt;br&gt;(HTML/CSS)" vertex="1">
+          <mxGeometry height="90" width="180" x="50" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-7" parent="dfNbPa-shav-T7dOVKYK-6" style="shape=module;jettyWidth=8;jettyHeight=4;" value="" vertex="1">
+          <mxGeometry height="20" relative="1" width="20" x="1" as="geometry">
+            <mxPoint x="-27" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-20" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="Backend&amp;nbsp;(.NET10 C#)" vertex="1">
+          <mxGeometry height="700" width="290" x="2270" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-21" parent="dfNbPa-shav-T7dOVKYK-20" style="shape=folder;fontStyle=1;spacingTop=10;tabWidth=40;tabHeight=14;tabPosition=left;html=1;whiteSpace=wrap;" value="BillingModel" vertex="1">
+          <mxGeometry height="50" width="120" x="90" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-23" parent="dfNbPa-shav-T7dOVKYK-20" style="shape=folder;fontStyle=1;spacingTop=10;tabWidth=40;tabHeight=14;tabPosition=left;html=1;whiteSpace=wrap;" value="AuditModel" vertex="1">
+          <mxGeometry height="50" width="120" x="90" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-22" parent="dfNbPa-shav-T7dOVKYK-20" style="shape=folder;fontStyle=1;spacingTop=10;tabWidth=40;tabHeight=14;tabPosition=left;html=1;whiteSpace=wrap;" value="InvoiceModel" vertex="1">
+          <mxGeometry height="50" width="160" x="90" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-24" parent="dfNbPa-shav-T7dOVKYK-20" style="shape=folder;fontStyle=1;spacingTop=10;tabWidth=40;tabHeight=14;tabPosition=left;html=1;whiteSpace=wrap;" value="PaymentModel" vertex="1">
+          <mxGeometry height="50" width="160" x="90" y="260" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-25" parent="dfNbPa-shav-T7dOVKYK-20" style="shape=folder;fontStyle=1;spacingTop=10;tabWidth=40;tabHeight=14;tabPosition=left;html=1;whiteSpace=wrap;" value="WarehouseModel" vertex="1">
+          <mxGeometry height="50" width="160" x="90" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-27" edge="1" parent="1" source="0qcQg6pG9izCyC9LrqL0-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="dfNbPa-shav-T7dOVKYK-21">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2300" y="265" />
+              <mxPoint x="2300" y="265" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-28" edge="1" parent="1" source="0qcQg6pG9izCyC9LrqL0-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0;entryDx=0;entryDy=32;entryPerimeter=0;" target="dfNbPa-shav-T7dOVKYK-24">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2160" y="362" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-30" edge="1" parent="1" source="0qcQg6pG9izCyC9LrqL0-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0;entryDx=0;entryDy=32;entryPerimeter=0;" target="dfNbPa-shav-T7dOVKYK-22">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2320" y="472" />
+              <mxPoint x="2320" y="472" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-31" edge="1" parent="1" source="0qcQg6pG9izCyC9LrqL0-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0;entryDx=0;entryDy=32;entryPerimeter=0;" target="dfNbPa-shav-T7dOVKYK-25">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2320" y="582" />
+              <mxPoint x="2320" y="582" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-32" edge="1" parent="1" source="0qcQg6pG9izCyC9LrqL0-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0;entryDx=0;entryDy=32;entryPerimeter=0;" target="dfNbPa-shav-T7dOVKYK-23">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2330" y="692" />
+              <mxPoint x="2330" y="692" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-34" edge="1" parent="1" source="dfNbPa-shav-T7dOVKYK-33" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;curved=1;" target="0qcQg6pG9izCyC9LrqL0-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dfNbPa-shav-T7dOVKYK-33" parent="1" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Oder BFF auslagern?&lt;br&gt;&lt;/h1&gt;&lt;div&gt;Entweder wird der BFF ebenfalls der &#39;zentrale&#39; gRPC-Service des Shops, oder die BFF Ebene wird hier höher gehboben, so das eine weitere Abstraktionslevel erreicht werden kann.&lt;/div&gt;" vertex="1">
+          <mxGeometry height="240" width="180" x="1450" y="-80" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

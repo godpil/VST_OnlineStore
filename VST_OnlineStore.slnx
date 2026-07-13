@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Backend/">
+    <Project Path="StoreBackend/StoreBackend.csproj" Id="1c1bbb07-fd76-4b60-b120-e222718078ad" />
+  </Folder>
   <Folder Name="/Dokumentation/">
     <File Path="Dokumentation/HappyPath.drawio" />
   </Folder>
@@ -10,5 +13,6 @@
     <Project Path="GRPCTester/GRPCTester.csproj" Id="cbbc539e-a309-469d-9b82-465c3f059e47" />
     <Project Path="PilService/PilService.csproj" Id="6899d698-94e0-4126-8ae6-ad74f396e68b" />
   </Folder>
+  <Project Path="BackendAPITester/BackendAPITester.csproj" Id="a8d69115-2ddd-474e-a096-5706e772dc61" />
   <Project Path="Tools/Tools.csproj" />
 </Solution>

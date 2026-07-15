@@ -13,8 +13,6 @@
             IsAvailable = isAvailable;
             IsReserved = isReserved;
         }
-
-
         
         public override string ToString() {
             return $"ProductItem(Id: {Id}, Price: {Price}, Name: {Name}, IsAvailable: {IsAvailable}, IsReserved: {IsReserved})";
@@ -34,13 +32,5 @@
         public override int GetHashCode() {
              return Price.GetHashCode() + Name.GetHashCode() + IsAvailable.GetHashCode() + IsReserved.GetHashCode();
         }
-        
-
-        
-
-
-
-
-
     }
 }

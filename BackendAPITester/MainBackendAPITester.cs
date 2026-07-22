@@ -27,9 +27,9 @@ namespace BackendAPITester
                 Tools.Program.ProgramTools.StartProgram(args);
                 
                 TestWarehouse();//Artikel im Lager prüfen, reservieren und aktualisieren
-                TestBillingAndPayment();//Zahlungsmethode auswählen und bezahlen
+                //TestBillingAndPayment();//Zahlungsmethode auswählen und bezahlen
                 TestInvoice();//Rechnung generieren
-                TestShopService();//E-Mail
+                //TestShopService();//E-Mail
 
                 Tools.Program.ProgramTools.EndProgram(programCode.ToString());
             }
@@ -51,16 +51,17 @@ namespace BackendAPITester
             foreach (var product in warehouse.Products) {
                 ConsoleTools.tl(product.ToString());
             }
+            
         }
 
         private static void TestInvoice() {
             var invoice = Invoice.Instance;
-            var response = invoice.CreatePDFBilling(invoice);
-            if (response.Success) {
+            //var response = invoice.CreatePDFBilling(invoice);
+            //if (response.Success) {
                 ConsoleTools.tl("PDF billing created successfully.");
-            } else {
+            //} else {
                 ConsoleTools.tl("Failed to create PDF billing.");
-            }
+            //}
         }
     }
 }

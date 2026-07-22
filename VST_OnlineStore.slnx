@@ -9,6 +9,9 @@
   <Folder Name="/Frontend/Website/">
     <File Path="WebstoreMainsite.html" />
   </Folder>
+  <Folder Name="/Interfaces/">
+    <Project Path="IStoreBackend/IStoreBackend.csproj" Id="df076cdc-a6b6-40c2-b828-b2271e6d5828" />
+  </Folder>
   <Folder Name="/Tutorials &amp; HowTo/">
     <Project Path="GRPCTester/GRPCTester.csproj" Id="cbbc539e-a309-469d-9b82-465c3f059e47" />
     <Project Path="PilService/PilService.csproj" Id="6899d698-94e0-4126-8ae6-ad74f396e68b" />

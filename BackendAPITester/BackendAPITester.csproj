@@ -9,8 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\StoreBackend\StoreBackend.csproj" />
     <ProjectReference Include="..\Tools\Tools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="IStoreBackend">
+      <HintPath>..\IStoreBackend\bin\Release\net10.0\IStoreBackend.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

@@ -7,6 +7,7 @@
   </Folder>
   <Folder Name="/Frontend/" />
   <Folder Name="/Frontend/Website/">
+    <File Path="index.html" />
     <File Path="WebstoreMainsite.html" />
   </Folder>
   <Folder Name="/Interfaces/">
@@ -17,5 +18,6 @@
     <Project Path="PilService/PilService.csproj" Id="6899d698-94e0-4126-8ae6-ad74f396e68b" />
   </Folder>
   <Project Path="BackendAPITester/BackendAPITester.csproj" Id="a8d69115-2ddd-474e-a096-5706e772dc61" />
+  <Project Path="StoreProxy/StoreProxy.csproj" Id="53efa80c-516a-48ca-9101-009a39aa8a8b" />
   <Project Path="Tools/Tools.csproj" />
 </Solution>

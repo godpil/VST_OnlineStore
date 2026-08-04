@@ -14,11 +14,11 @@ namespace StoreBackend {
         }
         //Payment Service Provider
         public interface IPSP {
-            string Name { get;set }
-            Guid Id { get; set}
+            string Name { get; set; }
+            Guid Id { get; set; }
         }
         public interface IPaymentResponse {
-            Guid Id { get; set}
+            Guid Id { get; set; }
             bool Success { get; }
             string Message { get; }
         }
@@ -31,10 +31,10 @@ namespace StoreBackend {
         }
 
         public interface IBill {
-            decimal Amount { get; set }
-            string Currency { get; set}
-            string PaymentMethod { get; set }
-            DateTime Date { get;set }
+            decimal Amount { get; set; }
+            string Currency { get; set; }
+            string PaymentMethod { get; set; }
+            DateTime Date { get; set; }
         }
 
     }
@@ -42,11 +42,11 @@ namespace StoreBackend {
     namespace WarehouseBackend {
         
         public interface IArticle {
-            Guid ArticleId { get; set}
-            decimal Price { get; set}
-            string Name { get; set }
-            bool IsInStock { get; set }
-            bool IsReserved { get; set}
+            Guid ArticleId { get; set; }
+            decimal Price { get; set; }
+            string Name { get; set; }
+            bool IsInStock { get; set; }
+            bool IsReserved { get; set; }
         }
 
         public interface IWarehouseBackend {

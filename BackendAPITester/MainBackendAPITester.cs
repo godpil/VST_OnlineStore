@@ -1,7 +1,6 @@
-﻿using StoreBackend.Warehouse;
-using StoreBackend.Invoice;
-using System;
+﻿using System;
 using System.Diagnostics;
+using StoreBackend.WarehouseBackend;
 
 /**/
 using Tools.Console;
@@ -41,17 +40,22 @@ namespace BackendAPITester
         }
 
         private static void TestWarehouse() {
-            var warehouse = Warehouse.Instance;
+            var warehouse = new WarehouseBackend();
             // Add some products to the warehouse
-            warehouse.Products.Add(new Product(Guid.NewGuid(), 10.99m, "Product A", true, false));
-            warehouse.Products.Add(new Product(Guid.NewGuid(), 15.49m, "Product B", true, false));
-            warehouse.Products.Add(new Product(Guid.NewGuid(), 7.99m, "Product C", false, true));
+            //warehouse.Products.Add(new Product(Guid.NewGuid(), 10.99m, "Product A", true, false));
+            //warehouse.Products.Add(new Product(Guid.NewGuid(), 15.49m, "Product B", true, false));
+            //warehouse.Products.Add(new Product(Guid.NewGuid(), 7.99m, "Product C", false, true));
             // Display the products in the warehouse
             ConsoleTools.tl("Products in Warehouse:");
-            foreach (var product in warehouse.Products) {
-                ConsoleTools.tl(product.ToString());
-            }
-            
+            //foreach (var product in warehouse.Products) {
+            //ConsoleTools.tl(product.ToString());
+            //}
+
+            warehouse.InsertArticle(Guid.NewGuid(), new (Guid.NewGuid(), 10.99m, "Product A", true, false));)
+            Article article = new Article(Guid.NewGuid(), 10.99m, "Product A", true, false);
+            warehouse.InsertArticle(article.ArticleId, article);
+
+
         }
 
         private static void TestInvoice() {
@@ -62,6 +66,48 @@ namespace BackendAPITester
             //} else {
                 ConsoleTools.tl("Failed to create PDF billing.");
             //}
+        }
+    }
+
+    internal class WarehouseBackend : IWarehouseBackend {
+        public bool IsArticleInStock(Guid articleId) {
+            throw new NotImplementedException();
+        }
+        public IArticle GetArticle(Guid articleId) {
+            throw new NotImplementedException();
+        }
+        public int GetArticleCount(Guid articleId) {
+            throw new NotImplementedException();
+        }
+        public void DeleteArticle(Guid articleId) {
+            throw new NotImplementedException();
+        }
+        public void ReserveArticle(Guid articleId) {
+            throw new NotImplementedException();
+        }
+        public void DereserveArticle(Guid articleId) {
+            throw new NotImplementedException();
+        }
+        public void InsertArticle(Guid articleId, IArticle article) {
+            throw new NotImplementedException();
+        }
+    }
+
+    internal class Article : IArticle {
+        public Guid ArticleId { get; set; }
+        public decimal Price { get; set; }
+        public string Name { get; set; }
+        public bool IsInStock { get; set; }
+        public bool IsReserved { get; set; }
+        public Article(Guid articleId, decimal price, string name, bool isInStock, bool isReserved) {
+            ArticleId = articleId;
+            Price = price;
+            Name = name;
+            IsInStock = isInStock;
+            IsReserved = isReserved;
+        }
+        public override string ToString() {
+            return $"ArticleId: {ArticleId}, Price: {Price}, Name: {Name}, IsInStock: {IsInStock}, IsReserved: {IsReserved}";
         }
     }
 }

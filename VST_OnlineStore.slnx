@@ -8,10 +8,14 @@
   <Folder Name="/Frontend/" />
   <Folder Name="/Frontend/Website/">
     <File Path="index.html" />
+  </Folder>
+  <Folder Name="/Frontend/Website/css/">
+    <File Path="store.css" />
+  </Folder>
+  <Folder Name="/Frontend/Website/js/">
     <File Path="productCard.js" />
     <File Path="StoreAPI.js" />
     <File Path="WebstoreApp.js" />
-    <File Path="WebstoreMainsite.html" />
   </Folder>
   <Folder Name="/Interfaces/">
     <Project Path="IStoreBackend/IStoreBackend.csproj" Id="df076cdc-a6b6-40c2-b828-b2271e6d5828" />

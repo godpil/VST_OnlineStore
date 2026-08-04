@@ -8,6 +8,9 @@
   <Folder Name="/Frontend/" />
   <Folder Name="/Frontend/Website/">
     <File Path="index.html" />
+    <File Path="productCard.js" />
+    <File Path="StoreAPI.js" />
+    <File Path="WebstoreApp.js" />
     <File Path="WebstoreMainsite.html" />
   </Folder>
   <Folder Name="/Interfaces/">

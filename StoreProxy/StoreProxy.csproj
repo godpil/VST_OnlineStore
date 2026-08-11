@@ -7,7 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="wwwroot\js\StoreAPI.js" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\images\" />
   </ItemGroup>
 
 </Project>

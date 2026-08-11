@@ -1,6 +1,6 @@
 <mxfile host="Electron">
   <diagram name="Seite-1" id="Ee26gHx2bVG5kNregx73">
-    <mxGraphModel dx="2945" dy="2375" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1835" dy="2548" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -535,6 +535,29 @@
         </mxCell>
         <mxCell id="n3Btyu9CJ5XLxg0qa3Rn-34" parent="1" style="shape=card;whiteSpace=wrap;html=1;align=left;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#000000;" value="&amp;gt; ShopService setzt Status auf &#39;COMPLETED&#39; und antwortet dem Client" vertex="1">
           <mxGeometry height="140" width="200" x="5745" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="CCJ_pQ0_ZWfoZ9O4dU_o-1" parent="1" style="shape=folder;fontStyle=1;spacingTop=10;tabWidth=40;tabHeight=14;tabPosition=left;html=1;whiteSpace=wrap;align=center;" value="&lt;p&gt;Domain&lt;br&gt;Geschäftslogik, Entitäten, Interfaces&lt;/p&gt;" vertex="1">
+          <mxGeometry height="390" width="430" x="1670" y="820" as="geometry" />
+        </mxCell>
+        <mxCell id="CCJ_pQ0_ZWfoZ9O4dU_o-2" parent="1" style="shape=folder;fontStyle=1;spacingTop=10;tabWidth=40;tabHeight=14;tabPosition=left;html=1;whiteSpace=wrap;" value="Application&lt;br&gt;UseCases &amp;amp; Definition d. IFaces)" vertex="1">
+          <mxGeometry height="370" width="460" x="1670" y="1360" as="geometry" />
+        </mxCell>
+        <mxCell id="CCJ_pQ0_ZWfoZ9O4dU_o-6" edge="1" parent="1" source="CCJ_pQ0_ZWfoZ9O4dU_o-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=0;exitDy=113;exitPerimeter=0;" target="CCJ_pQ0_ZWfoZ9O4dU_o-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CCJ_pQ0_ZWfoZ9O4dU_o-5" parent="1" style="shape=folder;fontStyle=1;spacingTop=10;tabWidth=40;tabHeight=14;tabPosition=left;html=1;whiteSpace=wrap;" value="Infrastructure&lt;br&gt;DBAcc, extAPIS, Logging" vertex="1">
+          <mxGeometry height="410" width="450" x="2240" y="1040" as="geometry" />
+        </mxCell>
+        <mxCell id="CCJ_pQ0_ZWfoZ9O4dU_o-7" edge="1" parent="1" source="CCJ_pQ0_ZWfoZ9O4dU_o-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=0;exitDy=311;exitPerimeter=0;entryX=0;entryY=0;entryDx=460;entryDy=207;entryPerimeter=0;" target="CCJ_pQ0_ZWfoZ9O4dU_o-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CCJ_pQ0_ZWfoZ9O4dU_o-8" edge="1" parent="1" source="CCJ_pQ0_ZWfoZ9O4dU_o-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="CCJ_pQ0_ZWfoZ9O4dU_o-1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1900" y="1250" />
+              <mxPoint x="1900" y="1250" />
+            </Array>
+          </mxGeometry>
         </mxCell>
       </root>
     </mxGraphModel>

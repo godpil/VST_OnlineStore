@@ -35,6 +35,6 @@ public class Program {
 
         // Für den ersten lokalen Test bewusst HTTP,
         // damit YARP ohne internes Entwicklungszertifikat testen kann.
-        app.Run("http://localhost:6667");
+        app.Run();
     }
 }

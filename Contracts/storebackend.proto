@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option csharp_namespace = "StoreBackend.Contracts";
+
+package storebackend;
+
+// Interner Vertrag zum bestehenden Warehouse im StoreBackend.
+// Ausschließlich der WarehouseService verwendet diese Schnittstelle.
+service WarehouseStorage {
+  rpc GetAvailableProducts (AvailableProductsRequest) returns (AvailableProductsResponse);
+  rpc SelectProduct (BackendSelectProductRequest) returns (BackendSelectProductResponse);
+}
+
+message AvailableProductsRequest {
+}
+
+message AvailableProductsResponse {
+  repeated StoredProduct products = 1;
+}
+
+message StoredProduct {
+  string id = 1;
+  string name = 2;
+  int64 price_in_cents = 3;
+  string image = 4;
+  bool is_available = 5;
+  bool is_reserved = 6;
+}
+
+message BackendSelectProductRequest {
+  string product_id = 1;
+}
+
+message BackendSelectProductResponse {
+  bool success = 1;
+  string product_id = 2;
+}

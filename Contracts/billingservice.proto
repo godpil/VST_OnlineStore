@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option csharp_namespace = "VstOnlineStore.Contracts.BillingService";
+
+package billingservice;
+
+service BillingOperations {
+  rpc GetStatus (BillingStatusRequest) returns (BillingStatusResponse);
+}
+
+message BillingStatusRequest {
+}
+
+message BillingStatusResponse {
+  bool available = 1;
+  string service = 2;
+}

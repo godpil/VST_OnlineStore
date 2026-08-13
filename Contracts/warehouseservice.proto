@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+option csharp_namespace = "VstOnlineStore.Contracts.WarehouseService";
+
+package warehouseservice;
+
+// Vom ShopService verwendete Warehouse-Servicegrenze.
+service WarehouseCatalog {
+  rpc GetFeaturedProducts (FeaturedProductsRequest) returns (FeaturedProductsResponse);
+  rpc SelectProduct (SelectProductRequest) returns (SelectProductResponse);
+  rpc GetStatus (WarehouseStatusRequest) returns (WarehouseStatusResponse);
+}
+
+message FeaturedProductsRequest {
+}
+
+message FeaturedProductsResponse {
+  repeated WarehouseProduct products = 1;
+}
+
+message WarehouseProduct {
+  string id = 1;
+  string name = 2;
+  int64 price_in_cents = 3;
+  string image = 4;
+}
+
+message SelectProductRequest {
+  string product_id = 1;
+}
+
+message SelectProductResponse {
+  bool success = 1;
+  string product_id = 2;
+}
+
+message WarehouseStatusRequest {
+}
+
+message WarehouseStatusResponse {
+  bool available = 1;
+  string service = 2;
+}

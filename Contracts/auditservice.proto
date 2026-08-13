@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option csharp_namespace = "VstOnlineStore.Contracts.AuditService";
+
+package auditservice;
+
+// Startpunkt für die spätere zentrale Logging- und Audit-Funktionalität.
+service AuditOperations {
+  rpc GetStatus (AuditStatusRequest) returns (AuditStatusResponse);
+}
+
+message AuditStatusRequest {
+}
+
+message AuditStatusResponse {
+  bool available = 1;
+  string service = 2;
+}

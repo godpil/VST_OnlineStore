@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option csharp_namespace = "VstOnlineStore.Contracts.InvoiceService";
+
+package invoiceservice;
+
+service InvoiceOperations {
+  rpc GetStatus (InvoiceStatusRequest) returns (InvoiceStatusResponse);
+}
+
+message InvoiceStatusRequest {
+}
+
+message InvoiceStatusResponse {
+  bool available = 1;
+  string service = 2;
+}

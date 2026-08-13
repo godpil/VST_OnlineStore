@@ -51,7 +51,7 @@ namespace BackendAPITester
             //ConsoleTools.tl(product.ToString());
             //}
 
-            warehouse.InsertArticle(Guid.NewGuid(), new (Guid.NewGuid(), 10.99m, "Product A", true, false));)
+           //warehouse.InsertArticle(Guid.NewGuid(), new (Guid.NewGuid(), 10.99m, "Product A", true, false));
             Article article = new Article(Guid.NewGuid(), 10.99m, "Product A", true, false);
             warehouse.InsertArticle(article.ArticleId, article);
 
@@ -59,7 +59,7 @@ namespace BackendAPITester
         }
 
         private static void TestInvoice() {
-            var invoice = Invoice.Instance;
+            //var invoice = Invoice.Instance;
             //var response = invoice.CreatePDFBilling(invoice);
             //if (response.Success) {
                 ConsoleTools.tl("PDF billing created successfully.");

@@ -3,13 +3,22 @@
         public Guid Id { get; set; }
         public decimal Price { get; set; }
         public string Name { get; set; }
+        public string Image { get; set; }
         public bool IsAvailable { get; set; }
         public bool IsReserved { get; set; }
 
-        public Product(Guid id, decimal price, string name, bool isAvailable, bool isReserved) {
+        public Product(
+            Guid id,
+            decimal price,
+            string name,
+            bool isAvailable,
+            bool isReserved,
+            string image = "") {
+
             Id = id;
             Price = price;
             Name = name;
+            Image = image;
             IsAvailable = isAvailable;
             IsReserved = isReserved;
         }
@@ -23,6 +32,7 @@
                 return Id == other.Id &&
                        Price == other.Price &&
                        Name == other.Name &&
+                       Image == other.Image &&
                        IsAvailable == other.IsAvailable &&
                        IsReserved == other.IsReserved;
             }
@@ -30,7 +40,7 @@
         }
 
         public override int GetHashCode() {
-             return Price.GetHashCode() + Name.GetHashCode() + IsAvailable.GetHashCode() + IsReserved.GetHashCode();
+             return HashCode.Combine(Id, Price, Name, Image, IsAvailable, IsReserved);
         }
     }
 }

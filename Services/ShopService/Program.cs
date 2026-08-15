@@ -44,7 +44,9 @@ public class Program {
                         id = product.Id,
                         name = product.Name,
                         price = product.PriceInCents / 100m,
-                        image = product.Image
+                        image = product.Image,
+                        availableQuantity = product.AvailableQuantity,
+                        isSoldOut = product.IsSoldOut
                     }));
                 }
                 catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable) {
@@ -61,12 +63,18 @@ public class Program {
 
                 try {
                     var response = await warehouse.SelectProductAsync(
-                        new WarehouseContracts.SelectProductRequest { ProductId = id },
+                        new WarehouseContracts.SelectProductRequest {
+                            ProductId = id,
+                            Quantity = 1
+                        },
                         cancellationToken: cancellationToken);
 
                     return Results.Ok(new {
                         success = response.Success,
-                        productId = response.ProductId
+                        productId = response.ProductId,
+                        availableQuantity = response.AvailableQuantity,
+                        isSoldOut = response.IsSoldOut,
+                        message = response.Message
                     });
                 }
                 catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable) {

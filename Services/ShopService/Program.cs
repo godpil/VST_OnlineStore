@@ -1,4 +1,5 @@
 using Grpc.Core;
+using ShopService.Checkout;
 using ShopService.Orchestration;
 using AuditContracts = VstOnlineStore.Contracts.AuditService;
 using BillingContracts = VstOnlineStore.Contracts.BillingService;
@@ -24,6 +25,7 @@ public class Program {
             options.Address = GetServiceAddress(builder.Configuration, "AuditService");
         });
         builder.Services.AddScoped<ServiceStatusOrchestrator>();
+        builder.Services.AddScoped<CheckoutOrchestrator>();
 
         var app = builder.Build();
 
@@ -55,31 +57,14 @@ public class Program {
             });
 
         app.MapPost(
-            "/api/products/{id}/select",
+            "/api/checkout",
             async (
-                string id,
-                WarehouseContracts.WarehouseCatalog.WarehouseCatalogClient warehouse,
+                CheckoutRequest request,
+                CheckoutOrchestrator orchestrator,
                 CancellationToken cancellationToken) => {
 
-                try {
-                    var response = await warehouse.SelectProductAsync(
-                        new WarehouseContracts.SelectProductRequest {
-                            ProductId = id,
-                            Quantity = 1
-                        },
-                        cancellationToken: cancellationToken);
-
-                    return Results.Ok(new {
-                        success = response.Success,
-                        productId = response.ProductId,
-                        availableQuantity = response.AvailableQuantity,
-                        isSoldOut = response.IsSoldOut,
-                        message = response.Message
-                    });
-                }
-                catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable) {
-                    return DownstreamUnavailable("WarehouseService");
-                }
+                var outcome = await orchestrator.CheckoutAsync(request, cancellationToken);
+                return Results.Json(outcome.Response, statusCode: outcome.StatusCode);
             });
 
         // Belegt die zentrale Steuerung aller fachlichen Services und dient

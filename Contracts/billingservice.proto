@@ -5,11 +5,25 @@ option csharp_namespace = "VstOnlineStore.Contracts.BillingService";
 package billingservice;
 
 service BillingOperations {
+  rpc ProcessPayment (PaymentRequest) returns (PaymentResponse);
   rpc GetStatus (BillingStatusRequest) returns (BillingStatusResponse);
 }
 
-message BillingStatusRequest {
+message PaymentRequest {
+  int64 amount_in_cents = 1;
+  string currency = 2;
+  string payment_method = 3;
+  string reference = 4;
 }
+
+message PaymentResponse {
+  bool success = 1;
+  string transaction_id = 2;
+  string provider = 3;
+  string message = 4;
+}
+
+message BillingStatusRequest {}
 
 message BillingStatusResponse {
   bool available = 1;

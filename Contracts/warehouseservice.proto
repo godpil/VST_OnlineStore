@@ -7,12 +7,12 @@ package warehouseservice;
 // Vom ShopService verwendete Warehouse-Servicegrenze.
 service WarehouseCatalog {
   rpc GetFeaturedProducts (FeaturedProductsRequest) returns (FeaturedProductsResponse);
-  rpc SelectProduct (SelectProductRequest) returns (SelectProductResponse);
+  rpc ReserveCart (CartStockRequest) returns (CartStockResponse);
+  rpc ReleaseCart (CartStockRequest) returns (CartStockResponse);
   rpc GetStatus (WarehouseStatusRequest) returns (WarehouseStatusResponse);
 }
 
-message FeaturedProductsRequest {
-}
+message FeaturedProductsRequest {}
 
 message FeaturedProductsResponse {
   repeated WarehouseProduct products = 1;
@@ -27,21 +27,28 @@ message WarehouseProduct {
   bool is_sold_out = 6;
 }
 
-message SelectProductRequest {
+message CartStockRequest {
+  repeated CartProductQuantity items = 1;
+}
+
+message CartProductQuantity {
   string product_id = 1;
   int32 quantity = 2;
 }
 
-message SelectProductResponse {
+message CartStockResponse {
   bool success = 1;
-  string product_id = 2;
-  int32 available_quantity = 3;
-  bool is_sold_out = 4;
-  string message = 5;
+  repeated CartProductStock products = 2;
+  string message = 3;
 }
 
-message WarehouseStatusRequest {
+message CartProductStock {
+  string product_id = 1;
+  int32 available_quantity = 2;
+  bool is_sold_out = 3;
 }
+
+message WarehouseStatusRequest {}
 
 message WarehouseStatusResponse {
   bool available = 1;

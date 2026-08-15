@@ -7,11 +7,11 @@ package storebackend;
 // Interner Prozessvertrag zwischen WarehouseService und StoreBackend.
 service WarehouseStorage {
   rpc GetProducts (BackendProductsRequest) returns (BackendProductsResponse);
-  rpc ReserveProduct (BackendReserveProductRequest) returns (BackendReserveProductResponse);
+  rpc ReserveProducts (BackendProductQuantitiesRequest) returns (BackendStockChangeResponse);
+  rpc ReleaseProducts (BackendProductQuantitiesRequest) returns (BackendStockChangeResponse);
 }
 
-message BackendProductsRequest {
-}
+message BackendProductsRequest {}
 
 message BackendProductsResponse {
   repeated StoredProduct products = 1;
@@ -26,15 +26,23 @@ message StoredProduct {
   bool is_sold_out = 6;
 }
 
-message BackendReserveProductRequest {
+message BackendProductQuantitiesRequest {
+  repeated BackendProductQuantity items = 1;
+}
+
+message BackendProductQuantity {
   string product_id = 1;
   int32 quantity = 2;
 }
 
-message BackendReserveProductResponse {
+message BackendStockChangeResponse {
   bool success = 1;
-  string product_id = 2;
-  int32 available_quantity = 3;
-  bool is_sold_out = 4;
-  string message = 5;
+  repeated BackendProductStock products = 2;
+  string message = 3;
+}
+
+message BackendProductStock {
+  string product_id = 1;
+  int32 available_quantity = 2;
+  bool is_sold_out = 3;
 }

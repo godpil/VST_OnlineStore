@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Initialisiert, startet, prueft und beendet den VST OnlineStore.
+    Initialisiert, startet, prueft und beendet Das Holzwerk.
 
 .DESCRIPTION
     Start fuehrt einen Restore und Build aus, startet alle benoetigten Prozesse
@@ -42,9 +42,12 @@ $ErrorActionPreference = "Stop"
 $projectRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
 $solutionPath = Join-Path $projectRoot "VST_OnlineStore.slnx"
 $runtimeDirectory = Join-Path $projectRoot "Logs\Startup"
-$processManifestPath = Join-Path $runtimeDirectory "vst-processes.json"
+$processManifestPath = Join-Path $runtimeDirectory "holzwerk-processes.json"
 $websiteUrl = "http://localhost:5275/"
 $apiReadinessUrl = "http://localhost:5275/api/products/featured"
+$browserUrl = "{0}?version=3&started={1}" -f `
+    $websiteUrl.TrimEnd("/"), `
+    [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 
 $serviceDefinitions = @(
     [PSCustomObject]@{
@@ -201,7 +204,7 @@ function Show-ApplicationStatus {
 }
 
 function Stop-Application {
-    Write-Step "VST OnlineStore beenden"
+    Write-Step "Das Holzwerk beenden"
 
     $entries = @(Get-ManifestEntries)
     if ($entries.Count -eq 0) {
@@ -246,15 +249,51 @@ function Start-ApplicationProcess {
     $standardOutputPath = Join-Path $runtimeDirectory ($Service.Name + ".out.log")
     $standardErrorPath = Join-Path $runtimeDirectory ($Service.Name + ".err.log")
 
-    $previousEnvironment = $env:ASPNETCORE_ENVIRONMENT
-    $previousUrls = $env:ASPNETCORE_URLS
+    $dotnetPath = (Get-Command dotnet -ErrorAction Stop).Source
+
+    # Manche Windows-Umgebungen enthalten gleichzeitig "Path" und "PATH".
+    # Windows PowerShell kann dann Start-Process nicht initialisieren. Fuer
+    # den Prozessstart werden die Eintraege deshalb kurz zusammengefuehrt
+    # und anschliessend exakt wiederhergestellt.
+    $pathEntries = @()
+    foreach ($key in [Environment]::GetEnvironmentVariables().Keys) {
+        if ($key -ieq "Path") {
+            $pathEntries += [PSCustomObject]@{
+                Key = [string]$key
+                Value = [Environment]::GetEnvironmentVariable(
+                    $key,
+                    [EnvironmentVariableTarget]::Process)
+            }
+        }
+    }
+
+    $normalizedPath = ($pathEntries.Value | ForEach-Object {
+        $_ -split ";"
+    } | Where-Object {
+        -not [string]::IsNullOrWhiteSpace($_)
+    } | Select-Object -Unique) -join ";"
+
     try {
-        $env:ASPNETCORE_ENVIRONMENT = "Development"
-        $env:ASPNETCORE_URLS = "http://localhost:$($Service.Port)"
+        foreach ($entry in $pathEntries) {
+            [Environment]::SetEnvironmentVariable(
+                $entry.Key,
+                $null,
+                [EnvironmentVariableTarget]::Process)
+        }
+        [Environment]::SetEnvironmentVariable(
+            "Path",
+            $normalizedPath,
+            [EnvironmentVariableTarget]::Process)
 
         $process = Start-Process `
-            -FilePath "dotnet" `
-            -ArgumentList ('"{0}"' -f $assemblyPath) `
+            -FilePath $dotnetPath `
+            -ArgumentList @(
+                ('"{0}"' -f $assemblyPath),
+                "--urls",
+                "http://localhost:$($Service.Port)",
+                "--environment",
+                "Development"
+            ) `
             -WorkingDirectory $workingDirectory `
             -RedirectStandardOutput $standardOutputPath `
             -RedirectStandardError $standardErrorPath `
@@ -262,8 +301,16 @@ function Start-ApplicationProcess {
             -PassThru
     }
     finally {
-        $env:ASPNETCORE_ENVIRONMENT = $previousEnvironment
-        $env:ASPNETCORE_URLS = $previousUrls
+        [Environment]::SetEnvironmentVariable(
+            "Path",
+            $null,
+            [EnvironmentVariableTarget]::Process)
+        foreach ($entry in $pathEntries) {
+            [Environment]::SetEnvironmentVariable(
+                $entry.Key,
+                $entry.Value,
+                [EnvironmentVariableTarget]::Process)
+        }
     }
 
     Wait-ServicePort -Service $Service -Process $process
@@ -287,7 +334,14 @@ function Wait-ApplicationApi {
                 $productCount = 1
             }
             $website = Invoke-WebRequest -Uri $websiteUrl -UseBasicParsing -TimeoutSec 5
-            if ($website.StatusCode -eq 200 -and $productCount -gt 0) {
+            $hasCurrentWebsite = `
+                $website.Content.Contains("<title>Das Holzwerk</title>") -and `
+                $website.Content.Contains('id="open-cart"') -and `
+                $website.Content.Contains("Holzwerk DemoPay")
+
+            if ($website.StatusCode -eq 200 -and
+                $productCount -gt 0 -and
+                $hasCurrentWebsite) {
                 return $productCount
             }
         }
@@ -335,14 +389,14 @@ function Start-Application {
 
         Write-Step "Vollstaendigen Aufrufpfad pruefen"
         $productCount = Wait-ApplicationApi
-        Write-Host "$productCount Produkte erfolgreich ueber den Proxy geladen." -ForegroundColor Green
+        Write-Host "$productCount Produkte sowie Branding, Warenkorb und Payment-Provider erfolgreich ueber den Proxy geladen." -ForegroundColor Green
 
         if (-not $NoBrowser) {
             Write-Step "Website oeffnen"
-            Start-Process -FilePath $websiteUrl
+            Start-Process -FilePath $browserUrl
         }
 
-        Write-Host "`nVST OnlineStore ist bereit: $websiteUrl" -ForegroundColor Green
+        Write-Host "`nDas Holzwerk ist bereit: $websiteUrl" -ForegroundColor Green
         Write-Host "Status: .\Start-VSTOnlineStore.ps1 -Action Status"
         Write-Host "Stop:   .\Start-VSTOnlineStore.ps1 -Action Stop"
     }
@@ -363,7 +417,7 @@ switch ($Action) {
         Start-Application
     }
     "Status" {
-        Write-Step "Status des VST OnlineStore"
+        Write-Step "Status von Das Holzwerk"
         Show-ApplicationStatus
     }
     "Stop" {

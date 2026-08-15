@@ -68,6 +68,7 @@ header {
 nav {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 25px;
     margin-left: auto;
 }
@@ -106,9 +107,13 @@ button:disabled {
     display: inline-flex;
     align-items: center;
     gap: 10px;
+    min-height: 44px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
     background: #f5eee4;
     color: var(--brown-950);
     font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 5px 14px rgba(19, 12, 8, 0.2);
 }
 
 .cart-button:hover:not(:disabled) {
@@ -271,6 +276,76 @@ h2 {
 .secondary-section p {
     margin-bottom: 0;
     color: #6c5b4e;
+}
+
+.payment-section {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.8fr) minmax(340px, 1.2fr);
+    align-items: center;
+    gap: 34px;
+}
+
+.payment-intro {
+    margin-bottom: 0;
+    color: #6c5b4e;
+    line-height: 1.6;
+}
+
+.payment-provider-card {
+    padding: 24px;
+    border: 1px solid #d8cec3;
+    border-radius: 10px;
+    background: white;
+    box-shadow: 0 8px 20px rgba(45, 33, 26, 0.08);
+}
+
+.payment-provider-heading {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 14px;
+}
+
+.provider-symbol {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    color: white;
+    background: var(--brown-700);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.provider-label {
+    margin: 0 0 3px;
+    color: var(--brown-600);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.payment-provider-card h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.payment-provider-card > p {
+    margin: 18px 0 0;
+    color: #6c5b4e;
+    line-height: 1.55;
+}
+
+.provider-status {
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: var(--green-700);
+    background: #e7f2e8;
+    font-size: 12px;
+    font-weight: 750;
 }
 
 .loading {
@@ -507,6 +582,20 @@ footer {
     .section-heading > p {
         margin-top: 10px;
         text-align: left;
+    }
+
+    .payment-section {
+        grid-template-columns: 1fr;
+        gap: 22px;
+    }
+
+    .payment-provider-heading {
+        grid-template-columns: auto 1fr;
+    }
+
+    .provider-status {
+        grid-column: 2;
+        justify-self: start;
     }
 
     .cart-panel {

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4a3325">
     <title>Das Holzwerk</title>
-    <link rel="stylesheet" href="css/store.css?v=2">
+    <link rel="stylesheet" href="css/store.css?v=3">
 </head>
 
 <body>
@@ -17,10 +17,12 @@
             <a href="#produkte">Produkte</a>
             <a href="#angebote">Angebote</a>
             <a href="#versand">Versand</a>
+            <a href="#zahlung">Zahlungsmöglichkeiten</a>
         </nav>
 
-        <button id="open-cart" class="cart-button" type="button" aria-controls="cart-panel">
-            Warenkorb
+        <button id="open-cart" class="cart-button" type="button" aria-controls="cart-panel" title="Warenkorb öffnen">
+            <span aria-hidden="true">🛒</span>
+            <span>Warenkorb</span>
             <span id="cart-count" class="cart-count" aria-label="0 Artikel">0</span>
         </button>
     </header>
@@ -28,7 +30,7 @@
     <section class="hero">
         <div class="hero-content">
             <p class="eyebrow">Natürlich. Beständig. Handgemacht.</p>
-            <h1>Willkommen bei Das Holzwerk</h1>
+            <h1>Das Holzwerk</h1>
             <p>Hochwertige Holzprodukte direkt vom Hersteller.</p>
         </div>
     </section>
@@ -51,6 +53,31 @@
         <section id="angebote" class="content-section secondary-section">
             <h2>Angebote</h2>
             <p>Ausgewählte Werkstücke und saisonale Angebote folgen demnächst.</p>
+        </section>
+
+        <section id="zahlung" class="content-section payment-section">
+            <div>
+                <p class="eyebrow dark">Sicherer Abschluss</p>
+                <h2>Zahlungsmöglichkeiten</h2>
+                <p class="payment-intro">
+                    Die Abrechnung erfolgt nach der erfolgreichen Reservierung des gesamten Warenkorbs.
+                </p>
+            </div>
+
+            <article class="payment-provider-card">
+                <div class="payment-provider-heading">
+                    <div class="provider-symbol" aria-hidden="true">€</div>
+                    <div>
+                        <p class="provider-label">Payment-Provider</p>
+                        <h3>Holzwerk DemoPay</h3>
+                    </div>
+                    <span class="provider-status">Testbetrieb</span>
+                </div>
+                <p>
+                    Simulierter Finanzdienstleister für die aktuelle Entwicklungsphase.
+                    Ein realer Anbieter kann später über die vorhandene Provider-Schnittstelle angebunden werden.
+                </p>
+            </article>
         </section>
 
         <section id="versand" class="content-section secondary-section">
@@ -86,9 +113,9 @@
 
     <div id="store-message" class="store-message" role="status" aria-live="polite"></div>
 
-    <script src="js/StoreAPI.js?v=2"></script>
-    <script src="js/productCard.js?v=2"></script>
-    <script src="js/WebstoreApp.js?v=2"></script>
+    <script src="js/StoreAPI.js?v=3"></script>
+    <script src="js/productCard.js?v=3"></script>
+    <script src="js/WebstoreApp.js?v=3"></script>
 </body>
 
 </html>

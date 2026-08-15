@@ -1,106 +1,49 @@
 "use strict";
 
-/*
- * Erzeugt die sichtbare Darstellung eines Produktes.
- *
- * Diese Datei kennt weder REST noch YARP noch das Backend.
- * Sie erhält lediglich ein Produktobjekt und eine Funktion,
- * die bei einer Benutzeraktion aufgerufen wird.
- */
-
-function createProductCard(product, onSelect) {
-
+function createProductCard(product, onBuy) {
     const card = document.createElement("article");
     card.className = "product-card";
+    card.dataset.productId = product.id;
 
-    /*
-     * Produktbild
-     */
     if (product.image) {
-
         const image = document.createElement("img");
-
         image.src = product.image;
         image.alt = product.name ?? "Produkt";
-
         card.appendChild(image);
     }
 
-    /*
-     * Produktname
-     */
     const title = document.createElement("h3");
-
-    title.textContent =
-        product.name ?? "Unbekanntes Produkt";
-
+    title.textContent = product.name ?? "Unbekanntes Produkt";
     card.appendChild(title);
 
-    /*
-     * Preis
-     */
     const price = document.createElement("p");
     price.className = "price";
-
-    if (typeof product.price === "number") {
-
-        price.textContent =
-            product.price.toLocaleString(
-                "de-DE",
-                {
-                    style: "currency",
-                    currency: "EUR"
-                }
-            );
-    }
-    else {
-
-        price.textContent = "Preis nicht verfügbar";
-    }
-
+    price.textContent = typeof product.price === "number"
+        ? product.price.toLocaleString("de-DE", { style: "currency", currency: "EUR" })
+        : "Preis nicht verfügbar";
     card.appendChild(price);
 
-    /*
-     * Aktueller Lagerbestand
-     */
     const stock = document.createElement("p");
-    stock.className = product.isSoldOut
-        ? "stock sold-out"
-        : "stock available";
+    stock.className = product.isSoldOut ? "stock sold-out" : "stock available";
     stock.textContent = product.isSoldOut
         ? "Ausverkauft"
         : `${product.availableQuantity} Stück auf Lager`;
-
     card.appendChild(stock);
 
-    /*
-     * Aktionsbutton
-     *
-     * Dieser Button führt selbst keinen HTTP-Aufruf aus.
-     * Er informiert lediglich WebstoreApp.js darüber,
-     * dass das Produkt ausgewählt wurde.
-     */
-    const selectButton =
-        document.createElement("button");
-
-    selectButton.type = "button";
-    selectButton.textContent = product.isSoldOut
-        ? "Ausverkauft"
-        : "Produkt reservieren";
-    selectButton.disabled = product.isSoldOut;
-
-    selectButton.addEventListener(
-        "click",
-        () => {
-
-            if (typeof onSelect === "function") {
-                onSelect(product.id);
-            }
-
+    const buyButton = document.createElement("button");
+    buyButton.type = "button";
+    buyButton.className = "buy-button";
+    buyButton.textContent = product.isSoldOut ? "Ausverkauft" : "Kaufen";
+    buyButton.disabled = product.isSoldOut;
+    buyButton.setAttribute("aria-label", product.isSoldOut
+        ? `${product.name} ist ausverkauft`
+        : `${product.name} in den Warenkorb legen`);
+    buyButton.addEventListener("click", () => {
+        if (typeof onBuy === "function") {
+            onBuy(product);
         }
-    );
-
-    card.appendChild(selectButton);
+    });
+    card.appendChild(buyButton);
 
     return card;
 }

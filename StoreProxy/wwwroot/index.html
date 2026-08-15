@@ -1,125 +1,94 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 
 <head>
-
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
-    <title>VST OnlineStore</title>
-
-    <link rel="stylesheet"
-          href="css/store.css">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#4a3325">
+    <title>Das Holzwerk</title>
+    <link rel="stylesheet" href="css/store.css?v=2">
 </head>
 
 <body>
-
     <header>
+        <div class="logo">🌲 Das Holzwerk</div>
 
-        <div class="logo">
-            🌲 VST OnlineStore
-        </div>
-
-        <nav>
-
-            <a href="#">Produkte</a>
-            <a href="#">Angebote</a>
-            <a href="#">Versand</a>
-            <a href="#">Zahlung</a>
-
+        <nav aria-label="Hauptnavigation">
+            <a href="#produkte">Produkte</a>
+            <a href="#angebote">Angebote</a>
+            <a href="#versand">Versand</a>
         </nav>
 
+        <button id="open-cart" class="cart-button" type="button" aria-controls="cart-panel">
+            Warenkorb
+            <span id="cart-count" class="cart-count" aria-label="0 Artikel">0</span>
+        </button>
     </header>
 
-
     <section class="hero">
-
-        <h1>
-            Willkommen im VST OnlineStore
-        </h1>
-
-        <p>
-
-            Hochwertige Holzprodukte direkt vom Hersteller.
-
-        </p>
-
+        <div class="hero-content">
+            <p class="eyebrow">Natürlich. Beständig. Handgemacht.</p>
+            <h1>Willkommen bei Das Holzwerk</h1>
+            <p>Hochwertige Holzprodukte direkt vom Hersteller.</p>
+        </div>
     </section>
 
-
     <main>
-
-        <section>
-
-            <h2>
-
-                Unsere Empfehlungen
-
-            </h2>
-
-            <div id="featured-products"
-                 class="product-container">
-
-                <div class="loading">
-
-                    Produkte werden geladen...
-
+        <section id="produkte" class="content-section">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow dark">Aus unserem Lager</p>
+                    <h2>Unsere Empfehlungen</h2>
                 </div>
-
+                <p>Verfügbarkeit und Preise werden direkt aus dem Lager geladen.</p>
             </div>
 
-        </section>
-
-
-        <section>
-
-            <h2>
-
-                Kategorien
-
-            </h2>
-
-            <div id="categories">
-
-                folgt später...
-
+            <div id="featured-products" class="product-container">
+                <div class="loading">Produkte werden geladen...</div>
             </div>
-
         </section>
 
-
-        <section>
-
-            <h2>
-
-                Angebote
-
-            </h2>
-
-            <div id="offers">
-
-                folgt später...
-
-            </div>
-
+        <section id="angebote" class="content-section secondary-section">
+            <h2>Angebote</h2>
+            <p>Ausgewählte Werkstücke und saisonale Angebote folgen demnächst.</p>
         </section>
 
+        <section id="versand" class="content-section secondary-section">
+            <h2>Versand</h2>
+            <p>Sorgfältig verpackt und sicher zu Ihnen geliefert.</p>
+        </section>
     </main>
 
+    <footer>© Das Holzwerk</footer>
 
-    <footer>
+    <div id="cart-overlay" class="cart-overlay" hidden></div>
+    <aside id="cart-panel" class="cart-panel" aria-labelledby="cart-title" aria-hidden="true">
+        <div class="cart-header">
+            <div>
+                <p class="eyebrow dark">Ihre Auswahl</p>
+                <h2 id="cart-title">Warenkorb</h2>
+            </div>
+            <button id="close-cart" class="icon-button" type="button" aria-label="Warenkorb schließen">×</button>
+        </div>
 
-        © VST OnlineStore
+        <div id="cart-items" class="cart-items"></div>
 
-    </footer>
+        <div class="cart-summary">
+            <div class="cart-total-row">
+                <span>Gesamtsumme</span>
+                <strong id="cart-total">0,00 €</strong>
+            </div>
+            <button id="checkout-button" class="checkout-button" type="button" disabled>Bezahlen</button>
+            <p class="cart-hint">Die Artikel werden erst beim Bezahlen im Lager reserviert.</p>
+            <p id="cart-message" class="cart-message" role="status" aria-live="polite"></p>
+        </div>
+    </aside>
 
+    <div id="store-message" class="store-message" role="status" aria-live="polite"></div>
 
-    <script src="js/StoreAPI.js"></script>
-    <script src="js/productCard.js"></script>
-    <script src="js/WebstoreApp.js"></script>
-
+    <script src="js/StoreAPI.js?v=2"></script>
+    <script src="js/productCard.js?v=2"></script>
+    <script src="js/WebstoreApp.js?v=2"></script>
 </body>
 
 </html>

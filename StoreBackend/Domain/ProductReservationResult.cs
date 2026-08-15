@@ -1,4 +1,4 @@
-namespace VstOnlineStore.StoreBackend.Domain;
+namespace StoreBackend.Domain;
 
 public sealed record ProductReservationResult(
     bool Success,

@@ -1,0 +1,23 @@
+[
+  {
+    "id": "70f70332-945f-4702-9bc2-1cf330f26d42",
+    "name": "Buchenholzplatte",
+    "price": 39.90,
+    "image": "",
+    "availableQuantity": 4
+  },
+  {
+    "id": "d63f3cb9-e42e-4d3e-a84d-bfe557e049cc",
+    "name": "Eichenbrett",
+    "price": 24.95,
+    "image": "",
+    "availableQuantity": 12
+  },
+  {
+    "id": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+    "name": "Nussbaumleiste",
+    "price": 18.50,
+    "image": "",
+    "availableQuantity": 0
+  }
+]

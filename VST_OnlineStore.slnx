@@ -17,9 +17,6 @@
     <File Path="StoreAPI.js" />
     <File Path="WebstoreApp.js" />
   </Folder>
-  <Folder Name="/Interfaces/">
-    <Project Path="IStoreBackend/IStoreBackend.csproj" Id="df076cdc-a6b6-40c2-b828-b2271e6d5828" />
-  </Folder>
   <Folder Name="/Services/">
     <Project Path="Services/AuditService/AuditService.csproj" />
     <Project Path="Services/BillingService/BillingService.csproj" />

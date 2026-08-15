@@ -1,27 +1,34 @@
 using Grpc.Core;
+using StoreBackend.Contracts;
 using VstOnlineStore.Contracts.WarehouseService;
-using VstOnlineStore.StoreBackend.Abstractions;
 
 namespace WarehouseService.GrpcServices;
 
+/// <summary>
+/// Öffentliche Warehouse-Grenze. Der Zugriff auf StoreBackend erfolgt
+/// ausschließlich über den internen gRPC-Vertrag.
+/// </summary>
 public sealed class WarehouseCatalogGrpcService(
-    IStoreBackend backend) : WarehouseCatalog.WarehouseCatalogBase {
+    WarehouseStorage.WarehouseStorageClient backend) : WarehouseCatalog.WarehouseCatalogBase {
 
     public override async Task<FeaturedProductsResponse> GetFeaturedProducts(
         FeaturedProductsRequest request,
         ServerCallContext context) {
 
-        var products = await backend.GetProductsAsync(context.CancellationToken);
+        var backendResponse = await backend.GetProductsAsync(
+            new BackendProductsRequest(),
+            cancellationToken: context.CancellationToken);
         var response = new FeaturedProductsResponse();
 
-        response.Products.AddRange(products.Select(product => new WarehouseProduct {
-            Id = product.Id.ToString(),
-            Name = product.Name,
-            PriceInCents = decimal.ToInt64(product.Price * 100m),
-            Image = product.Image,
-            AvailableQuantity = product.AvailableQuantity,
-            IsSoldOut = product.IsSoldOut
-        }));
+        response.Products.AddRange(
+            backendResponse.Products.Select(product => new WarehouseProduct {
+                Id = product.Id,
+                Name = product.Name,
+                PriceInCents = product.PriceInCents,
+                Image = product.Image,
+                AvailableQuantity = product.AvailableQuantity,
+                IsSoldOut = product.IsSoldOut
+            }));
 
         return response;
     }
@@ -30,26 +37,19 @@ public sealed class WarehouseCatalogGrpcService(
         SelectProductRequest request,
         ServerCallContext context) {
 
-        if (!Guid.TryParse(request.ProductId, out var productId)) {
-            return new SelectProductResponse {
-                Success = false,
+        var backendResponse = await backend.ReserveProductAsync(
+            new BackendReserveProductRequest {
                 ProductId = request.ProductId,
-                Message = "Die Produkt-ID ist ungültig."
-            };
-        }
-
-        var quantity = request.Quantity > 0 ? request.Quantity : 1;
-        var result = await backend.ReserveProductAsync(
-            productId,
-            quantity,
-            context.CancellationToken);
+                Quantity = request.Quantity > 0 ? request.Quantity : 1
+            },
+            cancellationToken: context.CancellationToken);
 
         return new SelectProductResponse {
-            Success = result.Success,
-            ProductId = request.ProductId,
-            AvailableQuantity = result.AvailableQuantity,
-            IsSoldOut = result.IsSoldOut,
-            Message = result.Message
+            Success = backendResponse.Success,
+            ProductId = backendResponse.ProductId,
+            AvailableQuantity = backendResponse.AvailableQuantity,
+            IsSoldOut = backendResponse.IsSoldOut,
+            Message = backendResponse.Message
         };
     }
 

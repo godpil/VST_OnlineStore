@@ -1,7 +1,8 @@
-namespace VstOnlineStore.StoreBackend.Domain;
+namespace StoreBackend.Domain;
 
 /// <summary>
 /// Produkt mit seinem aktuell verfügbaren Lagerbestand.
+/// Dieses Modell bleibt innerhalb der StoreBackend-Domäne.
 /// </summary>
 public sealed record WarehouseProduct(
     Guid Id,

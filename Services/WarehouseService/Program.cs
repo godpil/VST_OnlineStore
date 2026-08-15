@@ -1,6 +1,4 @@
 using StoreBackend.Contracts;
-using VstOnlineStore.StoreBackend.Abstractions;
-using WarehouseService.Backend;
 using WarehouseService.GrpcServices;
 
 namespace WarehouseService;
@@ -17,8 +15,6 @@ public class Program {
         builder.Services.AddGrpcClient<WarehouseStorage.WarehouseStorageClient>(options => {
             options.Address = new Uri(backendAddress);
         });
-        builder.Services.AddScoped<IStoreBackend, GrpcStoreBackendAdapter>();
-
         var app = builder.Build();
 
         app.MapGrpcService<WarehouseCatalogGrpcService>();

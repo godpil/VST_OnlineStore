@@ -1,46 +1,73 @@
 using Grpc.Core;
+using StoreBackend.Application;
 using StoreBackend.Contracts;
-using WarehouseModel = StoreBackend.Warehouse.Warehouse;
 
 namespace StoreBackend.Services;
 
+/// <summary>
+/// Interner gRPC-Transportadapter. Er übersetzt nur zwischen Protobuf und
+/// Anwendungsschicht; Geschäfts- und Speicherlogik liegen nicht hier.
+/// </summary>
 public sealed class WarehouseStorageGrpcService(
+    WarehouseApplicationService warehouse,
     ILogger<WarehouseStorageGrpcService> logger) : WarehouseStorage.WarehouseStorageBase {
 
-    public override Task<AvailableProductsResponse> GetAvailableProducts(
-        AvailableProductsRequest request,
+    public override async Task<BackendProductsResponse> GetProducts(
+        BackendProductsRequest request,
         ServerCallContext context) {
 
-        var response = new AvailableProductsResponse();
+        var products = await warehouse.GetProductsAsync(context.CancellationToken);
+        var response = new BackendProductsResponse();
 
-        response.Products.AddRange(
-            WarehouseModel.Instance.GetAvailableProducts().Select(product => new StoredProduct {
-                Id = product.Id.ToString(),
-                Name = product.Name,
-                PriceInCents = decimal.ToInt64(product.Price * 100m),
-                Image = product.Image,
-                IsAvailable = product.IsAvailable,
-                IsReserved = product.IsReserved
-            }));
+        response.Products.AddRange(products.Select(product => new StoredProduct {
+            Id = product.Id.ToString(),
+            Name = product.Name,
+            PriceInCents = decimal.ToInt64(product.Price * 100m),
+            Image = product.Image,
+            AvailableQuantity = product.AvailableQuantity,
+            IsSoldOut = product.IsSoldOut
+        }));
 
-        return Task.FromResult(response);
+        return response;
     }
 
-    public override Task<BackendSelectProductResponse> SelectProduct(
-        BackendSelectProductRequest request,
+    public override async Task<BackendReserveProductResponse> ReserveProduct(
+        BackendReserveProductRequest request,
         ServerCallContext context) {
 
-        var hasValidId = Guid.TryParse(request.ProductId, out var productId);
-        var success = hasValidId && WarehouseModel.Instance.CanSelectProduct(productId);
+        if (!Guid.TryParse(request.ProductId, out var productId)) {
+            return new BackendReserveProductResponse {
+                Success = false,
+                ProductId = request.ProductId,
+                Message = "Die Produkt-ID ist ungültig."
+            };
+        }
+
+        if (request.Quantity <= 0) {
+            return new BackendReserveProductResponse {
+                Success = false,
+                ProductId = request.ProductId,
+                Message = "Die Reservierungsmenge muss größer als null sein."
+            };
+        }
+
+        var result = await warehouse.ReserveProductAsync(
+            productId,
+            request.Quantity,
+            context.CancellationToken);
 
         logger.LogInformation(
-            "Produktauswahl {ProductId} im Warehouse geprüft. Ergebnis: {Success}",
+            "Reservierung von {Quantity} × {ProductId}. Ergebnis: {Success}",
+            request.Quantity,
             request.ProductId,
-            success);
+            result.Success);
 
-        return Task.FromResult(new BackendSelectProductResponse {
-            Success = success,
-            ProductId = request.ProductId
-        });
+        return new BackendReserveProductResponse {
+            Success = result.Success,
+            ProductId = request.ProductId,
+            AvailableQuantity = result.AvailableQuantity,
+            IsSoldOut = result.IsSoldOut,
+            Message = result.Message
+        };
     }
 }

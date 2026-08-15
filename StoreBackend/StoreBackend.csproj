@@ -8,11 +8,16 @@
 
 	<ItemGroup>
 		<PackageReference Include="Grpc.AspNetCore" Version="2.80.0" />
-		<PackageReference Include="QuestPDF" Version="2026.7.1" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Protobuf Include="..\Contracts\storebackend.proto" GrpcServices="Server" Link="Protos\storebackend.proto" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Update="Data\warehouse-products.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
 	</ItemGroup>
 
 </Project>

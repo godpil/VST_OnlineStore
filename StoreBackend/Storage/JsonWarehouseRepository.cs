@@ -42,7 +42,7 @@ public sealed class JsonWarehouseRepository(
             var products = await JsonSerializer.DeserializeAsync<List<WarehouseProduct>>(
                 stream,
                 JsonOptions,
-                cancellationToken) ?? new List<WarehouseProduct>();
+                cancellationToken) ?? [];
 
             ValidateProducts(products);
             SetProducts(products);
@@ -84,36 +84,18 @@ public sealed class JsonWarehouseRepository(
         }
     }
 
-    public async Task<WarehouseProduct?> GetProductAsync(
-        Guid productId,
+    public async Task ReplaceProductsAsync(
+        IReadOnlyCollection<WarehouseProduct> products,
         CancellationToken cancellationToken = default) {
+
+        ValidateProducts(products);
 
         await _accessLock.WaitAsync(cancellationToken);
         try {
-            return _products.GetValueOrDefault(productId);
-        }
-        finally {
-            _accessLock.Release();
-        }
-    }
-
-    public async Task SaveProductAsync(
-        WarehouseProduct product,
-        CancellationToken cancellationToken = default) {
-
-        ValidateProducts([product]);
-
-        await _accessLock.WaitAsync(cancellationToken);
-        try {
-            var updatedProducts = _products.Values
-                .Where(current => current.Id != product.Id)
-                .Append(product)
-                .ToArray();
-
             // Erst nach erfolgreicher Persistenz wird der sichtbare
             // In-Memory-Bestand übernommen.
-            await WriteToDiskCoreAsync(updatedProducts, cancellationToken);
-            _products[product.Id] = product;
+            await WriteToDiskCoreAsync(products, cancellationToken);
+            SetProducts(products);
         }
         finally {
             _accessLock.Release();
@@ -179,23 +161,13 @@ public sealed class JsonWarehouseRepository(
     }
 
     private static IReadOnlyList<WarehouseProduct> CreateInitialProducts() => [
-        new(
-            Guid.Parse("d63f3cb9-e42e-4d3e-a84d-bfe557e049cc"),
-            "Eichenbrett",
-            24.95m,
-            "",
-            12),
-        new(
-            Guid.Parse("70f70332-945f-4702-9bc2-1cf330f26d42"),
-            "Buchenholzplatte",
-            39.90m,
-            "",
-            4),
-        new(
-            Guid.Parse("5bbdf7bb-9a39-4169-8c9b-e0435741812d"),
-            "Nussbaumleiste",
-            18.50m,
-            "",
-            0)
+        new(Guid.Parse("d63f3cb9-e42e-4d3e-a84d-bfe557e049cc"), "Eichenbrett", 24.95m, "", 12),
+        new(Guid.Parse("70f70332-945f-4702-9bc2-1cf330f26d42"), "Buchenholzplatte", 39.90m, "", 4),
+        new(Guid.Parse("5bbdf7bb-9a39-4169-8c9b-e0435741812d"), "Nussbaumleiste", 18.50m, "", 0),
+        new(Guid.Parse("a1f8c2c0-a2a8-4de0-8ed0-35fcaf7260a1"), "Ahorn-Schneidebrett", 34.50m, "", 7),
+        new(Guid.Parse("b2e9d3d1-b3b9-4ef1-9fe1-46fdb08371b2"), "Zirbenholzschale", 44.90m, "", 5),
+        new(Guid.Parse("c3fad4e2-c4ca-40a2-a0f2-570ec19482c3"), "Eichen-Servierbrett", 29.90m, "", 9),
+        new(Guid.Parse("d40be5f3-d5db-41b3-b103-681fd2a593d4"), "Buchenholz-Hocker", 89.00m, "", 3),
+        new(Guid.Parse("e51cf604-e6ec-42c4-c214-7920e3b6a4e5"), "Nussbaum-Messerblock", 74.90m, "", 2)
     ];
 }

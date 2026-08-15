@@ -1,6 +1,7 @@
 using Grpc.Core;
 using StoreBackend.Application;
 using StoreBackend.Contracts;
+using StoreBackend.Domain;
 
 namespace StoreBackend.Services;
 
@@ -31,43 +32,53 @@ public sealed class WarehouseStorageGrpcService(
         return response;
     }
 
-    public override async Task<BackendReserveProductResponse> ReserveProduct(
-        BackendReserveProductRequest request,
-        ServerCallContext context) {
+    public override async Task<BackendStockChangeResponse> ReserveProducts(
+        BackendProductQuantitiesRequest request,
+        ServerCallContext context) =>
+        await ChangeStockAsync(request, reserve: true, context.CancellationToken);
 
-        if (!Guid.TryParse(request.ProductId, out var productId)) {
-            return new BackendReserveProductResponse {
-                Success = false,
-                ProductId = request.ProductId,
-                Message = "Die Produkt-ID ist ungültig."
-            };
+    public override async Task<BackendStockChangeResponse> ReleaseProducts(
+        BackendProductQuantitiesRequest request,
+        ServerCallContext context) =>
+        await ChangeStockAsync(request, reserve: false, context.CancellationToken);
+
+    private async Task<BackendStockChangeResponse> ChangeStockAsync(
+        BackendProductQuantitiesRequest request,
+        bool reserve,
+        CancellationToken cancellationToken) {
+
+        var items = new List<WarehouseOrderItem>();
+        foreach (var item in request.Items) {
+            if (!Guid.TryParse(item.ProductId, out var productId)) {
+                return new BackendStockChangeResponse {
+                    Success = false,
+                    Message = "Mindestens eine Produkt-ID ist ungültig."
+                };
+            }
+
+            items.Add(new WarehouseOrderItem(productId, item.Quantity));
         }
 
-        if (request.Quantity <= 0) {
-            return new BackendReserveProductResponse {
-                Success = false,
-                ProductId = request.ProductId,
-                Message = "Die Reservierungsmenge muss größer als null sein."
-            };
-        }
-
-        var result = await warehouse.ReserveProductAsync(
-            productId,
-            request.Quantity,
-            context.CancellationToken);
+        var result = reserve
+            ? await warehouse.ReserveProductsAsync(items, cancellationToken)
+            : await warehouse.ReleaseProductsAsync(items, cancellationToken);
 
         logger.LogInformation(
-            "Reservierung von {Quantity} × {ProductId}. Ergebnis: {Success}",
-            request.Quantity,
-            request.ProductId,
+            "Lageränderung für {ProductCount} Produkte. Reservierung: {Reserve}, Ergebnis: {Success}",
+            items.Count,
+            reserve,
             result.Success);
 
-        return new BackendReserveProductResponse {
+        var response = new BackendStockChangeResponse {
             Success = result.Success,
-            ProductId = request.ProductId,
-            AvailableQuantity = result.AvailableQuantity,
-            IsSoldOut = result.IsSoldOut,
             Message = result.Message
         };
+        response.Products.AddRange(result.Products.Select(product => new BackendProductStock {
+            ProductId = product.ProductId.ToString(),
+            AvailableQuantity = product.AvailableQuantity,
+            IsSoldOut = product.IsSoldOut
+        }));
+
+        return response;
     }
 }

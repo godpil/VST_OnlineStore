@@ -10,11 +10,7 @@ public interface IWarehouseRepository {
     Task<IReadOnlyList<WarehouseProduct>> GetProductsAsync(
         CancellationToken cancellationToken = default);
 
-    Task<WarehouseProduct?> GetProductAsync(
-        Guid productId,
-        CancellationToken cancellationToken = default);
-
-    Task SaveProductAsync(
-        WarehouseProduct product,
+    Task ReplaceProductsAsync(
+        IReadOnlyCollection<WarehouseProduct> products,
         CancellationToken cancellationToken = default);
 }

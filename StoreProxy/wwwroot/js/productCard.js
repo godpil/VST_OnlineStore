@@ -61,6 +61,19 @@ function createProductCard(product, onSelect) {
     card.appendChild(price);
 
     /*
+     * Aktueller Lagerbestand
+     */
+    const stock = document.createElement("p");
+    stock.className = product.isSoldOut
+        ? "stock sold-out"
+        : "stock available";
+    stock.textContent = product.isSoldOut
+        ? "Ausverkauft"
+        : `${product.availableQuantity} Stück auf Lager`;
+
+    card.appendChild(stock);
+
+    /*
      * Aktionsbutton
      *
      * Dieser Button führt selbst keinen HTTP-Aufruf aus.
@@ -71,7 +84,10 @@ function createProductCard(product, onSelect) {
         document.createElement("button");
 
     selectButton.type = "button";
-    selectButton.textContent = "Produkt auswählen";
+    selectButton.textContent = product.isSoldOut
+        ? "Ausverkauft"
+        : "Produkt reservieren";
+    selectButton.disabled = product.isSoldOut;
 
     selectButton.addEventListener(
         "click",

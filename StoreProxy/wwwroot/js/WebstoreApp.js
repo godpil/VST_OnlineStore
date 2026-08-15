@@ -102,6 +102,14 @@ async function handleProductSelect(productId) {
             result
         );
 
+        if (!result.success) {
+            window.alert(result.message ?? "Das Produkt konnte nicht reserviert werden.");
+        }
+
+        // Bestand nach jeder Reservierung erneut über den vollständigen
+        // Servicepfad laden, damit die Anzeige dem gespeicherten Stand entspricht.
+        await loadFeaturedProducts();
+
     }
     catch (error) {
 

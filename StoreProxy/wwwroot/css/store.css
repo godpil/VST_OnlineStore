@@ -77,6 +77,18 @@ main {
         font-weight: bold;
     }
 
+    .product-card .stock {
+        font-weight: 600;
+    }
+
+    .product-card .available {
+        color: #356b3f;
+    }
+
+    .product-card .sold-out {
+        color: #a12f2f;
+    }
+
 /* Buttons */
 button {
     padding: 10px 16px;
@@ -89,6 +101,11 @@ button {
 
     button:hover {
         background-color: #765238;
+    }
+
+    button:disabled {
+        background-color: #9b9189;
+        cursor: not-allowed;
     }
 
 /* Ladeanzeige */

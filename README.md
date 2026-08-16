@@ -84,3 +84,31 @@ lediglich der zentrale OTLP-Export ist nicht verfügbar:
 
 Der `AuditService` bleibt für spätere fachliche Audit-Ereignisse erhalten. Das
 technische Sammeln und Persistieren von Logs übernimmt der Collector.
+
+YARP-Proxyregeln
+----------------
+
+Der StoreProxy veröffentlicht ausschließlich die explizit konfigurierten
+Shop-Routen. Die Methoden, Gesamt-Timeouts und Limits sind wie folgt festgelegt:
+
+| Route | Methode | Timeout | Rate Limit pro Client |
+|---|---|---:|---:|
+| `/api/products/featured` | `GET` | 5 Sekunden | 120 pro Minute |
+| `/api/checkout` | `POST` | 30 Sekunden | 10 pro Minute |
+| `/api/services/status` | `GET` | 5 Sekunden | 30 pro Minute |
+
+Der Checkout-Request darf höchstens 65.536 Bytes groß sein. Überschreitungen
+werden als JSON mit HTTP 413 beantwortet; Rate-Limit-Verletzungen liefern HTTP
+429 und einen `Retry-After`-Header. Automatische Wiederholungen des Checkouts
+sind wegen der möglichen Zahlungswirkung bewusst nicht aktiviert.
+
+YARP prüft den ShopService alle zehn Sekunden aktiv über `/health`. Zwei
+aufeinanderfolgende Fehlschläge markieren das Ziel als nicht verfügbar.
+Zusätzlich erkennt die passive Prüfung Transportfehler und reaktiviert ein Ziel
+nach zehn Sekunden. Der Cluster ist mit `PowerOfTwoChoices` bereits auf weitere
+ShopService-Instanzen vorbereitet, verwendet aktuell jedoch genau ein Ziel.
+
+Ein eigener YARP-Transform setzt vor jeder Weiterleitung genau die kanonische
+`X-Correlation-ID`. Weiterleitungsfehler werden als strukturierte JSON-Antwort
+mit Status, neutraler Meldung und Correlation-ID zurückgegeben; interne
+Fehlerdetails erscheinen ausschließlich im strukturierten Log.

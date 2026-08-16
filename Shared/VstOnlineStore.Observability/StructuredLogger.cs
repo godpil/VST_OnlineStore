@@ -49,12 +49,20 @@ internal sealed class StructuredLogger(
         }
 
         var state = new StructuredLogState(entry, json);
-        logger.Log(
-            MapLogLevel(logLevel),
-            new EventId(2000, "StructuredLog"),
-            state,
-            exception,
-            static (logState, _) => logState.Json);
+        try {
+            logger.Log(
+                MapLogLevel(logLevel),
+                new EventId(2000, "StructuredLog"),
+                state,
+                exception,
+                static (logState, _) => logState.Json);
+        }
+        catch (Exception sinkException) {
+            // Kein externer Logging-Provider darf einen fachlichen Aufruf oder
+            // eine bereits vorbereitete HTTP-Antwort abbrechen.
+            System.Diagnostics.Debug.WriteLine(
+                $"Structured logging provider failed: {sinkException.Message}");
+        }
     }
 
     private Guid GetCorrelationId() {

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.EventLog;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
@@ -23,6 +24,20 @@ public static class OpenTelemetryExtensions {
         }
 
         var logRootDirectory = ResolveLogRootDirectory(configuration);
+        // Das Projekt schreibt bewusst in Debug-Konsole, JSONL und OTLP. Der
+        // Windows-EventLog-Provider benötigt dagegen eine registrierte Quelle
+        // beziehungsweise erhöhte Rechte und darf Anwendungsaufrufe nicht
+        // durch eine fehlende Betriebssystemberechtigung abbrechen.
+        if (OperatingSystem.IsWindows()) {
+            var eventLogRegistrations = services
+                .Where(registration =>
+                    registration.ServiceType == typeof(ILoggerProvider)
+                    && registration.ImplementationType == typeof(EventLogLoggerProvider))
+                .ToArray();
+            foreach (var registration in eventLogRegistrations) {
+                services.Remove(registration);
+            }
+        }
         services.AddHttpContextAccessor();
         services.AddSingleton(new StructuredLoggingOptions(
             serviceName,
@@ -30,12 +45,13 @@ public static class OpenTelemetryExtensions {
             RetentionDays: 14));
         services.AddSingleton<DailyJsonLogFileSink>();
         services.AddSingleton<IStructuredLogger, StructuredLogger>();
-        services.Configure<LoggerFilterOptions>(filtering =>
+        services.Configure<LoggerFilterOptions>(filtering => {
             filtering.Rules.Add(new LoggerFilterRule(
                 providerName: null,
                 categoryName: typeof(StructuredLogger).FullName,
                 logLevel: LogLevel.Debug,
-                filter: null)));
+                filter: null));
+        });
 
         services.Configure<OpenTelemetryLoggerOptions>(logging => {
             logging.IncludeFormattedMessage = true;

@@ -55,9 +55,9 @@ $collectorReleaseBaseUrl = "https://github.com/open-telemetry/opentelemetry-coll
 $collectorInstallDirectory = Join-Path $projectRoot "Tools\OpenTelemetryCollector\$collectorVersion"
 $collectorExecutablePath = Join-Path $collectorInstallDirectory "otelcol-contrib.exe"
 $collectorConfigPath = Join-Path $projectRoot "Observability\otel-collector-config.yaml"
-$collectorPort = 4317
-$websiteUrl = "http://localhost:5275/"
-$apiReadinessUrl = "http://localhost:5275/api/products/featured"
+$collectorPort = 6673
+$websiteUrl = "http://localhost:6666/"
+$apiReadinessUrl = "http://localhost:6666/api/products/featured"
 $browserUrl = "{0}?version=3&started={1}" -f `
     $websiteUrl.TrimEnd("/"), `
     [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
@@ -103,7 +103,7 @@ $serviceDefinitions = @(
         Name = "StoreProxy"
         ProjectDirectory = "StoreProxy"
         Assembly = "StoreProxy.dll"
-        Port = 5275
+        Port = 6666
     }
 )
 

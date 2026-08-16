@@ -15,7 +15,7 @@ public static class OpenTelemetryExtensions {
 
         var configuredEndpoint = configuration["OpenTelemetry:OtlpEndpoint"]
             ?? Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT")
-            ?? "http://localhost:4317";
+            ?? "http://localhost:6673";
 
         if (!Uri.TryCreate(configuredEndpoint, UriKind.Absolute, out var endpoint)) {
             throw new InvalidOperationException(

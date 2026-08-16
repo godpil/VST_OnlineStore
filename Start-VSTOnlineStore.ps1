@@ -55,9 +55,9 @@ $collectorReleaseBaseUrl = "https://github.com/open-telemetry/opentelemetry-coll
 $collectorInstallDirectory = Join-Path $projectRoot "Tools\OpenTelemetryCollector\$collectorVersion"
 $collectorExecutablePath = Join-Path $collectorInstallDirectory "otelcol-contrib.exe"
 $collectorConfigPath = Join-Path $projectRoot "Observability\otel-collector-config.yaml"
-$collectorPort = 6673
-$websiteUrl = "http://localhost:6666/"
-$apiReadinessUrl = "http://localhost:6666/api/products/featured"
+$collectorPort = 6687
+$websiteUrl = "http://localhost:6680/"
+$apiReadinessUrl = "http://localhost:6680/api/products/featured"
 $browserUrl = "{0}?version=3&started={1}" -f `
     $websiteUrl.TrimEnd("/"), `
     [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
@@ -67,43 +67,43 @@ $serviceDefinitions = @(
         Name = "StoreBackend"
         ProjectDirectory = "StoreBackend"
         Assembly = "StoreBackend.dll"
-        Port = 6667
+        Port = 6681
     },
     [PSCustomObject]@{
         Name = "WarehouseService"
         ProjectDirectory = "Services\WarehouseService"
         Assembly = "WarehouseService.dll"
-        Port = 6669
+        Port = 6683
     },
     [PSCustomObject]@{
         Name = "BillingService"
         ProjectDirectory = "Services\BillingService"
         Assembly = "BillingService.dll"
-        Port = 6670
+        Port = 6684
     },
     [PSCustomObject]@{
         Name = "InvoiceService"
         ProjectDirectory = "Services\InvoiceService"
         Assembly = "InvoiceService.dll"
-        Port = 6671
+        Port = 6685
     },
     [PSCustomObject]@{
         Name = "AuditService"
         ProjectDirectory = "Services\AuditService"
         Assembly = "AuditService.dll"
-        Port = 6672
+        Port = 6686
     },
     [PSCustomObject]@{
         Name = "ShopService"
         ProjectDirectory = "Services\ShopService"
         Assembly = "ShopService.dll"
-        Port = 6668
+        Port = 6682
     },
     [PSCustomObject]@{
         Name = "StoreProxy"
         ProjectDirectory = "StoreProxy"
         Assembly = "StoreProxy.dll"
-        Port = 6666
+        Port = 6680
     }
 )
 

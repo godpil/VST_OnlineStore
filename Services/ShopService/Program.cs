@@ -5,6 +5,7 @@ using AuditContracts = VstOnlineStore.Contracts.AuditService;
 using BillingContracts = VstOnlineStore.Contracts.BillingService;
 using InvoiceContracts = VstOnlineStore.Contracts.InvoiceService;
 using WarehouseContracts = VstOnlineStore.Contracts.WarehouseService;
+using VstOnlineStore.Observability;
 
 namespace ShopService;
 
@@ -12,22 +13,29 @@ public class Program {
     public static void Main(string[] args) {
         var builder = WebApplication.CreateBuilder(args);
 
+        builder.Services.AddVstOpenTelemetry(
+            builder.Configuration,
+            "ShopService");
+        builder.Services.AddCorrelationIdPropagation();
         builder.Services.AddGrpcClient<WarehouseContracts.WarehouseCatalog.WarehouseCatalogClient>(options => {
             options.Address = GetServiceAddress(builder.Configuration, "WarehouseService");
-        });
+        }).AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
         builder.Services.AddGrpcClient<BillingContracts.BillingOperations.BillingOperationsClient>(options => {
             options.Address = GetServiceAddress(builder.Configuration, "BillingService");
-        });
+        }).AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
         builder.Services.AddGrpcClient<InvoiceContracts.InvoiceOperations.InvoiceOperationsClient>(options => {
             options.Address = GetServiceAddress(builder.Configuration, "InvoiceService");
-        });
+        }).AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
         builder.Services.AddGrpcClient<AuditContracts.AuditOperations.AuditOperationsClient>(options => {
             options.Address = GetServiceAddress(builder.Configuration, "AuditService");
-        });
+        }).AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
         builder.Services.AddScoped<ServiceStatusOrchestrator>();
         builder.Services.AddScoped<CheckoutOrchestrator>();
 
         var app = builder.Build();
+
+        app.UseCorrelationId();
+        app.UseStructuredRequestLogging();
 
         // Öffentliche REST-Schnittstelle. Nur der ShopService kennt die
         // darunterliegenden fachlichen Microservices.

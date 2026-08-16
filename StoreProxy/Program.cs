@@ -1,3 +1,5 @@
+using VstOnlineStore.Observability;
+
 namespace StoreProxy {
     public class Program {
         public static void Main(string[] args) {
@@ -9,9 +11,14 @@ namespace StoreProxy {
                 .LoadFromConfig(
                     builder.Configuration
                         .GetSection("ReverseProxy"));
+            builder.Services.AddVstOpenTelemetry(
+                builder.Configuration,
+                "StoreProxy");
 
             var app = builder.Build();
 
+            app.UseCorrelationId();
+            app.UseStructuredRequestLogging();
             app.UseDefaultFiles();
             app.UseStaticFiles();
 

@@ -2,12 +2,15 @@
 
 const StoreAPI = (() => {
     const API_BASE = "/api";
+    const CORRELATION_ID_HEADER = "X-Correlation-ID";
 
     async function request(path, options = {}) {
+        const correlationId = crypto.randomUUID();
         const response = await fetch(`${API_BASE}${path}`, {
             ...options,
             headers: {
                 "Accept": "application/json",
+                [CORRELATION_ID_HEADER]: correlationId,
                 ...options.headers
             }
         });
@@ -22,7 +25,9 @@ const StoreAPI = (() => {
                 ?? body?.detail
                 ?? body?.title
                 ?? `Store API Fehler: HTTP ${response.status} ${response.statusText}`;
-            throw new Error(message);
+            const error = new Error(message);
+            error.correlationId = response.headers.get(CORRELATION_ID_HEADER) ?? correlationId;
+            throw error;
         }
 
         return response.status === 204 ? null : body;

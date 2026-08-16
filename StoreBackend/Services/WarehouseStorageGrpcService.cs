@@ -2,6 +2,7 @@ using Grpc.Core;
 using StoreBackend.Application;
 using StoreBackend.Contracts;
 using StoreBackend.Domain;
+using VstOnlineStore.Observability;
 
 namespace StoreBackend.Services;
 
@@ -11,7 +12,7 @@ namespace StoreBackend.Services;
 /// </summary>
 public sealed class WarehouseStorageGrpcService(
     WarehouseApplicationService warehouse,
-    ILogger<WarehouseStorageGrpcService> logger) : WarehouseStorage.WarehouseStorageBase {
+    IStructuredLogger logger) : WarehouseStorage.WarehouseStorageBase {
 
     public override async Task<BackendProductsResponse> GetProducts(
         BackendProductsRequest request,
@@ -63,11 +64,13 @@ public sealed class WarehouseStorageGrpcService(
             ? await warehouse.ReserveProductsAsync(items, cancellationToken)
             : await warehouse.ReleaseProductsAsync(items, cancellationToken);
 
-        logger.LogInformation(
-            "Lageränderung für {ProductCount} Produkte. Reservierung: {Reserve}, Ergebnis: {Success}",
-            items.Count,
-            reserve,
-            result.Success);
+        logger.Info(
+            "Warehouse stock changed.",
+            new {
+                productCount = items.Count,
+                reserve,
+                success = result.Success
+            });
 
         var response = new BackendStockChangeResponse {
             Success = result.Success,

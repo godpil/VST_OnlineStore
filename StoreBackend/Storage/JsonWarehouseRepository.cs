@@ -1,6 +1,7 @@
 using System.Text.Json;
 using StoreBackend.Application.Ports;
 using StoreBackend.Domain;
+using VstOnlineStore.Observability;
 
 namespace StoreBackend.Storage;
 
@@ -10,7 +11,7 @@ namespace StoreBackend.Storage;
 /// </summary>
 public sealed class JsonWarehouseRepository(
     string dataFilePath,
-    ILogger<JsonWarehouseRepository> logger) : IWarehouseRepository {
+    IStructuredLogger logger) : IWarehouseRepository {
 
     private static readonly JsonSerializerOptions JsonOptions = new() {
         PropertyNameCaseInsensitive = true,
@@ -32,9 +33,9 @@ public sealed class JsonWarehouseRepository(
             if (!File.Exists(dataFilePath)) {
                 SetProducts(CreateInitialProducts());
                 await WriteToDiskCoreAsync(_products.Values, cancellationToken);
-                logger.LogInformation(
-                    "Lagerdatei {DataFilePath} mit Startbestand angelegt.",
-                    dataFilePath);
+                logger.Info(
+                    "Warehouse data file initialized.",
+                    new { dataFilePath });
                 return;
             }
 
@@ -47,10 +48,12 @@ public sealed class JsonWarehouseRepository(
             ValidateProducts(products);
             SetProducts(products);
 
-            logger.LogInformation(
-                "{ProductCount} Produktdatensätze aus {DataFilePath} geladen.",
-                _products.Count,
-                dataFilePath);
+            logger.Info(
+                "Warehouse data loaded.",
+                new {
+                    productCount = _products.Count,
+                    dataFilePath
+                });
         }
         finally {
             _accessLock.Release();
@@ -125,10 +128,12 @@ public sealed class JsonWarehouseRepository(
 
         File.Move(temporaryFilePath, dataFilePath, overwrite: true);
 
-        logger.LogInformation(
-            "{ProductCount} Produktdatensätze nach {DataFilePath} geschrieben.",
-            productSnapshot.Length,
-            dataFilePath);
+        logger.Info(
+            "Warehouse data written.",
+            new {
+                productCount = productSnapshot.Length,
+                dataFilePath
+            });
     }
 
     private void SetProducts(IEnumerable<WarehouseProduct> products) {

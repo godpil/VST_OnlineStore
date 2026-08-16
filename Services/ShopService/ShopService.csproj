@@ -16,6 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Shared\VstOnlineStore.Observability\VstOnlineStore.Observability.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Protobuf Include="..\..\Contracts\warehouseservice.proto" GrpcServices="Client" Link="Protos\warehouseservice.proto" />
     <Protobuf Include="..\..\Contracts\billingservice.proto" GrpcServices="Client" Link="Protos\billingservice.proto" />
     <Protobuf Include="..\..\Contracts\invoiceservice.proto" GrpcServices="Client" Link="Protos\invoiceservice.proto" />

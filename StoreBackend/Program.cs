@@ -2,6 +2,7 @@ using StoreBackend.Application;
 using StoreBackend.Application.Ports;
 using StoreBackend.Services;
 using StoreBackend.Storage;
+using VstOnlineStore.Observability;
 
 namespace StoreBackend;
 
@@ -10,6 +11,9 @@ public class Program {
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddGrpc();
+        builder.Services.AddVstOpenTelemetry(
+            builder.Configuration,
+            "StoreBackend");
         builder.Services.AddSingleton<JsonWarehouseRepository>(services => {
             var configuredPath = builder.Configuration["WarehouseData:FilePath"]
                 ?? "Data/warehouse-products.json";
@@ -21,13 +25,16 @@ public class Program {
 
             return new JsonWarehouseRepository(
                 dataFilePath,
-                services.GetRequiredService<ILogger<JsonWarehouseRepository>>());
+                services.GetRequiredService<IStructuredLogger>());
         });
         builder.Services.AddSingleton<IWarehouseRepository>(services =>
             services.GetRequiredService<JsonWarehouseRepository>());
         builder.Services.AddSingleton<WarehouseApplicationService>();
 
         var app = builder.Build();
+
+        app.UseCorrelationId();
+        app.UseStructuredRequestLogging();
 
         // Vor dem ersten Zugriff über WarehouseService muss der aktuelle
         // Lagerbestand vollständig von der Festplatte geladen sein.

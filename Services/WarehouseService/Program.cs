@@ -1,4 +1,5 @@
 using StoreBackend.Contracts;
+using VstOnlineStore.Observability;
 using WarehouseService.GrpcServices;
 
 namespace WarehouseService;
@@ -12,11 +13,17 @@ public class Program {
                 "Die Konfiguration 'StoreBackend:Address' fehlt.");
 
         builder.Services.AddGrpc();
+        builder.Services.AddVstOpenTelemetry(
+            builder.Configuration,
+            "WarehouseService");
+        builder.Services.AddCorrelationIdPropagation();
         builder.Services.AddGrpcClient<WarehouseStorage.WarehouseStorageClient>(options => {
             options.Address = new Uri(backendAddress);
-        });
+        }).AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
         var app = builder.Build();
 
+        app.UseCorrelationId();
+        app.UseStructuredRequestLogging();
         app.MapGrpcService<WarehouseCatalogGrpcService>();
         app.MapGet("/", () => "WarehouseService gRPC endpoint");
 

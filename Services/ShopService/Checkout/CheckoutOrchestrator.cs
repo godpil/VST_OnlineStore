@@ -1,4 +1,5 @@
 using Grpc.Core;
+using VstOnlineStore.Observability;
 using BillingContracts = VstOnlineStore.Contracts.BillingService;
 using WarehouseContracts = VstOnlineStore.Contracts.WarehouseService;
 
@@ -12,7 +13,7 @@ namespace ShopService.Checkout;
 public sealed class CheckoutOrchestrator(
     WarehouseContracts.WarehouseCatalog.WarehouseCatalogClient warehouse,
     BillingContracts.BillingOperations.BillingOperationsClient billing,
-    ILogger<CheckoutOrchestrator> logger) {
+    IStructuredLogger logger) {
 
     public async Task<CheckoutOutcome> CheckoutAsync(
         CheckoutRequest request,
@@ -87,11 +88,15 @@ public sealed class CheckoutOrchestrator(
                     totalInCents);
             }
 
-            logger.LogInformation(
-                "Kauf {Reference} über {Provider} abgeschlossen. Transaktion: {TransactionId}",
-                reference,
-                payment.Provider,
-                payment.TransactionId);
+            logger.Info(
+                "Checkout completed.",
+                new {
+                    reference,
+                    provider = payment.Provider,
+                    transactionId = payment.TransactionId,
+                    totalInCents,
+                    currency = "EUR"
+                });
 
             return new CheckoutOutcome(
                 StatusCodes.Status200OK,
@@ -136,7 +141,14 @@ public sealed class CheckoutOrchestrator(
 
     private void TryLogWarning(Exception exception, string reference) {
         try {
-            logger.LogWarning(exception, "Abrechnung für {Reference} fehlgeschlagen.", reference);
+            logger.Warn(
+                "Billing failed.",
+                new {
+                    reference,
+                    exceptionType = exception.GetType().FullName,
+                    exceptionMessage = exception.Message
+                },
+                exception);
         }
         catch (Exception) {
             // Eine nicht verfügbare Log-Senke darf das fachliche Rollback
@@ -146,7 +158,15 @@ public sealed class CheckoutOrchestrator(
 
     private void TryLogError(Exception? exception, string message) {
         try {
-            logger.LogError(exception, "{Message}", message);
+            logger.Error(
+                message,
+                exception is null
+                    ? null
+                    : new {
+                        exceptionType = exception.GetType().FullName,
+                        exceptionMessage = exception.Message
+                    },
+                exception);
         }
         catch (Exception) {
             // Siehe TryLogWarning.

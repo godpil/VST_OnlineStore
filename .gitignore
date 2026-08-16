@@ -91,6 +91,9 @@ StyleCopReport.xml
 *.tmp_proj
 *_wpftmp.csproj
 *.log
+Logs/OpenTelemetry/
+Logs/*/
+Tools/OpenTelemetryCollector/
 *.vspscc
 *.vssscc
 .builds

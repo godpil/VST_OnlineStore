@@ -32,6 +32,42 @@ Entwurfsmuster - 02.05.2026
 Microserviceentwürfe zum Test - 03.05.26
 Webfrontendansätze - 01.06.26
 
+Betriebsskript
+--------------
+
+Das Skript `Start-VSTOnlineStore.ps1` kann den gesamten Stack oder einzelne
+Komponenten verwalten:
+
+```powershell
+# Hilfe zu allen Parametern und Aktionen
+.\Start-VSTOnlineStore.ps1 -h
+
+# Gesamten Stack starten, anzeigen und beenden
+.\Start-VSTOnlineStore.ps1
+.\Start-VSTOnlineStore.ps1 -Action Status
+.\Start-VSTOnlineStore.ps1 -Action Stop
+
+# Eine Komponente gezielt starten oder stoppen
+.\Start-VSTOnlineStore.ps1 -Action StartService -ServiceName AuditService -SkipBuild
+.\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName AuditService
+
+# Alle bekannten Datei- und Logsenken anzeigen
+.\Start-VSTOnlineStore.ps1 -Action FileSinks
+```
+
+Als `ServiceName` werden `StoreBackend`, `WarehouseService`, `BillingService`,
+`InvoiceService`, `AuditService`, `ShopService`, `StoreProxy` und
+`OpenTelemetryCollector` unterstützt. Einzelstarts verändern das bestehende
+Prozessmanifest, ohne andere Komponenten zu verlieren. Einzelstopps beenden nur
+einen anhand von Prozess-ID und Startzeit eindeutig als verwaltet erkannten
+Prozess. Abhängigkeiten werden bei der Einzelsteuerung bewusst nicht automatisch
+gestartet oder beendet.
+
+`FileSinks` zeigt pro Senke Status, Anzahl, Gesamtgröße, letzte Änderung und
+absoluten Pfad. Erfasst werden die täglich rollierenden Service-Logs,
+Standardausgabe und Standardfehler, die OTLP-JSONL-Datei, Audit-Snapshots,
+Warehouse-Daten und das Prozessmanifest.
+
 Strukturiertes Logging und OpenTelemetry
 ----------------------------------------
 
@@ -82,20 +118,44 @@ lediglich der zentrale OTLP-Export ist nicht verfügbar:
 .\Start-VSTOnlineStore.ps1 -SkipCollector
 ```
 
-Der `AuditService` bleibt für spätere fachliche Audit-Ereignisse erhalten. Das
-technische Sammeln und Persistieren von Logs übernimmt der Collector.
+Der `AuditService` speichert fachliche Snapshots der Bestellzustände getrennt
+von den technischen Logs. Jeder Snapshot besitzt eine eigene `eventID`, die
+`correlationID` des Bestellvorgangs, `eventType`, `responsibleService`, einen
+UTC-Zeitstempel, einen JSON-Payload, `previousEventID`, `actor` und einen der
+Statuswerte `SUCCESS`, `FAILURE`, `COMPENSATING` oder `COMPENSATED`.
 
-YARP-Proxyregeln
-----------------
+Die Ereignisse einer Correlation-ID bilden über `previousEventID` eine
+unveränderliche Kette. `eventID`, Zeitstempel, Sequenznummer und Verknüpfung
+werden atomar im AuditService vergeben. Der aktuelle Datenbankadapter simuliert
+eine append-only Tabelle in `Services/AuditService/Data/audit-snapshots.json`.
+Die Anwendungsschicht greift ausschließlich über `IAuditSnapshotRepository`
+darauf zu, sodass der JSON-Adapter später durch Entity Framework ersetzt werden
+kann.
 
-Der StoreProxy veröffentlicht ausschließlich die explizit konfigurierten
-Shop-Routen. Die Methoden, Gesamt-Timeouts und Limits sind wie folgt festgelegt:
+Der AuditService selbst veröffentlicht keinen REST-Endpunkt. Die chronologisch
+sortierte Ereigniskette ist ausschließlich über den StoreProxy abrufbar:
+
+```text
+GET /audit/orders/{correlationId}
+```
+
+Eine unbekannte Correlation-ID liefert `200 OK` mit einem leeren JSON-Array;
+eine syntaktisch ungültige GUID liefert `400 Bad Request`.
+
+StoreProxy-Routen
+-----------------
+
+Der StoreProxy veröffentlicht ausschließlich die explizit freigegebenen
+Routen. Die Shop-Routen werden über YARP weitergeleitet; die Audit-Abfrage
+übersetzt der StoreProxy in einen internen gRPC-Aufruf. Methoden,
+Gesamt-Timeouts und Limits sind wie folgt festgelegt:
 
 | Route | Methode | Timeout | Rate Limit pro Client |
 |---|---|---:|---:|
 | `/api/products/featured` | `GET` | 5 Sekunden | 120 pro Minute |
 | `/api/checkout` | `POST` | 30 Sekunden | 10 pro Minute |
 | `/api/services/status` | `GET` | 5 Sekunden | 30 pro Minute |
+| `/audit/orders/{correlationId}` | `GET` | 5 Sekunden | 30 pro Minute |
 
 Der Checkout-Request darf höchstens 65.536 Bytes groß sein. Überschreitungen
 werden als JSON mit HTTP 413 beantwortet; Rate-Limit-Verletzungen liefern HTTP

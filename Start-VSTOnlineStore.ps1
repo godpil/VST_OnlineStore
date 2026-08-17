@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Initialisiert, startet, prueft und beendet Das Holzwerk.
+    Initialisiert, startet, prueft und verwaltet Das Holzwerk.
 
 .DESCRIPTION
     Start fuehrt einen Restore und Build aus, startet alle benoetigten Prozesse
@@ -8,7 +8,11 @@
     anschliessend die Website im Standardbrowser.
 
 .PARAMETER Action
-    Start (Standard), Status oder Stop.
+    Start (Standard), Status, Stop, StartService, StopService oder FileSinks.
+
+.PARAMETER ServiceName
+    Komponente für StartService oder StopService. Neben den Anwendungen kann
+    auch der OpenTelemetryCollector einzeln verwaltet werden.
 
 .PARAMETER SkipBuild
     Ueberspringt Restore und Build, wenn bereits aktuelle Build-Ausgaben
@@ -20,6 +24,9 @@
 .PARAMETER SkipCollector
     Startet die Anwendung ohne den OpenTelemetry Collector.
 
+.PARAMETER Help
+    Zeigt mit -h eine kompakte Übersicht aller Skriptparameter und Beispiele.
+
 .EXAMPLE
     .\Start-VSTOnlineStore.ps1
 
@@ -28,18 +35,42 @@
 
 .EXAMPLE
     .\Start-VSTOnlineStore.ps1 -Action Stop
+
+.EXAMPLE
+    .\Start-VSTOnlineStore.ps1 -Action StartService -ServiceName AuditService -SkipBuild
+
+.EXAMPLE
+    .\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName BillingService
+
+.EXAMPLE
+    .\Start-VSTOnlineStore.ps1 -Action FileSinks
 #>
 
 [CmdletBinding()]
 param(
-    [ValidateSet("Start", "Status", "Stop")]
+    [ValidateSet("Start", "Status", "Stop", "StartService", "StopService", "FileSinks")]
     [string]$Action = "Start",
+
+    [Alias("Service")]
+    [ValidateSet(
+        "OpenTelemetryCollector",
+        "StoreBackend",
+        "WarehouseService",
+        "BillingService",
+        "InvoiceService",
+        "AuditService",
+        "ShopService",
+        "StoreProxy")]
+    [string]$ServiceName,
 
     [switch]$SkipBuild,
 
     [switch]$NoBrowser,
 
-    [switch]$SkipCollector
+    [switch]$SkipCollector,
+
+    [Alias("h")]
+    [switch]$Help
 )
 
 $ErrorActionPreference = "Stop"
@@ -58,6 +89,7 @@ $collectorConfigPath = Join-Path $projectRoot "Observability\otel-collector-conf
 $collectorPort = 6687
 $websiteUrl = "http://localhost:6680/"
 $apiReadinessUrl = "http://localhost:6680/api/products/featured"
+$auditReadinessUrl = "http://localhost:6680/audit/orders/$([Guid]::NewGuid().ToString('D'))"
 $browserUrl = "{0}?version=3&started={1}" -f `
     $websiteUrl.TrimEnd("/"), `
     [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
@@ -111,6 +143,45 @@ function Write-Step {
     param([string]$Message)
 
     Write-Host "`n==> $Message" -ForegroundColor Cyan
+}
+
+function Show-ScriptHelp {
+    Write-Host @"
+Das Holzwerk - VST OnlineStore Verwaltung
+
+Syntax:
+  .\Start-VSTOnlineStore.ps1 [-Action <Aktion>] [-ServiceName <Komponente>]
+                              [-SkipBuild] [-NoBrowser] [-SkipCollector] [-h]
+
+Aktionen:
+  Start          Gesamten Stack bauen, starten und pruefen (Standard)
+  Status         Status, Ports und verwaltete Prozess-IDs anzeigen
+  Stop           Alle durch das Skript verwalteten Prozesse beenden
+  StartService   Genau eine Komponente starten
+  StopService    Genau eine verwaltete Komponente beenden
+  FileSinks      Alle bekannten Datei- und Logsenken anzeigen
+
+Parameter:
+  -Action        Auszufuehrende Aktion; Standardwert ist Start
+  -ServiceName   Komponente fuer StartService oder StopService
+  -Service       Kurzalias fuer -ServiceName
+  -SkipBuild     Restore und Build beim Start ueberspringen
+  -NoBrowser     Browser beim Gesamtstart nicht oeffnen
+  -SkipCollector OpenTelemetry Collector beim Gesamtstart auslassen
+  -h             Diese Hilfe anzeigen; es wird keine Aktion ausgefuehrt
+
+Komponenten:
+  OpenTelemetryCollector, StoreBackend, WarehouseService, BillingService,
+  InvoiceService, AuditService, ShopService, StoreProxy
+
+Beispiele:
+  .\Start-VSTOnlineStore.ps1
+  .\Start-VSTOnlineStore.ps1 -Action Status
+  .\Start-VSTOnlineStore.ps1 -Action StartService -ServiceName AuditService -SkipBuild
+  .\Start-VSTOnlineStore.ps1 -Action StopService -Service AuditService
+  .\Start-VSTOnlineStore.ps1 -Action FileSinks
+  .\Start-VSTOnlineStore.ps1 -Action Stop
+"@
 }
 
 function Test-TcpPort {
@@ -178,6 +249,50 @@ function Get-ManifestEntries {
     $parsedEntries = ConvertFrom-Json $content
     foreach ($entry in $parsedEntries) {
         Write-Output $entry
+    }
+}
+
+function Save-ManifestEntries {
+    param([object[]]$Entries = @())
+
+    $entriesToPersist = @($Entries | Where-Object { $null -ne $_ })
+    if ($entriesToPersist.Count -eq 0) {
+        Remove-Item `
+            -LiteralPath $processManifestPath `
+            -Force `
+            -ErrorAction SilentlyContinue
+        return
+    }
+
+    New-Item -ItemType Directory -Path $runtimeDirectory -Force | Out-Null
+    ConvertTo-Json -InputObject $entriesToPersist |
+        Set-Content -LiteralPath $processManifestPath -Encoding UTF8
+}
+
+function Get-ComponentDefinition {
+    param([Parameter(Mandatory = $true)][string]$Name)
+
+    if ($Name -eq "OpenTelemetryCollector") {
+        return [PSCustomObject]@{
+            Name = "OpenTelemetryCollector"
+            Port = $collectorPort
+            IsCollector = $true
+        }
+    }
+
+    $service = $serviceDefinitions |
+        Where-Object { $_.Name -eq $Name } |
+        Select-Object -First 1
+    if ($null -eq $service) {
+        throw "Unbekannte Komponente: $Name"
+    }
+
+    return [PSCustomObject]@{
+        Name = $service.Name
+        Port = $service.Port
+        ProjectDirectory = $service.ProjectDirectory
+        Assembly = $service.Assembly
+        IsCollector = $false
     }
 }
 
@@ -456,6 +571,255 @@ function Start-ApplicationProcess {
     }
 }
 
+function Start-SelectedComponent {
+    if ([string]::IsNullOrWhiteSpace($ServiceName)) {
+        throw "Für -Action StartService muss -ServiceName angegeben werden."
+    }
+
+    $component = Get-ComponentDefinition -Name $ServiceName
+    $manifestEntries = @(Get-ManifestEntries)
+    $manifestEntry = $manifestEntries |
+        Where-Object { $_.Name -eq $component.Name } |
+        Select-Object -First 1
+
+    if ($null -ne $manifestEntry -and
+        (Test-ManifestProcess -Entry $manifestEntry)) {
+        $portStatus = if (Test-TcpPort -Port $component.Port) {
+            "offen"
+        }
+        else {
+            "noch nicht offen"
+        }
+        Write-Host `
+            "$($component.Name) wird bereits durch das Skript verwaltet (PID $($manifestEntry.ProcessId), Port $portStatus)." `
+            -ForegroundColor Yellow
+        return
+    }
+
+    if (Test-TcpPort -Port $component.Port) {
+        throw "Port $($component.Port) für $($component.Name) ist durch einen nicht verwalteten Prozess belegt."
+    }
+
+    $remainingEntries = @($manifestEntries |
+        Where-Object { $_.Name -ne $component.Name })
+    Save-ManifestEntries -Entries $remainingEntries
+    New-Item -ItemType Directory -Path $runtimeDirectory -Force | Out-Null
+
+    Write-Step "$($component.Name) einzeln starten"
+
+    if (-not $component.IsCollector) {
+        if ($null -eq (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+            throw "Das .NET SDK wurde nicht gefunden. Bitte 'dotnet' installieren oder PATH korrigieren."
+        }
+
+        $projectPath = Join-Path `
+            (Join-Path $projectRoot $component.ProjectDirectory) `
+            ($component.Name + ".csproj")
+        if (-not (Test-Path -LiteralPath $projectPath)) {
+            throw "Projekt nicht gefunden: $projectPath"
+        }
+
+        if (-not $SkipBuild) {
+            Write-Step "NuGet-Pakete für $($component.Name) wiederherstellen"
+            Invoke-DotNetCommand -Arguments @("restore", $projectPath)
+
+            Write-Step "$($component.Name) bauen"
+            Invoke-DotNetCommand -Arguments @("build", $projectPath, "--no-restore")
+        }
+    }
+
+    $startedEntry = if ($component.IsCollector) {
+        Start-OpenTelemetryCollector
+    }
+    else {
+        Start-ApplicationProcess -Service $component
+    }
+
+    try {
+        Save-ManifestEntries -Entries (@($remainingEntries) + @($startedEntry))
+    }
+    catch {
+        Stop-Process `
+            -Id $startedEntry.ProcessId `
+            -Force `
+            -ErrorAction SilentlyContinue
+        throw
+    }
+
+    Write-Host `
+        "$($component.Name) wurde einzeln gestartet. Abhängige Komponenten werden nicht automatisch gestartet." `
+        -ForegroundColor Green
+}
+
+function Stop-SelectedComponent {
+    if ([string]::IsNullOrWhiteSpace($ServiceName)) {
+        throw "Für -Action StopService muss -ServiceName angegeben werden."
+    }
+
+    $component = Get-ComponentDefinition -Name $ServiceName
+    $manifestEntries = @(Get-ManifestEntries)
+    $manifestEntry = $manifestEntries |
+        Where-Object { $_.Name -eq $component.Name } |
+        Select-Object -First 1
+    $remainingEntries = @($manifestEntries |
+        Where-Object { $_.Name -ne $component.Name })
+
+    Write-Step "$($component.Name) einzeln stoppen"
+
+    if ($null -eq $manifestEntry) {
+        Write-Host "$($component.Name) wird nicht durch das Skript verwaltet."
+        if (Test-TcpPort -Port $component.Port) {
+            Write-Host `
+                "Port $($component.Port) ist trotzdem belegt; der fremde Prozess wird nicht beendet." `
+                -ForegroundColor Yellow
+        }
+        return
+    }
+
+    if (-not (Test-ManifestProcess -Entry $manifestEntry)) {
+        Save-ManifestEntries -Entries $remainingEntries
+        Write-Host `
+            "Der verwaltete Prozess von $($component.Name) läuft nicht mehr; der veraltete Manifesteintrag wurde entfernt." `
+            -ForegroundColor Yellow
+        return
+    }
+
+    Write-Host "Stoppe $($component.Name) (PID $($manifestEntry.ProcessId)) ..."
+    Stop-Process -Id $manifestEntry.ProcessId -Force
+    Wait-Process `
+        -Id $manifestEntry.ProcessId `
+        -Timeout 10 `
+        -ErrorAction SilentlyContinue
+    Save-ManifestEntries -Entries $remainingEntries
+
+    Write-Host `
+        "$($component.Name) wurde beendet. Abhängige Komponenten bleiben unverändert." `
+        -ForegroundColor Green
+}
+
+function Format-FileSize {
+    param([long]$Bytes)
+
+    if ($Bytes -ge 1GB) {
+        return "{0:N2} GB" -f ($Bytes / 1GB)
+    }
+    if ($Bytes -ge 1MB) {
+        return "{0:N2} MB" -f ($Bytes / 1MB)
+    }
+    if ($Bytes -ge 1KB) {
+        return "{0:N2} KB" -f ($Bytes / 1KB)
+    }
+
+    return "$Bytes B"
+}
+
+function Get-FileSinkSummary {
+    param(
+        [Parameter(Mandatory = $true)][string]$Category,
+        [Parameter(Mandatory = $true)][string]$Owner,
+        [Parameter(Mandatory = $true)][string]$Path,
+        [string]$FilePattern
+    )
+
+    $isDirectorySink = -not [string]::IsNullOrWhiteSpace($FilePattern)
+    $pathExists = Test-Path -LiteralPath $Path
+    $files = if ($isDirectorySink) {
+        if ($pathExists) {
+            @(Get-ChildItem `
+                -LiteralPath $Path `
+                -Filter $FilePattern `
+                -File `
+                -ErrorAction SilentlyContinue)
+        }
+        else {
+            @()
+        }
+    }
+    elseif ($pathExists) {
+        @(Get-Item -LiteralPath $Path -ErrorAction SilentlyContinue)
+    }
+    else {
+        @()
+    }
+
+    $totalBytes = if ($files.Count -eq 0) {
+        0L
+    }
+    else {
+        [long](($files | Measure-Object -Property Length -Sum).Sum)
+    }
+    $lastWrite = $files |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1 -ExpandProperty LastWriteTime
+
+    [PSCustomObject]@{
+        Category = $Category
+        Owner = $Owner
+        Status = if ($files.Count -gt 0) {
+            "vorhanden"
+        }
+        elseif ($pathExists) {
+            "leer"
+        }
+        else {
+            "fehlt"
+        }
+        Files = $files.Count
+        Size = Format-FileSize -Bytes $totalBytes
+        LastWrite = if ($null -eq $lastWrite) { "-" } else { $lastWrite }
+        Path = $Path
+    }
+}
+
+function Show-FileSinks {
+    Write-Step "Dateisenken von Das Holzwerk"
+
+    $rows = @()
+    foreach ($service in $serviceDefinitions) {
+        $rows += Get-FileSinkSummary `
+            -Category "Structured JSONL" `
+            -Owner $service.Name `
+            -Path (Join-Path $projectRoot ("Logs\" + $service.Name)) `
+            -FilePattern ($service.Name + "-????-??-??.jsonl")
+    }
+
+    $startupComponents = @("OpenTelemetryCollector") + @($serviceDefinitions.Name)
+    foreach ($componentName in $startupComponents) {
+        $rows += Get-FileSinkSummary `
+            -Category "Standard output" `
+            -Owner $componentName `
+            -Path (Join-Path $runtimeDirectory ($componentName + ".out.log"))
+        $rows += Get-FileSinkSummary `
+            -Category "Standard error" `
+            -Owner $componentName `
+            -Path (Join-Path $runtimeDirectory ($componentName + ".err.log"))
+    }
+
+    $rows += Get-FileSinkSummary `
+        -Category "OTLP JSONL" `
+        -Owner "OpenTelemetryCollector" `
+        -Path (Join-Path $collectorLogDirectory "vst-online-store.jsonl")
+    $rows += Get-FileSinkSummary `
+        -Category "Business audit" `
+        -Owner "AuditService" `
+        -Path (Join-Path $projectRoot "Services\AuditService\Data\audit-snapshots.json")
+    $rows += Get-FileSinkSummary `
+        -Category "Domain data" `
+        -Owner "StoreBackend" `
+        -Path (Join-Path $projectRoot "StoreBackend\Data\warehouse-products.json")
+    $rows += Get-FileSinkSummary `
+        -Category "Process manifest" `
+        -Owner "Start script" `
+        -Path $processManifestPath
+
+    $rows |
+        Sort-Object Category, Owner |
+        Format-Table `
+            Category, Owner, Status, Files, Size, LastWrite, Path `
+            -AutoSize `
+            -Wrap
+}
+
 function Wait-ApplicationApi {
     $deadline = [DateTime]::UtcNow.AddSeconds(30)
     do {
@@ -466,12 +830,25 @@ function Wait-ApplicationApi {
                 $productCount = 1
             }
             $website = Invoke-WebRequest -Uri $websiteUrl -UseBasicParsing -TimeoutSec 5
+            $auditResponse = Invoke-WebRequest `
+                -Uri $auditReadinessUrl `
+                -UseBasicParsing `
+                -TimeoutSec 5
+            $auditPayload = ConvertFrom-Json -InputObject $auditResponse.Content
+            $auditSnapshotCount = if ($null -eq $auditPayload) {
+                0
+            }
+            else {
+                @($auditPayload).Count
+            }
             $hasCurrentWebsite = `
                 $website.Content.Contains("<title>Das Holzwerk</title>") -and `
                 $website.Content.Contains('id="open-cart"') -and `
                 $website.Content.Contains("Holzwerk DemoPay")
 
             if ($website.StatusCode -eq 200 -and
+                $auditResponse.StatusCode -eq 200 -and
+                $auditSnapshotCount -eq 0 -and
                 $productCount -gt 0 -and
                 $hasCurrentWebsite) {
                 return $productCount
@@ -525,11 +902,11 @@ function Start-Application {
             $startedProcesses += Start-ApplicationProcess -Service $service
         }
 
-        $startedProcesses | ConvertTo-Json | Set-Content -LiteralPath $processManifestPath -Encoding UTF8
+        Save-ManifestEntries -Entries $startedProcesses
 
         Write-Step "Vollstaendigen Aufrufpfad pruefen"
         $productCount = Wait-ApplicationApi
-        Write-Host "$productCount Produkte sowie Branding, Warenkorb und Payment-Provider erfolgreich ueber den Proxy geladen." -ForegroundColor Green
+        Write-Host "$productCount Produkte, Branding, Warenkorb, Payment-Provider und Audit-Abfrage erfolgreich ueber den Proxy geladen." -ForegroundColor Green
 
         if (-not $NoBrowser) {
             Write-Step "Website oeffnen"
@@ -538,6 +915,7 @@ function Start-Application {
 
         Write-Host "`nDas Holzwerk ist bereit: $websiteUrl" -ForegroundColor Green
         Write-Host "Status: .\Start-VSTOnlineStore.ps1 -Action Status"
+        Write-Host "Dateisenken: .\Start-VSTOnlineStore.ps1 -Action FileSinks"
         Write-Host "Stop:   .\Start-VSTOnlineStore.ps1 -Action Stop"
     }
     catch {
@@ -552,15 +930,29 @@ function Start-Application {
     }
 }
 
-switch ($Action) {
-    "Start" {
-        Start-Application
-    }
-    "Status" {
-        Write-Step "Status von Das Holzwerk"
-        Show-ApplicationStatus
-    }
-    "Stop" {
-        Stop-Application
+if ($Help) {
+    Show-ScriptHelp
+}
+else {
+    switch ($Action) {
+        "Start" {
+            Start-Application
+        }
+        "Status" {
+            Write-Step "Status von Das Holzwerk"
+            Show-ApplicationStatus
+        }
+        "Stop" {
+            Stop-Application
+        }
+        "StartService" {
+            Start-SelectedComponent
+        }
+        "StopService" {
+            Stop-SelectedComponent
+        }
+        "FileSinks" {
+            Show-FileSinks
+        }
     }
 }

@@ -4,9 +4,65 @@ option csharp_namespace = "VstOnlineStore.Contracts.AuditService";
 
 package auditservice;
 
-// Startpunkt für die spätere zentrale Logging- und Audit-Funktionalität.
+import "google/protobuf/timestamp.proto";
+
+// Interner Vertrag für unveränderliche Snapshots eines Bestellvorgangs.
 service AuditOperations {
+  rpc RecordSnapshot (RecordAuditSnapshotRequest) returns (RecordAuditSnapshotResponse);
+  rpc GetOrderSnapshots (GetOrderSnapshotsRequest) returns (GetOrderSnapshotsResponse);
   rpc GetStatus (AuditStatusRequest) returns (AuditStatusResponse);
+}
+
+enum AuditEventType {
+  AUDIT_EVENT_TYPE_UNSPECIFIED = 0;
+  ORDER_STARTED = 1;
+  ORDER_VALIDATED = 2;
+  STOCK_RESERVATION = 3;
+  PAYMENT = 4;
+  STOCK_RELEASE = 5;
+  ORDER_COMPLETED = 6;
+}
+
+enum AuditStatusCode {
+  AUDIT_STATUS_CODE_UNSPECIFIED = 0;
+  AUDIT_STATUS_CODE_SUCCESS = 1;
+  AUDIT_STATUS_CODE_FAILURE = 2;
+  AUDIT_STATUS_CODE_COMPENSATING = 3;
+  AUDIT_STATUS_CODE_COMPENSATED = 4;
+}
+
+message RecordAuditSnapshotRequest {
+  string correlation_id = 1;
+  AuditEventType event_type = 2;
+  string responsible_service = 3;
+  string payload_json = 4;
+  string actor = 5;
+  AuditStatusCode status_code = 6;
+}
+
+message RecordAuditSnapshotResponse {
+  AuditSnapshot snapshot = 1;
+}
+
+message GetOrderSnapshotsRequest {
+  string correlation_id = 1;
+}
+
+message GetOrderSnapshotsResponse {
+  repeated AuditSnapshot snapshots = 1;
+}
+
+message AuditSnapshot {
+  string event_id = 1;
+  string correlation_id = 2;
+  AuditEventType event_type = 3;
+  string responsible_service = 4;
+  google.protobuf.Timestamp timestamp = 5;
+  string payload_json = 6;
+  string previous_event_id = 7;
+  string actor = 8;
+  AuditStatusCode status_code = 9;
+  int64 sequence_number = 10;
 }
 
 message AuditStatusRequest {

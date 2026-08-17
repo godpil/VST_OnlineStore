@@ -1,0 +1,170 @@
+[
+  {
+    "eventID": "80e0dbb6-020a-407c-89c2-5e7d62196b1e",
+    "correlationID": "d09e9b51-960e-4a15-9d38-a54116124ae1",
+    "eventType": "ORDER_STARTED",
+    "responsibleService": "ShopService",
+    "timestamp": "2026-08-17T21:49:56.7862482Z",
+    "payload": {
+      "phase": "ORDER_STARTED",
+      "items": [
+        {
+          "productId": "a1f8c2c0-a2a8-4de0-8ed0-35fcaf7260a1",
+          "quantity": 1
+        }
+      ],
+      "totalInCents": null,
+      "currency": "EUR",
+      "reference": null,
+      "reservationSucceeded": null,
+      "stock": [],
+      "paymentSucceeded": null,
+      "paymentProvider": null,
+      "transactionId": null,
+      "message": null,
+      "failureReason": null
+    },
+    "previousEventID": null,
+    "actor": "ANONYMOUS_USER",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 1
+  },
+  {
+    "eventID": "ccfb2ef2-f2bf-4019-b8fa-b94a0bfa09c2",
+    "correlationID": "d09e9b51-960e-4a15-9d38-a54116124ae1",
+    "eventType": "ORDER_VALIDATED",
+    "responsibleService": "ShopService",
+    "timestamp": "2026-08-17T21:49:56.8692891Z",
+    "payload": {
+      "phase": "ORDER_VALIDATED",
+      "items": [
+        {
+          "productId": "a1f8c2c0-a2a8-4de0-8ed0-35fcaf7260a1",
+          "quantity": 1
+        }
+      ],
+      "totalInCents": null,
+      "currency": "EUR",
+      "reference": null,
+      "reservationSucceeded": null,
+      "stock": [],
+      "paymentSucceeded": null,
+      "paymentProvider": null,
+      "transactionId": null,
+      "message": "Der Warenkorb wurde validiert.",
+      "failureReason": null
+    },
+    "previousEventID": "80e0dbb6-020a-407c-89c2-5e7d62196b1e",
+    "actor": "ShopService",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 2
+  },
+  {
+    "eventID": "4d011ce0-1f66-4439-9972-74b24fa77aa9",
+    "correlationID": "d09e9b51-960e-4a15-9d38-a54116124ae1",
+    "eventType": "STOCK_RESERVATION",
+    "responsibleService": "WarehouseService",
+    "timestamp": "2026-08-17T21:49:57.0286036Z",
+    "payload": {
+      "phase": "STOCK_RESERVED",
+      "items": [
+        {
+          "productId": "a1f8c2c0-a2a8-4de0-8ed0-35fcaf7260a1",
+          "quantity": 1
+        }
+      ],
+      "totalInCents": 3450,
+      "currency": "EUR",
+      "reference": null,
+      "reservationSucceeded": true,
+      "stock": [
+        {
+          "productId": "a1f8c2c0-a2a8-4de0-8ed0-35fcaf7260a1",
+          "availableQuantity": 6,
+          "isSoldOut": false
+        }
+      ],
+      "paymentSucceeded": null,
+      "paymentProvider": null,
+      "transactionId": null,
+      "message": "Der Warenkorb wurde vollst\u00E4ndig reserviert.",
+      "failureReason": null
+    },
+    "previousEventID": "ccfb2ef2-f2bf-4019-b8fa-b94a0bfa09c2",
+    "actor": "WarehouseService",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 3
+  },
+  {
+    "eventID": "aaf204da-b16f-4463-9043-c0aa24c288b2",
+    "correlationID": "d09e9b51-960e-4a15-9d38-a54116124ae1",
+    "eventType": "PAYMENT",
+    "responsibleService": "BillingService",
+    "timestamp": "2026-08-17T21:49:57.4024536Z",
+    "payload": {
+      "phase": "PAYMENT_COMPLETED",
+      "items": [
+        {
+          "productId": "a1f8c2c0-a2a8-4de0-8ed0-35fcaf7260a1",
+          "quantity": 1
+        }
+      ],
+      "totalInCents": 3450,
+      "currency": "EUR",
+      "reference": "HOLZWERK-b52d58ad622f48c6bf9d15ac02cee082",
+      "reservationSucceeded": true,
+      "stock": [
+        {
+          "productId": "a1f8c2c0-a2a8-4de0-8ed0-35fcaf7260a1",
+          "availableQuantity": 6,
+          "isSoldOut": false
+        }
+      ],
+      "paymentSucceeded": true,
+      "paymentProvider": "Holzwerk DemoPay",
+      "transactionId": "4acb938a193843febbce24db9003d52e",
+      "message": "Die Zahlung wurde vom Demo-Finanzdienstleister best\u00E4tigt.",
+      "failureReason": null
+    },
+    "previousEventID": "4d011ce0-1f66-4439-9972-74b24fa77aa9",
+    "actor": "Holzwerk DemoPay",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 4
+  },
+  {
+    "eventID": "6242788f-dd82-469a-b624-f8a6e924a40d",
+    "correlationID": "d09e9b51-960e-4a15-9d38-a54116124ae1",
+    "eventType": "ORDER_COMPLETED",
+    "responsibleService": "ShopService",
+    "timestamp": "2026-08-17T21:49:57.4152853Z",
+    "payload": {
+      "phase": "ORDER_COMPLETED",
+      "items": [
+        {
+          "productId": "a1f8c2c0-a2a8-4de0-8ed0-35fcaf7260a1",
+          "quantity": 1
+        }
+      ],
+      "totalInCents": 3450,
+      "currency": "EUR",
+      "reference": "HOLZWERK-b52d58ad622f48c6bf9d15ac02cee082",
+      "reservationSucceeded": true,
+      "stock": [
+        {
+          "productId": "a1f8c2c0-a2a8-4de0-8ed0-35fcaf7260a1",
+          "availableQuantity": 6,
+          "isSoldOut": false
+        }
+      ],
+      "paymentSucceeded": true,
+      "paymentProvider": "Holzwerk DemoPay",
+      "transactionId": "4acb938a193843febbce24db9003d52e",
+      "message": "Zahlung und Warenreservierung wurden erfolgreich abgeschlossen.",
+      "failureReason": null
+    },
+    "previousEventID": "aaf204da-b16f-4463-9043-c0aa24c288b2",
+    "actor": "ShopService",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 5
+  }
+]

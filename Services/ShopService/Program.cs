@@ -30,6 +30,7 @@ public class Program {
             options.Address = GetServiceAddress(builder.Configuration, "AuditService");
         }).AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
         builder.Services.AddScoped<ServiceStatusOrchestrator>();
+        builder.Services.AddScoped<AuditSnapshotRecorder>();
         builder.Services.AddScoped<CheckoutOrchestrator>();
 
         var app = builder.Build();

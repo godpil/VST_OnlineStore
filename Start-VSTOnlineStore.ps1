@@ -5,7 +5,8 @@
 .DESCRIPTION
     Start fuehrt einen Restore und Build aus, startet alle benoetigten Prozesse
     in Abhaengigkeitsreihenfolge, prueft den vollstaendigen API-Pfad und oeffnet
-    anschliessend die Website im Standardbrowser.
+    anschliessend die Website im Standardbrowser. RabbitMQ wird ohne Docker als
+    extern installierter Windows-Dienst auf Port 5672 vorausgesetzt.
 
 .PARAMETER Action
     Start (Standard), Status, Stop, StartService, StopService oder FileSinks.
@@ -87,6 +88,7 @@ $collectorInstallDirectory = Join-Path $projectRoot "Tools\OpenTelemetryCollecto
 $collectorExecutablePath = Join-Path $collectorInstallDirectory "otelcol-contrib.exe"
 $collectorConfigPath = Join-Path $projectRoot "Observability\otel-collector-config.yaml"
 $collectorPort = 6687
+$rabbitMqPort = 5672
 $websiteUrl = "http://localhost:6680/"
 $apiReadinessUrl = "http://localhost:6680/api/products/featured"
 $auditReadinessUrl = "http://localhost:6680/audit/orders/$([Guid]::NewGuid().ToString('D'))"
@@ -171,8 +173,12 @@ Parameter:
   -h             Diese Hilfe anzeigen; es wird keine Aktion ausgefuehrt
 
 Komponenten:
-  OpenTelemetryCollector, StoreBackend, WarehouseService, BillingService,
-  InvoiceService, AuditService, ShopService, StoreProxy
+  RabbitMQ (extern), OpenTelemetryCollector, StoreBackend, WarehouseService,
+  BillingService, InvoiceService, AuditService, ShopService, StoreProxy
+
+Voraussetzung:
+  Ein lokal installierter RabbitMQ-Broker muss ohne Docker auf Port 5672 laufen.
+  Die .NET-Anbindung erfolgt mittels des NuGet-Pakets RabbitMQ.Client.
 
 Beispiele:
   .\Start-VSTOnlineStore.ps1
@@ -208,6 +214,14 @@ function Test-TcpPort {
     finally {
         $client.Dispose()
     }
+}
+
+function Assert-RabbitMqAvailable {
+    if (Test-TcpPort -Port $rabbitMqPort) {
+        return
+    }
+
+    throw "RabbitMQ ist auf localhost:$rabbitMqPort nicht erreichbar. Bitte den nativ installierten RabbitMQ-Windows-Dienst starten. Docker wird von diesem Projekt nicht verwendet."
 }
 
 function Wait-ServicePort {
@@ -348,7 +362,14 @@ function Show-ApplicationStatus {
         ProcessId = if ($collectorIsRunning) { $collectorEntry.ProcessId } else { "-" }
     }
 
-    @($collectorRow) + @($rows) | Format-Table -AutoSize
+    $rabbitMqRow = [PSCustomObject]@{
+        Component = "RabbitMQ (external)"
+        Port = $rabbitMqPort
+        PortStatus = if (Test-TcpPort -Port $rabbitMqPort) { "offen" } else { "geschlossen" }
+        ProcessId = "external"
+    }
+
+    @($rabbitMqRow, $collectorRow) + @($rows) | Format-Table -AutoSize
 }
 
 function Install-OpenTelemetryCollector {
@@ -870,6 +891,8 @@ function Start-Application {
     if ($null -eq (Get-Command dotnet -ErrorAction SilentlyContinue)) {
         throw "Das .NET SDK wurde nicht gefunden. Bitte 'dotnet' installieren oder PATH korrigieren."
     }
+
+    Assert-RabbitMqAvailable
 
     $occupiedServices = @($serviceDefinitions | Where-Object { Test-TcpPort -Port $_.Port })
     if ($occupiedServices.Count -gt 0) {

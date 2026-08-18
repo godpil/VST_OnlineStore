@@ -1,0 +1,10 @@
+
+Voraussetzungen:
+----------------
+(ggf. online)
+.NET10Runtime
+-> Die Ports localhost:6680..6687 müssen frei sein (aktuelles mapping)
+-> RabbitMQ-Server wird unter Port: localhost:5672 erwartet (NuGet Client, aber Broker ist Server)
+	(s. IAuditEventPublisher)
+	-> Benötigt erlangOTPv.27(https://www.erlang.org/downloads)
+	-> Benötigt RabbitMQ-Server v.4.3.4 (https://github.com/rabbitmq/rabbitmq-server/releases/download/v4.3.4/rabbitmq-server-4.3.4.exe)

@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using Grpc.Core;
 using Microsoft.AspNetCore.RateLimiting;
 using VstOnlineStore.Observability;
+using VstOnlineStore.Observability.Auditing;
 using Yarp.ReverseProxy.Transforms;
 using AuditContracts = VstOnlineStore.Contracts.AuditService;
 
@@ -42,6 +43,9 @@ public class Program {
             options.OnRejected = WriteRateLimitResponseAsync;
         });
         builder.Services.AddVstOpenTelemetry(
+            builder.Configuration,
+            "StoreProxy");
+        builder.Services.AddRabbitMqAuditPublishing(
             builder.Configuration,
             "StoreProxy");
         builder.Services.AddCorrelationIdPropagation();

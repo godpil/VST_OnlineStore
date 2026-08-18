@@ -66,6 +66,17 @@ public sealed class JsonAuditSnapshotRepository(
 
         await _accessLock.WaitAsync(cancellationToken);
         try {
+            var existingSnapshot = _snapshots.FirstOrDefault(
+                snapshot => snapshot.EventId == draft.EventId);
+            if (existingSnapshot is not null) {
+                if (existingSnapshot.CorrelationId != draft.CorrelationId) {
+                    throw new InvalidDataException(
+                        $"Die Event-ID {draft.EventId:D} wurde mit unterschiedlichen Correlation-IDs empfangen.");
+                }
+
+                return existingSnapshot;
+            }
+
             var previousEventId = _snapshots
                 .Where(snapshot => snapshot.CorrelationId == draft.CorrelationId)
                 .OrderByDescending(snapshot => snapshot.SequenceNumber)
@@ -76,11 +87,11 @@ public sealed class JsonAuditSnapshotRepository(
                 : checked(_snapshots.Max(snapshot => snapshot.SequenceNumber) + 1);
 
             var snapshot = new AuditSnapshot(
-                Guid.NewGuid(),
+                draft.EventId,
                 draft.CorrelationId,
                 draft.EventType,
                 draft.ResponsibleService,
-                DateTime.UtcNow,
+                draft.Timestamp,
                 draft.Payload.Clone(),
                 previousEventId,
                 draft.Actor,

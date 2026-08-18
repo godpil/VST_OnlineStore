@@ -3,6 +3,7 @@ using StoreBackend.Application.Ports;
 using StoreBackend.Services;
 using StoreBackend.Storage;
 using VstOnlineStore.Observability;
+using VstOnlineStore.Observability.Auditing;
 
 namespace StoreBackend;
 
@@ -12,6 +13,9 @@ public class Program {
 
         builder.Services.AddGrpc();
         builder.Services.AddVstOpenTelemetry(
+            builder.Configuration,
+            "StoreBackend");
+        builder.Services.AddRabbitMqAuditPublishing(
             builder.Configuration,
             "StoreBackend");
         builder.Services.AddSingleton<JsonWarehouseRepository>(services => {

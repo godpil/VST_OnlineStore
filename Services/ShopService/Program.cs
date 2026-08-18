@@ -6,6 +6,7 @@ using BillingContracts = VstOnlineStore.Contracts.BillingService;
 using InvoiceContracts = VstOnlineStore.Contracts.InvoiceService;
 using WarehouseContracts = VstOnlineStore.Contracts.WarehouseService;
 using VstOnlineStore.Observability;
+using VstOnlineStore.Observability.Auditing;
 
 namespace ShopService;
 
@@ -14,6 +15,9 @@ public class Program {
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddVstOpenTelemetry(
+            builder.Configuration,
+            "ShopService");
+        builder.Services.AddRabbitMqAuditPublishing(
             builder.Configuration,
             "ShopService");
         builder.Services.AddCorrelationIdPropagation();

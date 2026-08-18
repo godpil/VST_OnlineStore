@@ -32,9 +32,11 @@ public sealed record AuditSnapshot(
     [property: JsonPropertyName("sequenceNumber")] long SequenceNumber);
 
 public sealed record AuditSnapshotDraft(
+    Guid EventId,
     Guid CorrelationId,
     AuditEventType EventType,
     string ResponsibleService,
+    DateTime Timestamp,
     JsonElement Payload,
     string Actor,
     AuditStatusCode StatusCode);

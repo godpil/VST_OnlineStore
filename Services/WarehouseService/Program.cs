@@ -1,5 +1,6 @@
 using StoreBackend.Contracts;
 using VstOnlineStore.Observability;
+using VstOnlineStore.Observability.Auditing;
 using WarehouseService.GrpcServices;
 
 namespace WarehouseService;
@@ -14,6 +15,9 @@ public class Program {
 
         builder.Services.AddGrpc();
         builder.Services.AddVstOpenTelemetry(
+            builder.Configuration,
+            "WarehouseService");
+        builder.Services.AddRabbitMqAuditPublishing(
             builder.Configuration,
             "WarehouseService");
         builder.Services.AddCorrelationIdPropagation();

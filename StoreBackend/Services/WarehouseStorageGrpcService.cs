@@ -3,6 +3,7 @@ using StoreBackend.Application;
 using StoreBackend.Contracts;
 using StoreBackend.Domain;
 using VstOnlineStore.Observability;
+using VstOnlineStore.Observability.Auditing;
 
 namespace StoreBackend.Services;
 
@@ -12,7 +13,8 @@ namespace StoreBackend.Services;
 /// </summary>
 public sealed class WarehouseStorageGrpcService(
     WarehouseApplicationService warehouse,
-    IStructuredLogger logger) : WarehouseStorage.WarehouseStorageBase {
+    IStructuredLogger logger,
+    IAuditEventPublisher audit) : WarehouseStorage.WarehouseStorageBase {
 
     public override async Task<BackendProductsResponse> GetProducts(
         BackendProductsRequest request,
@@ -71,6 +73,30 @@ public sealed class WarehouseStorageGrpcService(
                 reserve,
                 success = result.Success
             });
+
+        await audit.PublishAsync(
+            reserve ? AuditEventType.STOCK_RESERVATION : AuditEventType.STOCK_RELEASE,
+            "StoreBackend",
+            new {
+                phase = reserve ? "STOCK_PERSISTED" : "STOCK_RELEASE_PERSISTED",
+                reserve,
+                success = result.Success,
+                result.Message,
+                items = items.Select(item => new {
+                    item.ProductId,
+                    item.Quantity
+                }),
+                products = result.Products.Select(product => new {
+                    product.ProductId,
+                    product.AvailableQuantity,
+                    product.IsSoldOut
+                })
+            },
+            "StoreBackend",
+            reserve
+                ? result.Success ? AuditStatusCode.SUCCESS : AuditStatusCode.FAILURE
+                : result.Success ? AuditStatusCode.COMPENSATED : AuditStatusCode.FAILURE,
+            cancellationToken: cancellationToken);
 
         var response = new BackendStockChangeResponse {
             Success = result.Success,

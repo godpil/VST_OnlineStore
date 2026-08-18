@@ -127,8 +127,8 @@ public sealed class CheckoutOrchestrator(
             auditState.Message = auditState.FailureReason;
             await RecordAuditAsync(
                 AuditContracts.AuditEventType.StockReservation,
-                "WarehouseService",
-                "WarehouseService",
+                "ShopService",
+                "ShopService",
                 AuditContracts.AuditStatusCode.Failure,
                 auditState,
                 cancellationToken);
@@ -157,7 +157,7 @@ public sealed class CheckoutOrchestrator(
         }
         await RecordAuditAsync(
             AuditContracts.AuditEventType.StockReservation,
-            "WarehouseService",
+            "ShopService",
             "WarehouseService",
             reservation.Success
                 ? AuditContracts.AuditStatusCode.Success
@@ -198,7 +198,7 @@ public sealed class CheckoutOrchestrator(
             }
             await RecordAuditAsync(
                 AuditContracts.AuditEventType.Payment,
-                "BillingService",
+                "ShopService",
                 payment.Provider,
                 payment.Success
                     ? AuditContracts.AuditStatusCode.Success
@@ -256,8 +256,8 @@ public sealed class CheckoutOrchestrator(
             auditState.Message = auditState.FailureReason;
             await RecordAuditAsync(
                 AuditContracts.AuditEventType.Payment,
-                "BillingService",
-                "BillingService",
+                "ShopService",
+                "ShopService",
                 AuditContracts.AuditStatusCode.Failure,
                 auditState,
                 cancellationToken);
@@ -309,7 +309,7 @@ public sealed class CheckoutOrchestrator(
             auditState.Message = response.Message;
             await RecordAuditAsync(
                 AuditContracts.AuditEventType.StockRelease,
-                "WarehouseService",
+                "ShopService",
                 "WarehouseService",
                 response.Success
                     ? AuditContracts.AuditStatusCode.Compensated
@@ -328,8 +328,8 @@ public sealed class CheckoutOrchestrator(
             auditState.Message = "Reservierung konnte nach Abrechnungsfehler nicht zurückgenommen werden.";
             await RecordAuditAsync(
                 AuditContracts.AuditEventType.StockRelease,
-                "WarehouseService",
-                "WarehouseService",
+                "ShopService",
+                "ShopService",
                 AuditContracts.AuditStatusCode.Failure,
                 auditState,
                 CancellationToken.None);

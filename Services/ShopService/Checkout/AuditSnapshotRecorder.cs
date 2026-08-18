@@ -1,7 +1,7 @@
-using System.Text.Json;
-using Grpc.Core;
-using VstOnlineStore.Observability;
+using VstOnlineStore.Observability.Auditing;
 using AuditContracts = VstOnlineStore.Contracts.AuditService;
+using SharedEventType = VstOnlineStore.Observability.Auditing.AuditEventType;
+using SharedStatusCode = VstOnlineStore.Observability.Auditing.AuditStatusCode;
 
 namespace ShopService.Checkout;
 
@@ -10,13 +10,7 @@ namespace ShopService.Checkout;
 /// Audit-Senke darf Zahlung oder Kompensation nicht blockieren.
 /// </summary>
 public sealed class AuditSnapshotRecorder(
-    AuditContracts.AuditOperations.AuditOperationsClient audit,
-    IHttpContextAccessor httpContextAccessor,
-    IStructuredLogger logger) {
-
-    private static readonly JsonSerializerOptions JsonOptions = new() {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
+    IAuditEventPublisher audit) {
 
     public async Task RecordAsync(
         AuditContracts.AuditEventType eventType,
@@ -26,60 +20,32 @@ public sealed class AuditSnapshotRecorder(
         AuditContracts.AuditStatusCode statusCode,
         CancellationToken cancellationToken) {
 
-        var httpContext = httpContextAccessor.HttpContext;
-        if (httpContext is null
-            || !CorrelationId.TryGet(httpContext, out var correlationId)) {
-            TryLogFailure(
-                null,
-                eventType,
-                "Für den Audit-Snapshot ist keine Correlation-ID verfügbar.");
-            return;
-        }
-
-        try {
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(
-                cancellationToken);
-            timeout.CancelAfter(TimeSpan.FromSeconds(2));
-
-            await audit.RecordSnapshotAsync(
-                new AuditContracts.RecordAuditSnapshotRequest {
-                    CorrelationId = correlationId.ToString("D"),
-                    EventType = eventType,
-                    ResponsibleService = responsibleService,
-                    PayloadJson = JsonSerializer.Serialize(payload, JsonOptions),
-                    Actor = actor,
-                    StatusCode = statusCode
-                },
-                deadline: DateTime.UtcNow.AddSeconds(2),
-                cancellationToken: timeout.Token);
-        }
-        catch (Exception exception) when (exception is RpcException
-            or OperationCanceledException
-            or JsonException) {
-            TryLogFailure(
-                exception,
-                eventType,
-                "Audit-Snapshot konnte nicht geschrieben werden.");
-        }
+        await audit.PublishAsync(
+            ToSharedEventType(eventType),
+            responsibleService,
+            payload,
+            actor,
+            ToSharedStatusCode(statusCode),
+            cancellationToken: cancellationToken);
     }
 
-    private void TryLogFailure(
-        Exception? exception,
-        AuditContracts.AuditEventType eventType,
-        string message) {
+    private static SharedEventType ToSharedEventType(
+        AuditContracts.AuditEventType eventType) => eventType switch {
+            AuditContracts.AuditEventType.OrderStarted => SharedEventType.ORDER_STARTED,
+            AuditContracts.AuditEventType.OrderValidated => SharedEventType.ORDER_VALIDATED,
+            AuditContracts.AuditEventType.StockReservation => SharedEventType.STOCK_RESERVATION,
+            AuditContracts.AuditEventType.Payment => SharedEventType.PAYMENT,
+            AuditContracts.AuditEventType.StockRelease => SharedEventType.STOCK_RELEASE,
+            AuditContracts.AuditEventType.OrderCompleted => SharedEventType.ORDER_COMPLETED,
+            _ => throw new ArgumentOutOfRangeException(nameof(eventType), eventType, null)
+        };
 
-        try {
-            logger.Warn(
-                message,
-                new {
-                    eventType = eventType.ToString(),
-                    exceptionType = exception?.GetType().FullName,
-                    exceptionMessage = exception?.Message
-                },
-                exception);
-        }
-        catch (Exception) {
-            // Die Audit-Fehlerbehandlung selbst darf den Checkout nicht stören.
-        }
-    }
+    private static SharedStatusCode ToSharedStatusCode(
+        AuditContracts.AuditStatusCode statusCode) => statusCode switch {
+            AuditContracts.AuditStatusCode.Success => SharedStatusCode.SUCCESS,
+            AuditContracts.AuditStatusCode.Failure => SharedStatusCode.FAILURE,
+            AuditContracts.AuditStatusCode.Compensating => SharedStatusCode.COMPENSATING,
+            AuditContracts.AuditStatusCode.Compensated => SharedStatusCode.COMPENSATED,
+            _ => throw new ArgumentOutOfRangeException(nameof(statusCode), statusCode, null)
+        };
 }

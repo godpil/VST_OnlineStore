@@ -1,6 +1,7 @@
 using Grpc.Core;
 using StoreBackend.Contracts;
 using VstOnlineStore.Contracts.WarehouseService;
+using VstOnlineStore.Observability.Auditing;
 
 namespace WarehouseService.GrpcServices;
 
@@ -9,7 +10,8 @@ namespace WarehouseService.GrpcServices;
 /// ausschließlich über den internen gRPC-Vertrag.
 /// </summary>
 public sealed class WarehouseCatalogGrpcService(
-    WarehouseStorage.WarehouseStorageClient backend) : WarehouseCatalog.WarehouseCatalogBase {
+    WarehouseStorage.WarehouseStorageClient backend,
+    IAuditEventPublisher audit) : WarehouseCatalog.WarehouseCatalogBase {
 
     public override async Task<FeaturedProductsResponse> GetFeaturedProducts(
         FeaturedProductsRequest request,
@@ -77,6 +79,29 @@ public sealed class WarehouseCatalogGrpcService(
             AvailableQuantity = product.AvailableQuantity,
             IsSoldOut = product.IsSoldOut
         }));
+
+        await audit.PublishAsync(
+            reserve ? AuditEventType.STOCK_RESERVATION : AuditEventType.STOCK_RELEASE,
+            "WarehouseService",
+            new {
+                phase = reserve ? "STOCK_RESERVATION" : "STOCK_RELEASE",
+                success = response.Success,
+                response.Message,
+                items = request.Items.Select(item => new {
+                    item.ProductId,
+                    item.Quantity
+                }),
+                products = response.Products.Select(product => new {
+                    product.ProductId,
+                    product.AvailableQuantity,
+                    product.IsSoldOut
+                })
+            },
+            "WarehouseService",
+            reserve
+                ? response.Success ? AuditStatusCode.SUCCESS : AuditStatusCode.FAILURE
+                : response.Success ? AuditStatusCode.COMPENSATED : AuditStatusCode.FAILURE,
+            cancellationToken: cancellationToken);
 
         return response;
     }

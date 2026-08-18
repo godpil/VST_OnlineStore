@@ -1,8 +1,10 @@
 using AuditService.Application;
 using AuditService.Application.Ports;
 using AuditService.GrpcServices;
+using AuditService.Messaging;
 using AuditService.Storage;
 using VstOnlineStore.Observability;
+using VstOnlineStore.Observability.Auditing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +12,8 @@ builder.Services.AddGrpc();
 builder.Services.AddVstOpenTelemetry(
     builder.Configuration,
     "AuditService");
+builder.Services.Configure<RabbitMqAuditOptions>(
+    builder.Configuration.GetSection(RabbitMqAuditOptions.SectionName));
 builder.Services.AddSingleton<JsonAuditSnapshotRepository>(services => {
     var configuredPath = builder.Configuration["AuditData:FilePath"]
         ?? "Data/audit-snapshots.json";
@@ -26,6 +30,7 @@ builder.Services.AddSingleton<JsonAuditSnapshotRepository>(services => {
 builder.Services.AddSingleton<IAuditSnapshotRepository>(services =>
     services.GetRequiredService<JsonAuditSnapshotRepository>());
 builder.Services.AddSingleton<AuditApplicationService>();
+builder.Services.AddHostedService<RabbitMqAuditEventConsumer>();
 
 var app = builder.Build();
 

@@ -14,7 +14,34 @@ public sealed class AuditApplicationService(
         JsonElement payload,
         string actor,
         AuditStatusCode statusCode,
+        CancellationToken cancellationToken = default) =>
+        RecordAsync(
+            Guid.NewGuid(),
+            correlationId,
+            eventType,
+            responsibleService,
+            DateTime.UtcNow,
+            payload,
+            actor,
+            statusCode,
+            cancellationToken);
+
+    public Task<AuditSnapshot> RecordAsync(
+        Guid eventId,
+        Guid correlationId,
+        AuditEventType eventType,
+        string responsibleService,
+        DateTime timestamp,
+        JsonElement payload,
+        string actor,
+        AuditStatusCode statusCode,
         CancellationToken cancellationToken = default) {
+
+        if (eventId == Guid.Empty) {
+            throw new ArgumentException(
+                "Die Event-ID darf nicht leer sein.",
+                nameof(eventId));
+        }
 
         if (correlationId == Guid.Empty) {
             throw new ArgumentException(
@@ -24,6 +51,12 @@ public sealed class AuditApplicationService(
 
         ArgumentException.ThrowIfNullOrWhiteSpace(responsibleService);
         ArgumentException.ThrowIfNullOrWhiteSpace(actor);
+
+        if (timestamp.Kind != DateTimeKind.Utc) {
+            throw new ArgumentException(
+                "Der Audit-Zeitstempel muss in UTC vorliegen.",
+                nameof(timestamp));
+        }
 
         if (!Enum.IsDefined(eventType)) {
             throw new ArgumentOutOfRangeException(nameof(eventType));
@@ -41,9 +74,11 @@ public sealed class AuditApplicationService(
 
         return repository.AppendAsync(
             new AuditSnapshotDraft(
+                eventId,
                 correlationId,
                 eventType,
                 responsibleService.Trim(),
+                timestamp,
                 payload.Clone(),
                 actor.Trim(),
                 statusCode),

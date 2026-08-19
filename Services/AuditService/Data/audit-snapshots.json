@@ -1517,5 +1517,468 @@
     "actor": "ShopService",
     "statusCode": "SUCCESS",
     "sequenceNumber": 40
+  },
+  {
+    "eventID": "bf7b71d9-168a-461f-b89a-05087d68c65d",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "ORDER_STARTED",
+    "responsibleService": "ShopService",
+    "timestamp": "2026-08-19T23:34:13.1500565Z",
+    "payload": {
+      "phase": "ORDER_STARTED",
+      "items": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "quantity": 1
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "quantity": 1
+        }
+      ],
+      "totalInCents": null,
+      "currency": "EUR",
+      "reference": null,
+      "reservationSucceeded": null,
+      "stock": [],
+      "paymentSucceeded": null,
+      "paymentProviderKey": "stripe",
+      "paymentProvider": null,
+      "transactionId": null,
+      "invoiceId": null,
+      "invoiceQueued": null,
+      "customerEmailSupplied": true,
+      "customerEmailDomain": "hotmail.com",
+      "message": null,
+      "failureReason": null
+    },
+    "previousEventID": null,
+    "actor": "ANONYMOUS_USER",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 41
+  },
+  {
+    "eventID": "435b4204-ba25-458e-aef6-51650b56d5ab",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "ORDER_VALIDATED",
+    "responsibleService": "ShopService",
+    "timestamp": "2026-08-19T23:34:13.3990872Z",
+    "payload": {
+      "phase": "ORDER_VALIDATED",
+      "items": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "quantity": 1
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "quantity": 1
+        }
+      ],
+      "totalInCents": null,
+      "currency": "EUR",
+      "reference": null,
+      "reservationSucceeded": null,
+      "stock": [],
+      "paymentSucceeded": null,
+      "paymentProviderKey": "stripe",
+      "paymentProvider": null,
+      "transactionId": null,
+      "invoiceId": null,
+      "invoiceQueued": null,
+      "customerEmailSupplied": true,
+      "customerEmailDomain": "hotmail.com",
+      "message": "Der Warenkorb wurde validiert.",
+      "failureReason": null
+    },
+    "previousEventID": "bf7b71d9-168a-461f-b89a-05087d68c65d",
+    "actor": "ShopService",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 42
+  },
+  {
+    "eventID": "f2ea71b7-ab8c-4f4c-ac99-b6a2899ade69",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "PAYMENT",
+    "responsibleService": "ShopService",
+    "timestamp": "2026-08-19T23:34:13.4176055Z",
+    "payload": {
+      "phase": "PAYMENT_PROVIDER_SELECTED",
+      "items": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "quantity": 1
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "quantity": 1
+        }
+      ],
+      "totalInCents": null,
+      "currency": "EUR",
+      "reference": null,
+      "reservationSucceeded": null,
+      "stock": [],
+      "paymentSucceeded": null,
+      "paymentProviderKey": "stripe",
+      "paymentProvider": "Stripe",
+      "transactionId": null,
+      "invoiceId": null,
+      "invoiceQueued": null,
+      "customerEmailSupplied": true,
+      "customerEmailDomain": "hotmail.com",
+      "message": "Stripe wurde als Zahlungsanbieter ausgew\u00E4hlt.",
+      "failureReason": null
+    },
+    "previousEventID": "435b4204-ba25-458e-aef6-51650b56d5ab",
+    "actor": "Stripe",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 43
+  },
+  {
+    "eventID": "0ddd1305-f5ba-42d8-bbb7-0c7045bde22f",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "STOCK_RESERVATION",
+    "responsibleService": "StoreBackend",
+    "timestamp": "2026-08-19T23:34:13.5760254Z",
+    "payload": {
+      "phase": "STOCK_PERSISTED",
+      "reserve": true,
+      "success": true,
+      "message": "Der Warenkorb wurde vollst\u00E4ndig reserviert.",
+      "items": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "quantity": 1
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "quantity": 1
+        }
+      ],
+      "products": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "availableQuantity": 11,
+          "isSoldOut": false
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "availableQuantity": 9,
+          "isSoldOut": false
+        }
+      ]
+    },
+    "previousEventID": "f2ea71b7-ab8c-4f4c-ac99-b6a2899ade69",
+    "actor": "StoreBackend",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 44
+  },
+  {
+    "eventID": "0bea8501-fa30-460e-94f4-ce5cfed1023d",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "STOCK_RESERVATION",
+    "responsibleService": "WarehouseService",
+    "timestamp": "2026-08-19T23:34:13.8401911Z",
+    "payload": {
+      "phase": "STOCK_RESERVATION",
+      "success": true,
+      "message": "Der Warenkorb wurde vollst\u00E4ndig reserviert.",
+      "items": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "quantity": 1
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "quantity": 1
+        }
+      ],
+      "products": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "availableQuantity": 11,
+          "isSoldOut": false
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "availableQuantity": 9,
+          "isSoldOut": false
+        }
+      ]
+    },
+    "previousEventID": "0ddd1305-f5ba-42d8-bbb7-0c7045bde22f",
+    "actor": "WarehouseService",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 45
+  },
+  {
+    "eventID": "229d30e9-1eed-4ea5-ac40-b86cc00c317a",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "STOCK_RESERVATION",
+    "responsibleService": "ShopService",
+    "timestamp": "2026-08-19T23:34:14.1060356Z",
+    "payload": {
+      "phase": "STOCK_RESERVED",
+      "items": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "quantity": 1
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "quantity": 1
+        }
+      ],
+      "totalInCents": 10750,
+      "currency": "EUR",
+      "reference": null,
+      "reservationSucceeded": true,
+      "stock": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "availableQuantity": 11,
+          "isSoldOut": false
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "availableQuantity": 9,
+          "isSoldOut": false
+        }
+      ],
+      "paymentSucceeded": null,
+      "paymentProviderKey": "stripe",
+      "paymentProvider": "Stripe",
+      "transactionId": null,
+      "invoiceId": null,
+      "invoiceQueued": null,
+      "customerEmailSupplied": true,
+      "customerEmailDomain": "hotmail.com",
+      "message": "Der Warenkorb wurde vollst\u00E4ndig reserviert.",
+      "failureReason": null
+    },
+    "previousEventID": "0bea8501-fa30-460e-94f4-ce5cfed1023d",
+    "actor": "WarehouseService",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 46
+  },
+  {
+    "eventID": "b49142e8-94e7-4abe-bd8e-5fa1d9cf0a6f",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "PAYMENT",
+    "responsibleService": "BillingService",
+    "timestamp": "2026-08-19T23:34:14.1828158Z",
+    "payload": {
+      "phase": "PAYMENT_COMPLETED",
+      "amountInCents": 10750,
+      "currency": "EUR",
+      "paymentMethodSupplied": true,
+      "reference": "HOLZWERK-61e3b12e22854efe9a0cc6af4871e5f5",
+      "providerKey": "stripe",
+      "provider": "Stripe",
+      "isTestMode": true,
+      "customerEmailSupplied": true,
+      "recipientDomain": "hotmail.com",
+      "invoiceItemCount": 2,
+      "success": true,
+      "transactionId": "pi_test_07b1ab82c691448b8a8ca5c45fa4cb62",
+      "message": "Die Zahlung wurde vom Stripe-Testadapter best\u00E4tigt."
+    },
+    "previousEventID": "229d30e9-1eed-4ea5-ac40-b86cc00c317a",
+    "actor": "Stripe",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 47
+  },
+  {
+    "eventID": "fd720d40-88a4-4ca1-9abc-bbf4f63bbc49",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "INVOICE",
+    "responsibleService": "BillingService",
+    "timestamp": "2026-08-19T23:34:14.4556316Z",
+    "payload": {
+      "phase": "INVOICE_QUEUED",
+      "invoiceId": "ec6a1702-955f-4ee4-aad0-2e63fe1241a2",
+      "reference": "HOLZWERK-61e3b12e22854efe9a0cc6af4871e5f5",
+      "paymentProvider": "Stripe",
+      "transactionId": "pi_test_07b1ab82c691448b8a8ca5c45fa4cb62",
+      "recipientDomain": "hotmail.com",
+      "invoiceQueued": true
+    },
+    "previousEventID": "b49142e8-94e7-4abe-bd8e-5fa1d9cf0a6f",
+    "actor": "BillingService",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 48
+  },
+  {
+    "eventID": "de5cbca9-52eb-477b-80fd-d8330f019247",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "PAYMENT",
+    "responsibleService": "ShopService",
+    "timestamp": "2026-08-19T23:34:14.4808613Z",
+    "payload": {
+      "phase": "PAYMENT_COMPLETED",
+      "items": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "quantity": 1
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "quantity": 1
+        }
+      ],
+      "totalInCents": 10750,
+      "currency": "EUR",
+      "reference": "HOLZWERK-61e3b12e22854efe9a0cc6af4871e5f5",
+      "reservationSucceeded": true,
+      "stock": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "availableQuantity": 11,
+          "isSoldOut": false
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "availableQuantity": 9,
+          "isSoldOut": false
+        }
+      ],
+      "paymentSucceeded": true,
+      "paymentProviderKey": "stripe",
+      "paymentProvider": "Stripe",
+      "transactionId": "pi_test_07b1ab82c691448b8a8ca5c45fa4cb62",
+      "invoiceId": "ec6a1702-955f-4ee4-aad0-2e63fe1241a2",
+      "invoiceQueued": true,
+      "customerEmailSupplied": true,
+      "customerEmailDomain": "hotmail.com",
+      "message": "Die Zahlung wurde vom Stripe-Testadapter best\u00E4tigt.",
+      "failureReason": null
+    },
+    "previousEventID": "fd720d40-88a4-4ca1-9abc-bbf4f63bbc49",
+    "actor": "Stripe",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 49
+  },
+  {
+    "eventID": "daf1c328-c81c-498f-83fa-ee807cac676a",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "ORDER_COMPLETED",
+    "responsibleService": "ShopService",
+    "timestamp": "2026-08-19T23:34:14.494273Z",
+    "payload": {
+      "phase": "ORDER_COMPLETED",
+      "items": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "quantity": 1
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "quantity": 1
+        }
+      ],
+      "totalInCents": 10750,
+      "currency": "EUR",
+      "reference": "HOLZWERK-61e3b12e22854efe9a0cc6af4871e5f5",
+      "reservationSucceeded": true,
+      "stock": [
+        {
+          "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+          "availableQuantity": 11,
+          "isSoldOut": false
+        },
+        {
+          "productId": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
+          "availableQuantity": 9,
+          "isSoldOut": false
+        }
+      ],
+      "paymentSucceeded": true,
+      "paymentProviderKey": "stripe",
+      "paymentProvider": "Stripe",
+      "transactionId": "pi_test_07b1ab82c691448b8a8ca5c45fa4cb62",
+      "invoiceId": "ec6a1702-955f-4ee4-aad0-2e63fe1241a2",
+      "invoiceQueued": true,
+      "customerEmailSupplied": true,
+      "customerEmailDomain": "hotmail.com",
+      "message": "Zahlung und Warenreservierung wurden erfolgreich abgeschlossen.",
+      "failureReason": null
+    },
+    "previousEventID": "de5cbca9-52eb-477b-80fd-d8330f019247",
+    "actor": "ShopService",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 50
+  },
+  {
+    "eventID": "9175facf-51d5-421d-a09f-96f6d977e66e",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "INVOICE",
+    "responsibleService": "InvoiceService",
+    "timestamp": "2026-08-19T23:34:14.5310031Z",
+    "payload": {
+      "phase": "INVOICE_GENERATION_STARTED",
+      "eventId": "647a9d9c-bdf8-4acb-80f2-62849e74dfb0",
+      "invoiceId": "ec6a1702-955f-4ee4-aad0-2e63fe1241a2",
+      "invoiceNumber": null,
+      "orderReference": "HOLZWERK-61e3b12e22854efe9a0cc6af4871e5f5",
+      "paymentProvider": "Stripe",
+      "transactionId": "pi_test_07b1ab82c691448b8a8ca5c45fa4cb62",
+      "recipientDomain": "hotmail.com",
+      "amountInCents": 10750,
+      "currency": "EUR",
+      "pdfSizeBytes": null
+    },
+    "previousEventID": "daf1c328-c81c-498f-83fa-ee807cac676a",
+    "actor": "InvoiceService",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 51
+  },
+  {
+    "eventID": "531b88c6-853e-4835-8416-4c7416dff9c4",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "INVOICE",
+    "responsibleService": "InvoiceService",
+    "timestamp": "2026-08-19T23:34:15.5799597Z",
+    "payload": {
+      "phase": "INVOICE_GENERATED",
+      "eventId": "647a9d9c-bdf8-4acb-80f2-62849e74dfb0",
+      "invoiceId": "ec6a1702-955f-4ee4-aad0-2e63fe1241a2",
+      "invoiceNumber": "RE-20260819-EC6A1702",
+      "orderReference": "HOLZWERK-61e3b12e22854efe9a0cc6af4871e5f5",
+      "paymentProvider": "Stripe",
+      "transactionId": "pi_test_07b1ab82c691448b8a8ca5c45fa4cb62",
+      "recipientDomain": "hotmail.com",
+      "amountInCents": 10750,
+      "currency": "EUR",
+      "pdfSizeBytes": 63646
+    },
+    "previousEventID": "9175facf-51d5-421d-a09f-96f6d977e66e",
+    "actor": "InvoiceService",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 52
+  },
+  {
+    "eventID": "86d8010f-81d0-4099-beb4-33461eda46ec",
+    "correlationID": "611ac168-e1a1-4433-9e1d-7199d73af404",
+    "eventType": "INVOICE",
+    "responsibleService": "InvoiceService",
+    "timestamp": "2026-08-19T23:34:15.6176133Z",
+    "payload": {
+      "phase": "INVOICE_EMAIL_DISPATCHED",
+      "eventId": "647a9d9c-bdf8-4acb-80f2-62849e74dfb0",
+      "invoiceId": "ec6a1702-955f-4ee4-aad0-2e63fe1241a2",
+      "invoiceNumber": "RE-20260819-EC6A1702",
+      "orderReference": "HOLZWERK-61e3b12e22854efe9a0cc6af4871e5f5",
+      "paymentProvider": "Stripe",
+      "transactionId": "pi_test_07b1ab82c691448b8a8ca5c45fa4cb62",
+      "recipientDomain": "hotmail.com",
+      "amountInCents": 10750,
+      "currency": "EUR",
+      "pdfSizeBytes": 63646
+    },
+    "previousEventID": "531b88c6-853e-4835-8416-4c7416dff9c4",
+    "actor": "InvoiceService",
+    "statusCode": "SUCCESS",
+    "sequenceNumber": 53
   }
 ]

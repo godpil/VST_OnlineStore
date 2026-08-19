@@ -8,7 +8,6 @@ import "google/protobuf/timestamp.proto";
 
 // Interner Vertrag für unveränderliche Snapshots eines Bestellvorgangs.
 service AuditOperations {
-  rpc RecordSnapshot (RecordAuditSnapshotRequest) returns (RecordAuditSnapshotResponse);
   rpc GetOrderSnapshots (GetOrderSnapshotsRequest) returns (GetOrderSnapshotsResponse);
   rpc GetStatus (AuditStatusRequest) returns (AuditStatusResponse);
 }
@@ -30,19 +29,6 @@ enum AuditStatusCode {
   AUDIT_STATUS_CODE_FAILURE = 2;
   AUDIT_STATUS_CODE_COMPENSATING = 3;
   AUDIT_STATUS_CODE_COMPENSATED = 4;
-}
-
-message RecordAuditSnapshotRequest {
-  string correlation_id = 1;
-  AuditEventType event_type = 2;
-  string responsible_service = 3;
-  string payload_json = 4;
-  string actor = 5;
-  AuditStatusCode status_code = 6;
-}
-
-message RecordAuditSnapshotResponse {
-  AuditSnapshot snapshot = 1;
 }
 
 message GetOrderSnapshotsRequest {

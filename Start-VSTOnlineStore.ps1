@@ -93,7 +93,7 @@ $websiteUrl = "http://localhost:6680/"
 $apiReadinessUrl = "http://localhost:6680/api/products/featured"
 $paymentProvidersReadinessUrl = "http://localhost:6680/api/payment-providers"
 $auditReadinessUrl = "http://localhost:6680/audit/orders/$([Guid]::NewGuid().ToString('D'))"
-$browserUrl = "{0}?version=4&started={1}" -f `
+$browserUrl = "{0}?version=5&started={1}" -f `
     $websiteUrl.TrimEnd("/"), `
     [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 
@@ -830,6 +830,15 @@ function Show-FileSinks {
         -Owner "StoreBackend" `
         -Path (Join-Path $projectRoot "StoreBackend\Data\warehouse-products.json")
     $rows += Get-FileSinkSummary `
+        -Category "Invoice database" `
+        -Owner "InvoiceService" `
+        -Path (Join-Path $projectRoot "Services\InvoiceService\Data\invoices.json")
+    $rows += Get-FileSinkSummary `
+        -Category "Email pickup" `
+        -Owner "InvoiceService" `
+        -Path (Join-Path $projectRoot "Services\InvoiceService\Data\email-outbox") `
+        -FilePattern "*.eml"
+    $rows += Get-FileSinkSummary `
         -Category "Process manifest" `
         -Owner "Start script" `
         -Path $processManifestPath
@@ -877,7 +886,9 @@ function Wait-ApplicationApi {
                 $website.Content.Contains("<title>Das Holzwerk</title>") -and `
                 $website.Content.Contains('id="open-cart"') -and `
                 $website.Content.Contains('id="payment-provider-cards"') -and `
-                $website.Content.Contains('id="checkout-payment-providers"')
+                $website.Content.Contains('id="checkout-payment-providers"') -and `
+                $website.Content.Contains('id="customer-email"') -and `
+                $website.Content.Contains('id="invoice-link"')
 
             if ($website.StatusCode -eq 200 -and
                 $auditResponse.StatusCode -eq 200 -and
@@ -942,7 +953,7 @@ function Start-Application {
 
         Write-Step "Vollstaendigen Aufrufpfad pruefen"
         $productCount = Wait-ApplicationApi
-        Write-Host "$productCount Produkte, Branding, Warenkorb, Payment-Provider und Audit-Abfrage erfolgreich ueber den Proxy geladen." -ForegroundColor Green
+        Write-Host "$productCount Produkte, Branding, Warenkorb, Payment-Provider, Rechnungsfelder und Audit-Abfrage erfolgreich ueber den Proxy geladen." -ForegroundColor Green
 
         if (-not $NoBrowser) {
             Write-Step "Website oeffnen"

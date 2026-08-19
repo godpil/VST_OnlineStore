@@ -35,8 +35,8 @@ Webfrontendansätze - 01.06.26
 Betriebsskript
 --------------
 
-Das Skript `Start-VSTOnlineStore.ps1` kann den gesamten Stack oder einzelne
-Komponenten verwalten:
+Das Skript `Start-VSTOnlineStore.ps1` stellt das Testskript für dieses Projekt dar,
+und sorgt für die Verwaltung des gesamten Stacks oder einzelner Komponenten:
 
 ```powershell
 # Hilfe zu allen Parametern und Aktionen
@@ -209,3 +209,5 @@ BillingService geschrieben. Fachlich entstehen zusätzlich Audit-Snapshots für
 `PAYMENT_PROVIDER_SELECTED`, `PAYMENT_COMPLETED`, Ablehnungen und technische
 Provider-Fehler. Zugangsdaten oder Zahlungsinstrumente werden weder in den Logs
 noch im Audit-Payload gespeichert.
+
+Scheiss KI

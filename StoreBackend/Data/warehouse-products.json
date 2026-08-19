@@ -4,55 +4,55 @@
     "name": "Ahorn-Schneidebrett",
     "price": 34.50,
     "image": "",
-    "availableQuantity": 4
+    "availableQuantity": 14
   },
   {
     "id": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
     "name": "Buchenholz-Hocker",
     "price": 89.00,
     "image": "",
-    "availableQuantity": 2
+    "availableQuantity": 12
   },
   {
     "id": "70f70332-945f-4702-9bc2-1cf330f26d42",
     "name": "Buchenholzplatte",
     "price": 39.90,
     "image": "",
-    "availableQuantity": 2
+    "availableQuantity": 12
   },
   {
     "id": "c3fad4e2-c4ca-40a2-a0f2-570ec19482c3",
     "name": "Eichen-Servierbrett",
     "price": 29.90,
     "image": "",
-    "availableQuantity": 4
+    "availableQuantity": 14
   },
   {
     "id": "d63f3cb9-e42e-4d3e-a84d-bfe557e049cc",
     "name": "Eichenbrett",
     "price": 24.95,
     "image": "",
-    "availableQuantity": 7
+    "availableQuantity": 17
   },
   {
     "id": "e51cf604-e6ec-42c4-c214-7920e3b6a4e5",
     "name": "Nussbaum-Messerblock",
     "price": 74.90,
     "image": "",
-    "availableQuantity": 0
+    "availableQuantity": 10
   },
   {
     "id": "5bbdf7bb-9a39-4169-8c9b-e0435741812d",
     "name": "Nussbaumleiste",
     "price": 18.50,
     "image": "",
-    "availableQuantity": 0
+    "availableQuantity": 10
   },
   {
     "id": "b2e9d3d1-b3b9-4ef1-9fe1-46fdb08371b2",
     "name": "Zirbenholzschale",
     "price": 44.90,
     "image": "",
-    "availableQuantity": 5
+    "availableQuantity": 15
   }
 ]

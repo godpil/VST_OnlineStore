@@ -1,6 +1,7 @@
 using Grpc.Core;
 using ShopService.Checkout;
 using ShopService.Orchestration;
+using ShopService.Queries;
 using AuditContracts = VstOnlineStore.Contracts.AuditService;
 using BillingContracts = VstOnlineStore.Contracts.BillingService;
 using InvoiceContracts = VstOnlineStore.Contracts.InvoiceService;
@@ -116,6 +117,11 @@ public class Program {
                         statusCode: StatusCodes.Status503ServiceUnavailable);
                 }
             });
+
+        // StoreProxy veröffentlicht diese URLs, kommuniziert jedoch nur per
+        // YARP mit dem ShopService. Die gRPC-Orchestrierung bleibt hier.
+        app.MapInvoiceQueryEndpoints();
+        app.MapAuditQueryEndpoints();
 
         app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "ShopService" }));
 

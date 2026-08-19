@@ -39,7 +39,7 @@ public sealed class InvoiceOperationsGrpcService(
         }
 
         logger.Info(
-            "Invoice PDF returned to StoreProxy.",
+            "Invoice PDF returned to the requesting upstream service.",
             new {
                 invoice.InvoiceId,
                 invoice.InvoiceNumber,

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using AuditService.Application;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
@@ -10,39 +9,6 @@ namespace AuditService.GrpcServices;
 
 public sealed class AuditOperationsGrpcService(
     AuditApplicationService applicationService) : AuditContracts.AuditOperations.AuditOperationsBase {
-
-    public override async Task<AuditContracts.RecordAuditSnapshotResponse> RecordSnapshot(
-        AuditContracts.RecordAuditSnapshotRequest request,
-        ServerCallContext context) {
-
-        try {
-            if (!Guid.TryParse(request.CorrelationId, out var correlationId)
-                || correlationId == Guid.Empty) {
-                throw new ArgumentException("Die Correlation-ID ist ungültig.");
-            }
-
-            using var payloadDocument = JsonDocument.Parse(request.PayloadJson);
-            var snapshot = await applicationService.RecordAsync(
-                correlationId,
-                ToDomainEventType(request.EventType),
-                request.ResponsibleService,
-                payloadDocument.RootElement,
-                request.Actor,
-                ToDomainStatusCode(request.StatusCode),
-                context.CancellationToken);
-
-            return new AuditContracts.RecordAuditSnapshotResponse {
-                Snapshot = ToContract(snapshot)
-            };
-        }
-        catch (Exception exception) when (exception is ArgumentException
-            or ArgumentOutOfRangeException
-            or JsonException) {
-            throw new RpcException(new Status(
-                StatusCode.InvalidArgument,
-                exception.Message));
-        }
-    }
 
     public override async Task<AuditContracts.GetOrderSnapshotsResponse> GetOrderSnapshots(
         AuditContracts.GetOrderSnapshotsRequest request,
@@ -86,33 +52,6 @@ public sealed class AuditOperationsGrpcService(
             Actor = snapshot.Actor,
             StatusCode = ToContractStatusCode(snapshot.StatusCode),
             SequenceNumber = snapshot.SequenceNumber
-        };
-
-    private static DomainEventType ToDomainEventType(
-        AuditContracts.AuditEventType eventType) => eventType switch {
-            AuditContracts.AuditEventType.OrderStarted => DomainEventType.ORDER_STARTED,
-            AuditContracts.AuditEventType.OrderValidated => DomainEventType.ORDER_VALIDATED,
-            AuditContracts.AuditEventType.StockReservation => DomainEventType.STOCK_RESERVATION,
-            AuditContracts.AuditEventType.Payment => DomainEventType.PAYMENT,
-            AuditContracts.AuditEventType.StockRelease => DomainEventType.STOCK_RELEASE,
-            AuditContracts.AuditEventType.OrderCompleted => DomainEventType.ORDER_COMPLETED,
-            AuditContracts.AuditEventType.Invoice => DomainEventType.INVOICE,
-            _ => throw new ArgumentOutOfRangeException(
-                nameof(eventType),
-                eventType,
-                "Der Event-Typ ist nicht spezifiziert.")
-        };
-
-    private static DomainStatusCode ToDomainStatusCode(
-        AuditContracts.AuditStatusCode statusCode) => statusCode switch {
-            AuditContracts.AuditStatusCode.Success => DomainStatusCode.SUCCESS,
-            AuditContracts.AuditStatusCode.Failure => DomainStatusCode.FAILURE,
-            AuditContracts.AuditStatusCode.Compensating => DomainStatusCode.COMPENSATING,
-            AuditContracts.AuditStatusCode.Compensated => DomainStatusCode.COMPENSATED,
-            _ => throw new ArgumentOutOfRangeException(
-                nameof(statusCode),
-                statusCode,
-                "Der Audit-Status ist nicht spezifiziert.")
         };
 
     private static AuditContracts.AuditEventType ToContractEventType(

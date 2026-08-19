@@ -1,7 +1,8 @@
 using System.Net.Mail;
 using Grpc.Core;
 using VstOnlineStore.Observability;
-using AuditContracts = VstOnlineStore.Contracts.AuditService;
+using AuditEventType = VstOnlineStore.Observability.Auditing.AuditEventType;
+using AuditStatusCode = VstOnlineStore.Observability.Auditing.AuditStatusCode;
 using BillingContracts = VstOnlineStore.Contracts.BillingService;
 using WarehouseContracts = VstOnlineStore.Contracts.WarehouseService;
 
@@ -29,10 +30,10 @@ public sealed class CheckoutOrchestrator(
             requestedPaymentProvider,
             GetRecipientDomain(customerEmail));
         await RecordAuditAsync(
-            AuditContracts.AuditEventType.OrderStarted,
+            AuditEventType.ORDER_STARTED,
             "ShopService",
             "ANONYMOUS_USER",
-            AuditContracts.AuditStatusCode.Success,
+            AuditStatusCode.SUCCESS,
             auditState,
             cancellationToken);
 
@@ -45,10 +46,10 @@ public sealed class CheckoutOrchestrator(
             auditState.FailureReason = validation.Message;
             auditState.Message = validation.Message;
             await RecordAuditAsync(
-                AuditContracts.AuditEventType.OrderValidated,
+                AuditEventType.ORDER_VALIDATED,
                 "ShopService",
                 "ShopService",
-                AuditContracts.AuditStatusCode.Failure,
+                AuditStatusCode.FAILURE,
                 auditState,
                 cancellationToken);
 
@@ -66,10 +67,10 @@ public sealed class CheckoutOrchestrator(
         auditState.Phase = "ORDER_VALIDATED";
         auditState.Message = "Der Warenkorb wurde validiert.";
         await RecordAuditAsync(
-            AuditContracts.AuditEventType.OrderValidated,
+            AuditEventType.ORDER_VALIDATED,
             "ShopService",
             "ShopService",
-            AuditContracts.AuditStatusCode.Success,
+            AuditStatusCode.SUCCESS,
             auditState,
             cancellationToken);
 
@@ -88,10 +89,10 @@ public sealed class CheckoutOrchestrator(
                 auditState.FailureReason = "Der ausgewählte Zahlungsanbieter ist nicht verfügbar.";
                 auditState.Message = auditState.FailureReason;
                 await RecordAuditAsync(
-                    AuditContracts.AuditEventType.Payment,
+                    AuditEventType.PAYMENT,
                     "ShopService",
                     "BillingService",
-                    AuditContracts.AuditStatusCode.Failure,
+                    AuditStatusCode.FAILURE,
                     auditState,
                     cancellationToken);
                 logger.Warn(
@@ -111,10 +112,10 @@ public sealed class CheckoutOrchestrator(
             auditState.FailureReason = "Der BillingService ist nicht erreichbar.";
             auditState.Message = auditState.FailureReason;
             await RecordAuditAsync(
-                AuditContracts.AuditEventType.Payment,
+                AuditEventType.PAYMENT,
                 "ShopService",
                 "BillingService",
-                AuditContracts.AuditStatusCode.Failure,
+                AuditStatusCode.FAILURE,
                 auditState,
                 cancellationToken);
             TryLogWarning(exception, requestedPaymentProvider ?? string.Empty);
@@ -130,10 +131,10 @@ public sealed class CheckoutOrchestrator(
         auditState.Phase = "PAYMENT_PROVIDER_SELECTED";
         auditState.Message = $"{selectedPaymentProvider.Name} wurde als Zahlungsanbieter ausgewählt.";
         await RecordAuditAsync(
-            AuditContracts.AuditEventType.Payment,
+            AuditEventType.PAYMENT,
             "ShopService",
             selectedPaymentProvider.Name,
-            AuditContracts.AuditStatusCode.Success,
+            AuditStatusCode.SUCCESS,
             auditState,
             cancellationToken);
         logger.Info(
@@ -169,10 +170,10 @@ public sealed class CheckoutOrchestrator(
                 auditState.FailureReason = "Mindestens ein Produkt ist nicht mehr verfügbar.";
                 auditState.Message = auditState.FailureReason;
                 await RecordAuditAsync(
-                    AuditContracts.AuditEventType.OrderValidated,
+                    AuditEventType.ORDER_VALIDATED,
                     "ShopService",
                     "ShopService",
-                    AuditContracts.AuditStatusCode.Failure,
+                    AuditStatusCode.FAILURE,
                     auditState,
                     cancellationToken);
 
@@ -206,10 +207,10 @@ public sealed class CheckoutOrchestrator(
             auditState.FailureReason = "Der WarehouseService ist nicht erreichbar.";
             auditState.Message = auditState.FailureReason;
             await RecordAuditAsync(
-                AuditContracts.AuditEventType.StockReservation,
+                AuditEventType.STOCK_RESERVATION,
                 "ShopService",
                 "ShopService",
-                AuditContracts.AuditStatusCode.Failure,
+                AuditStatusCode.FAILURE,
                 auditState,
                 cancellationToken);
 
@@ -236,12 +237,12 @@ public sealed class CheckoutOrchestrator(
             auditState.FailureReason = reservation.Message;
         }
         await RecordAuditAsync(
-            AuditContracts.AuditEventType.StockReservation,
+            AuditEventType.STOCK_RESERVATION,
             "ShopService",
             "WarehouseService",
             reservation.Success
-                ? AuditContracts.AuditStatusCode.Success
-                : AuditContracts.AuditStatusCode.Failure,
+                ? AuditStatusCode.SUCCESS
+                : AuditStatusCode.FAILURE,
             auditState,
             cancellationToken);
 
@@ -292,12 +293,12 @@ public sealed class CheckoutOrchestrator(
                 auditState.FailureReason = payment.Message;
             }
             await RecordAuditAsync(
-                AuditContracts.AuditEventType.Payment,
+                AuditEventType.PAYMENT,
                 "ShopService",
                 payment.Provider,
                 payment.Success
-                    ? AuditContracts.AuditStatusCode.Success
-                    : AuditContracts.AuditStatusCode.Failure,
+                    ? AuditStatusCode.SUCCESS
+                    : AuditStatusCode.FAILURE,
                 auditState,
                 cancellationToken);
 
@@ -329,10 +330,10 @@ public sealed class CheckoutOrchestrator(
             auditState.Phase = "ORDER_COMPLETED";
             auditState.Message = "Zahlung und Warenreservierung wurden erfolgreich abgeschlossen.";
             await RecordAuditAsync(
-                AuditContracts.AuditEventType.OrderCompleted,
+                AuditEventType.ORDER_COMPLETED,
                 "ShopService",
                 "ShopService",
-                AuditContracts.AuditStatusCode.Success,
+                AuditStatusCode.SUCCESS,
                 auditState,
                 cancellationToken);
 
@@ -356,10 +357,10 @@ public sealed class CheckoutOrchestrator(
             auditState.FailureReason = "Der BillingService ist nicht erreichbar.";
             auditState.Message = auditState.FailureReason;
             await RecordAuditAsync(
-                AuditContracts.AuditEventType.Payment,
+                AuditEventType.PAYMENT,
                 "ShopService",
                 "ShopService",
-                AuditContracts.AuditStatusCode.Failure,
+                AuditStatusCode.FAILURE,
                 auditState,
                 cancellationToken);
 
@@ -385,10 +386,10 @@ public sealed class CheckoutOrchestrator(
         auditState.Phase = "STOCK_RELEASE_REQUESTED";
         auditState.Message = "Die Kompensation der Warenreservierung wurde gestartet.";
         await RecordAuditAsync(
-            AuditContracts.AuditEventType.StockRelease,
+            AuditEventType.STOCK_RELEASE,
             "ShopService",
             "ShopService",
-            AuditContracts.AuditStatusCode.Compensating,
+            AuditStatusCode.COMPENSATING,
             auditState,
             cancellationToken);
 
@@ -409,12 +410,12 @@ public sealed class CheckoutOrchestrator(
                 : "STOCK_RELEASE_FAILED";
             auditState.Message = response.Message;
             await RecordAuditAsync(
-                AuditContracts.AuditEventType.StockRelease,
+                AuditEventType.STOCK_RELEASE,
                 "ShopService",
                 "WarehouseService",
                 response.Success
-                    ? AuditContracts.AuditStatusCode.Compensated
-                    : AuditContracts.AuditStatusCode.Failure,
+                    ? AuditStatusCode.COMPENSATED
+                    : AuditStatusCode.FAILURE,
                 auditState,
                 CancellationToken.None);
 
@@ -428,10 +429,10 @@ public sealed class CheckoutOrchestrator(
             auditState.Phase = "STOCK_RELEASE_FAILED";
             auditState.Message = "Reservierung konnte nach Abrechnungsfehler nicht zurückgenommen werden.";
             await RecordAuditAsync(
-                AuditContracts.AuditEventType.StockRelease,
+                AuditEventType.STOCK_RELEASE,
                 "ShopService",
                 "ShopService",
-                AuditContracts.AuditStatusCode.Failure,
+                AuditStatusCode.FAILURE,
                 auditState,
                 CancellationToken.None);
             TryLogError(exception, auditState.Message);
@@ -449,10 +450,10 @@ public sealed class CheckoutOrchestrator(
         auditState.FailureReason ??= message;
         auditState.Message = message;
         await RecordAuditAsync(
-            AuditContracts.AuditEventType.OrderCompleted,
+            AuditEventType.ORDER_COMPLETED,
             "ShopService",
             "ShopService",
-            AuditContracts.AuditStatusCode.Failure,
+            AuditStatusCode.FAILURE,
             auditState,
             cancellationToken);
 
@@ -460,10 +461,10 @@ public sealed class CheckoutOrchestrator(
     }
 
     private Task RecordAuditAsync(
-        AuditContracts.AuditEventType eventType,
+        AuditEventType eventType,
         string responsibleService,
         string actor,
-        AuditContracts.AuditStatusCode statusCode,
+        AuditStatusCode statusCode,
         OrderAuditState auditState,
         CancellationToken cancellationToken) =>
         audit.RecordAsync(

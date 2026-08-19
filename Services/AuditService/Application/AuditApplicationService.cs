@@ -8,25 +8,6 @@ public sealed class AuditApplicationService(
     IAuditSnapshotRepository repository) {
 
     public Task<AuditSnapshot> RecordAsync(
-        Guid correlationId,
-        AuditEventType eventType,
-        string responsibleService,
-        JsonElement payload,
-        string actor,
-        AuditStatusCode statusCode,
-        CancellationToken cancellationToken = default) =>
-        RecordAsync(
-            Guid.NewGuid(),
-            correlationId,
-            eventType,
-            responsibleService,
-            DateTime.UtcNow,
-            payload,
-            actor,
-            statusCode,
-            cancellationToken);
-
-    public Task<AuditSnapshot> RecordAsync(
         Guid eventId,
         Guid correlationId,
         AuditEventType eventType,

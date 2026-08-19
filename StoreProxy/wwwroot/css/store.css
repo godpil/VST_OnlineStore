@@ -498,6 +498,41 @@ footer {
     border: 0;
 }
 
+.customer-email-field {
+    display: grid;
+    gap: 0.45rem;
+    font-weight: 700;
+}
+
+.customer-email-field input {
+    width: 100%;
+    border: 1px solid #c8b9a8;
+    border-radius: 0.55rem;
+    padding: 0.7rem 0.8rem;
+    color: #2c211b;
+    background: #fff;
+    font: inherit;
+}
+
+.customer-email-field input:focus {
+    outline: 3px solid rgb(109 139 91 / 24%);
+    border-color: #59734b;
+}
+
+.customer-email-field input:invalid:not(:placeholder-shown) {
+    border-color: #a33a32;
+}
+
+.invoice-link {
+    display: inline-block;
+    color: #365c2c;
+    font-weight: 700;
+}
+
+.invoice-link[hidden] {
+    display: none;
+}
+
 .payment-provider-selection legend {
     margin-bottom: 9px;
     font-size: 14px;

@@ -5,6 +5,7 @@ const storeState = {
     cart: new Map(),
     paymentProviders: [],
     selectedPaymentProvider: null,
+    customerEmail: "",
     isCheckingOut: false
 };
 
@@ -15,6 +16,10 @@ async function initializeStore() {
     document.getElementById("close-cart")?.addEventListener("click", closeCart);
     document.getElementById("cart-overlay")?.addEventListener("click", closeCart);
     document.getElementById("checkout-button")?.addEventListener("click", checkoutCart);
+    document.getElementById("customer-email")?.addEventListener("input", event => {
+        storeState.customerEmail = event.target.value;
+        renderCart();
+    });
     document.addEventListener("keydown", event => {
         if (event.key === "Escape") {
             closeCart();
@@ -244,6 +249,8 @@ function renderCart() {
     countElement.setAttribute("aria-label", `${itemCount} Artikel`);
     checkoutButton.disabled = itemCount === 0 || storeState.isCheckingOut;
     checkoutButton.disabled ||= storeState.selectedPaymentProvider === null;
+    const customerEmailInput = document.getElementById("customer-email");
+    checkoutButton.disabled ||= !customerEmailInput?.checkValidity();
     checkoutButton.textContent = storeState.isCheckingOut ? "Zahlung läuft..." : "Bezahlen";
     for (const option of document.querySelectorAll('input[name="payment-provider"]')) {
         option.disabled = storeState.isCheckingOut;
@@ -306,6 +313,20 @@ async function checkoutCart() {
         return;
     }
 
+    const customerEmailInput = document.getElementById("customer-email");
+    if (!customerEmailInput?.reportValidity()) {
+        return;
+    }
+
+    // Das Fenster muss noch innerhalb der direkten Benutzeraktion geöffnet
+    // werden, sonst blockieren Browser es häufig als Popup.
+    const invoiceWindow = window.open("about:blank", "_blank");
+    if (invoiceWindow) {
+        invoiceWindow.document.title = "Rechnung wird erstellt";
+        invoiceWindow.document.body.textContent =
+            "Ihre Zahlung wird verarbeitet und die Rechnung wird erstellt...";
+    }
+
     storeState.isCheckingOut = true;
     showCartMessage("Lagerbestand wird reserviert und die Zahlung vorbereitet...", "");
     renderCart();
@@ -317,7 +338,8 @@ async function checkoutCart() {
         }));
         const result = await StoreAPI.checkout(
             items,
-            storeState.selectedPaymentProvider);
+            storeState.selectedPaymentProvider,
+            storeState.customerEmail);
 
         storeState.cart.clear();
         await loadFeaturedProducts();
@@ -325,8 +347,16 @@ async function checkoutCart() {
         showCartMessage(
             `${result.message} Gesamt: ${formatPrice(result.total)} · ${result.paymentProvider}`,
             "success");
+        if (result.invoiceUrl) {
+            setInvoiceLink(result.invoiceUrl);
+            invoiceWindow?.location.replace(result.invoiceUrl);
+        }
+        else {
+            invoiceWindow?.close();
+        }
     }
     catch (error) {
+        invoiceWindow?.close();
         console.error("Fehler beim Bezahlen:", error);
         showCartMessage(error.message ?? "Der Kauf konnte nicht abgeschlossen werden.", "error");
         await loadFeaturedProducts();
@@ -335,6 +365,16 @@ async function checkoutCart() {
         storeState.isCheckingOut = false;
         renderCart();
     }
+}
+
+function setInvoiceLink(invoiceUrl) {
+    const link = document.getElementById("invoice-link");
+    if (!link) {
+        return;
+    }
+
+    link.href = invoiceUrl;
+    link.hidden = false;
 }
 
 function openCart() {

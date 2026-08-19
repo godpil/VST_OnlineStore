@@ -7,6 +7,7 @@ using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
 using Yarp.ReverseProxy.Transforms;
 using AuditContracts = VstOnlineStore.Contracts.AuditService;
+using InvoiceContracts = VstOnlineStore.Contracts.InvoiceService;
 
 namespace StoreProxy;
 
@@ -42,6 +43,8 @@ public class Program {
                 CreateFixedWindowPartition(context, permitLimit: 30));
             options.AddPolicy("audit-orders", context =>
                 CreateFixedWindowPartition(context, permitLimit: 30));
+            options.AddPolicy("invoice-pdf", context =>
+                CreateFixedWindowPartition(context, permitLimit: 30));
             options.OnRejected = WriteRateLimitResponseAsync;
         });
         builder.Services.AddVstOpenTelemetry(
@@ -55,6 +58,12 @@ public class Program {
             var address = builder.Configuration["Services:AuditService:Address"]
                 ?? throw new InvalidOperationException(
                     "Die Konfiguration 'Services:AuditService:Address' fehlt.");
+            options.Address = new Uri(address);
+        }).AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
+        builder.Services.AddGrpcClient<InvoiceContracts.InvoiceOperations.InvoiceOperationsClient>(options => {
+            var address = builder.Configuration["Services:InvoiceService:Address"]
+                ?? throw new InvalidOperationException(
+                    "Die Konfiguration 'Services:InvoiceService:Address' fehlt.");
             options.Address = new Uri(address);
         }).AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
 
@@ -73,8 +82,75 @@ public class Program {
             GetOrderAuditSnapshotsAsync)
             .WithRequestTimeout(TimeSpan.FromSeconds(5))
             .RequireRateLimiting("audit-orders");
+        app.MapGet(
+            "/api/invoices/{invoiceId:guid}/pdf",
+            GetInvoicePdfAsync)
+            .WithRequestTimeout(TimeSpan.FromSeconds(12))
+            .RequireRateLimiting("invoice-pdf");
         app.MapReverseProxy();
         app.Run();
+    }
+
+    private static async Task<IResult> GetInvoicePdfAsync(
+        Guid invoiceId,
+        HttpContext httpContext,
+        InvoiceContracts.InvoiceOperations.InvoiceOperationsClient invoices,
+        IStructuredLogger logger,
+        CancellationToken cancellationToken) {
+
+        try {
+            // Die Erstellung läuft asynchron. Der kurze, begrenzte Poll hält
+            // die Browser-URL stabil, ohne Billing und Invoice zu koppeln.
+            for (var attempt = 1; attempt <= 40; attempt++) {
+                var response = await invoices.GetInvoicePdfAsync(
+                    new InvoiceContracts.GetInvoicePdfRequest {
+                        InvoiceId = invoiceId.ToString("D")
+                    },
+                    deadline: DateTime.UtcNow.AddSeconds(2),
+                    cancellationToken: cancellationToken);
+
+                if (response.Found) {
+                    var safeFileName = Path.GetFileName(response.FileName)
+                        .Replace("\"", string.Empty, StringComparison.Ordinal);
+                    httpContext.Response.Headers.ContentDisposition =
+                        $"inline; filename=\"{safeFileName}\"";
+                    logger.Info(
+                        "Invoice PDF delivered to browser.",
+                        new {
+                            invoiceId,
+                            response.FileName,
+                            pdfSizeBytes = response.Pdf.Length,
+                            attempt
+                        });
+                    return Results.File(
+                        response.Pdf.ToByteArray(),
+                        "application/pdf",
+                        enableRangeProcessing: true);
+                }
+
+                if (attempt < 40) {
+                    await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
+                }
+            }
+
+            logger.Warn(
+                "Invoice PDF was not available within the proxy wait window.",
+                new { invoiceId, waitWindowSeconds = 10 });
+            return Results.NotFound(new {
+                message = "Die Rechnung wird noch erstellt. Bitte versuchen Sie es erneut.",
+                invoiceId
+            });
+        }
+        catch (RpcException exception) when (exception.StatusCode is
+            StatusCode.Unavailable or StatusCode.DeadlineExceeded) {
+            logger.Warn(
+                "Invoice PDF query failed.",
+                new { invoiceId, grpcStatus = exception.StatusCode.ToString() },
+                exception);
+            return Results.Problem(
+                title: "InvoiceService nicht erreichbar",
+                statusCode: StatusCodes.Status503ServiceUnavailable);
+        }
     }
 
     private static async Task<IResult> GetOrderAuditSnapshotsAsync(
@@ -146,6 +222,7 @@ public class Program {
             AuditContracts.AuditEventType.Payment => "PAYMENT",
             AuditContracts.AuditEventType.StockRelease => "STOCK_RELEASE",
             AuditContracts.AuditEventType.OrderCompleted => "ORDER_COMPLETED",
+            AuditContracts.AuditEventType.Invoice => "INVOICE",
             _ => throw new JsonException("Der Audit-Event-Typ ist ungültig.")
         };
 

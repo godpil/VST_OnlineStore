@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <Protobuf Include="..\Contracts\auditservice.proto" GrpcServices="Client" Link="Protos\auditservice.proto" />
+    <Protobuf Include="..\Contracts\invoiceservice.proto" GrpcServices="Client" Link="Protos\invoiceservice.proto" />
   </ItemGroup>
 
   <ItemGroup>

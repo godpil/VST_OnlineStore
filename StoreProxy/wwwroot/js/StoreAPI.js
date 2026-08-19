@@ -41,18 +41,25 @@ const StoreAPI = (() => {
         return await request("/payment-providers", { method: "GET" });
     }
 
-    async function checkout(items, paymentProvider) {
+    async function checkout(items, paymentProvider, customerEmail) {
         if (!Array.isArray(items) || items.length === 0) {
             throw new Error("Der Warenkorb ist leer.");
         }
         if (typeof paymentProvider !== "string" || paymentProvider.trim().length === 0) {
             throw new Error("Bitte wählen Sie einen Zahlungsanbieter aus.");
         }
+        if (typeof customerEmail !== "string" || customerEmail.trim().length === 0) {
+            throw new Error("Bitte geben Sie eine E-Mail-Adresse für die Rechnung an.");
+        }
 
         return await request("/checkout", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items, paymentProvider })
+            body: JSON.stringify({
+                items,
+                paymentProvider,
+                customerEmail: customerEmail.trim()
+            })
         });
     }
 

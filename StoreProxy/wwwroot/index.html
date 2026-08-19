@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4a3325">
     <title>Das Holzwerk</title>
-    <link rel="stylesheet" href="css/store.css?v=4">
+    <link rel="stylesheet" href="css/store.css?v=5">
 </head>
 
 <body>
@@ -94,6 +94,11 @@
                 <span>Gesamtsumme</span>
                 <strong id="cart-total">0,00 €</strong>
             </div>
+            <label class="customer-email-field" for="customer-email">
+                <span>E-Mail-Adresse für die Rechnung</span>
+                <input id="customer-email" name="customer-email" type="email"
+                    autocomplete="email" placeholder="kunde@beispiel.de" required>
+            </label>
             <fieldset class="payment-provider-selection">
                 <legend>Zahlungsanbieter</legend>
                 <div id="checkout-payment-providers" class="payment-provider-options">
@@ -103,14 +108,17 @@
             <button id="checkout-button" class="checkout-button" type="button" disabled>Bezahlen</button>
             <p class="cart-hint">Die Artikel werden erst beim Bezahlen im Lager reserviert.</p>
             <p id="cart-message" class="cart-message" role="status" aria-live="polite"></p>
+            <a id="invoice-link" class="invoice-link" href="#" target="_blank" rel="noopener" hidden>
+                Rechnung erneut öffnen
+            </a>
         </div>
     </aside>
 
     <div id="store-message" class="store-message" role="status" aria-live="polite"></div>
 
-    <script src="js/StoreAPI.js?v=4"></script>
-    <script src="js/productCard.js?v=4"></script>
-    <script src="js/WebstoreApp.js?v=4"></script>
+    <script src="js/StoreAPI.js?v=5"></script>
+    <script src="js/productCard.js?v=5"></script>
+    <script src="js/WebstoreApp.js?v=5"></script>
 </body>
 
 </html>

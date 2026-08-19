@@ -5,7 +5,18 @@ option csharp_namespace = "VstOnlineStore.Contracts.InvoiceService";
 package invoiceservice;
 
 service InvoiceOperations {
+  rpc GetInvoicePdf (GetInvoicePdfRequest) returns (GetInvoicePdfResponse);
   rpc GetStatus (InvoiceStatusRequest) returns (InvoiceStatusResponse);
+}
+
+message GetInvoicePdfRequest {
+  string invoice_id = 1;
+}
+
+message GetInvoicePdfResponse {
+  bool found = 1;
+  bytes pdf = 2;
+  string file_name = 3;
 }
 
 message InvoiceStatusRequest {

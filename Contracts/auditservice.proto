@@ -21,6 +21,7 @@ enum AuditEventType {
   PAYMENT = 4;
   STOCK_RELEASE = 5;
   ORDER_COMPLETED = 6;
+  INVOICE = 7;
 }
 
 enum AuditStatusCode {

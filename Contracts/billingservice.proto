@@ -16,6 +16,8 @@ message PaymentRequest {
   string payment_method = 3;
   string reference = 4;
   string payment_provider = 5;
+  string customer_email = 6;
+  repeated PaymentLineItem invoice_items = 7;
 }
 
 message PaymentResponse {
@@ -23,6 +25,15 @@ message PaymentResponse {
   string transaction_id = 2;
   string provider = 3;
   string message = 4;
+  string invoice_id = 5;
+  bool invoice_queued = 6;
+}
+
+message PaymentLineItem {
+  string product_id = 1;
+  string description = 2;
+  int32 quantity = 3;
+  int64 unit_price_in_cents = 4;
 }
 
 message PaymentProvidersRequest {}

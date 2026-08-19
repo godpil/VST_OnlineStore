@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using Grpc.Core;
 using VstOnlineStore.Observability;
 using AuditContracts = VstOnlineStore.Contracts.AuditService;
@@ -22,9 +23,11 @@ public sealed class CheckoutOrchestrator(
         CancellationToken cancellationToken = default) {
 
         var requestedPaymentProvider = request.PaymentProvider?.Trim();
+        var customerEmail = request.CustomerEmail?.Trim();
         var auditState = new OrderAuditState(
             request.Items ?? [],
-            requestedPaymentProvider);
+            requestedPaymentProvider,
+            GetRecipientDomain(customerEmail));
         await RecordAuditAsync(
             AuditContracts.AuditEventType.OrderStarted,
             "ShopService",
@@ -33,7 +36,10 @@ public sealed class CheckoutOrchestrator(
             auditState,
             cancellationToken);
 
-        var validation = ValidateAndGroup(request.Items, requestedPaymentProvider);
+        var validation = ValidateAndGroup(
+            request.Items,
+            requestedPaymentProvider,
+            customerEmail);
         if (!validation.Success) {
             auditState.Phase = "ORDER_VALIDATION_FAILED";
             auditState.FailureReason = validation.Message;
@@ -251,19 +257,33 @@ public sealed class CheckoutOrchestrator(
         var reference = $"HOLZWERK-{Guid.NewGuid():N}";
         auditState.Reference = reference;
         try {
+            var paymentRequest = new BillingContracts.PaymentRequest {
+                AmountInCents = totalInCents,
+                Currency = "EUR",
+                PaymentMethod = "test",
+                Reference = reference,
+                PaymentProvider = selectedPaymentProvider.Key,
+                CustomerEmail = customerEmail
+            };
+            paymentRequest.InvoiceItems.AddRange(quantities.Select(item => {
+                var product = products[item.Key];
+                return new BillingContracts.PaymentLineItem {
+                    ProductId = item.Key.ToString("D"),
+                    Description = product.Name,
+                    Quantity = item.Value,
+                    UnitPriceInCents = product.PriceInCents
+                };
+            }));
+
             var payment = await billing.ProcessPaymentAsync(
-                new BillingContracts.PaymentRequest {
-                    AmountInCents = totalInCents,
-                    Currency = "EUR",
-                    PaymentMethod = "test",
-                    Reference = reference,
-                    PaymentProvider = selectedPaymentProvider.Key
-                },
+                paymentRequest,
                 cancellationToken: cancellationToken);
 
             auditState.PaymentSucceeded = payment.Success;
             auditState.PaymentProvider = payment.Provider;
             auditState.TransactionId = NullIfEmpty(payment.TransactionId);
+            auditState.InvoiceId = NullIfEmpty(payment.InvoiceId);
+            auditState.InvoiceQueued = payment.InvoiceQueued;
             auditState.Message = payment.Message;
             auditState.Phase = payment.Success
                 ? "PAYMENT_COMPLETED"
@@ -300,6 +320,8 @@ public sealed class CheckoutOrchestrator(
                     reference,
                     provider = payment.Provider,
                     transactionId = payment.TransactionId,
+                    invoiceId = NullIfEmpty(payment.InvoiceId),
+                    payment.InvoiceQueued,
                     totalInCents,
                     currency = "EUR"
                 });
@@ -322,7 +344,11 @@ public sealed class CheckoutOrchestrator(
                     totalInCents / 100m,
                     "EUR",
                     payment.TransactionId,
-                    payment.Provider));
+                    payment.Provider,
+                    NullIfEmpty(payment.InvoiceId),
+                    payment.InvoiceQueued && !string.IsNullOrWhiteSpace(payment.InvoiceId)
+                        ? $"/api/invoices/{payment.InvoiceId}/pdf"
+                        : null));
         }
         catch (RpcException exception) {
             auditState.PaymentSucceeded = false;
@@ -484,7 +510,8 @@ public sealed class CheckoutOrchestrator(
 
     private static ValidationResult ValidateAndGroup(
         IReadOnlyList<CheckoutItemRequest>? items,
-        string? paymentProvider) {
+        string? paymentProvider,
+        string? customerEmail) {
 
         if (items is null || items.Count == 0) {
             return new ValidationResult(false, "Der Warenkorb ist leer.", null);
@@ -494,6 +521,13 @@ public sealed class CheckoutOrchestrator(
             return new ValidationResult(
                 false,
                 "Bitte wählen Sie einen Zahlungsanbieter aus.",
+                null);
+        }
+
+        if (!MailAddress.TryCreate(customerEmail, out _)) {
+            return new ValidationResult(
+                false,
+                "Bitte geben Sie eine gültige E-Mail-Adresse für die Rechnung an.",
                 null);
         }
 
@@ -528,10 +562,15 @@ public sealed class CheckoutOrchestrator(
                 totalInCents / 100m,
                 "EUR",
                 null,
+                null,
+                null,
                 null));
 
     private static string? NullIfEmpty(string value) =>
         string.IsNullOrWhiteSpace(value) ? null : value;
+
+    private static string? GetRecipientDomain(string? email) =>
+        MailAddress.TryCreate(email, out var address) ? address.Host : null;
 
     private sealed record ValidationResult(
         bool Success,
@@ -540,7 +579,8 @@ public sealed class CheckoutOrchestrator(
 
     private sealed class OrderAuditState(
         IReadOnlyList<CheckoutItemRequest> requestedItems,
-        string? requestedPaymentProvider) {
+        string? requestedPaymentProvider,
+        string? customerEmailDomain) {
 
         public string Phase { get; set; } = "ORDER_STARTED";
         public IReadOnlyList<OrderItemSnapshot> Items { get; set; } = requestedItems
@@ -555,6 +595,10 @@ public sealed class CheckoutOrchestrator(
         public string? PaymentProviderKey { get; set; } = requestedPaymentProvider;
         public string? PaymentProvider { get; set; }
         public string? TransactionId { get; set; }
+        public string? InvoiceId { get; set; }
+        public bool? InvoiceQueued { get; set; }
+        public bool CustomerEmailSupplied { get; } = customerEmailDomain is not null;
+        public string? CustomerEmailDomain { get; } = customerEmailDomain;
         public string? Message { get; set; }
         public string? FailureReason { get; set; }
     }

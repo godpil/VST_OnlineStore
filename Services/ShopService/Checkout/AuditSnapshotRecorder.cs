@@ -37,6 +37,7 @@ public sealed class AuditSnapshotRecorder(
             AuditContracts.AuditEventType.Payment => SharedEventType.PAYMENT,
             AuditContracts.AuditEventType.StockRelease => SharedEventType.STOCK_RELEASE,
             AuditContracts.AuditEventType.OrderCompleted => SharedEventType.ORDER_COMPLETED,
+            AuditContracts.AuditEventType.Invoice => SharedEventType.INVOICE,
             _ => throw new ArgumentOutOfRangeException(nameof(eventType), eventType, null)
         };
 

@@ -70,7 +70,9 @@ internal sealed class StructuredLogger(
         return httpContext is not null
             && CorrelationId.TryGet(httpContext, out var correlationId)
                 ? correlationId
-                : Guid.NewGuid();
+                : CorrelationId.TryGetAmbient(out correlationId)
+                    ? correlationId
+                    : Guid.NewGuid();
     }
 
     private static JsonElement SerializeContext(object? context) {

@@ -9,7 +9,8 @@ public enum AuditEventType {
     STOCK_RESERVATION,
     PAYMENT,
     STOCK_RELEASE,
-    ORDER_COMPLETED
+    ORDER_COMPLETED,
+    INVOICE
 }
 
 public enum AuditStatusCode {

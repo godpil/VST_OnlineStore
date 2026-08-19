@@ -251,6 +251,7 @@ public sealed class RabbitMqAuditEventConsumer(
             SharedEventType.PAYMENT => DomainEventType.PAYMENT,
             SharedEventType.STOCK_RELEASE => DomainEventType.STOCK_RELEASE,
             SharedEventType.ORDER_COMPLETED => DomainEventType.ORDER_COMPLETED,
+            SharedEventType.INVOICE => DomainEventType.INVOICE,
             _ => throw new ArgumentOutOfRangeException(nameof(eventType), eventType, null)
         };
 

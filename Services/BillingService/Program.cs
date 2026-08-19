@@ -1,5 +1,7 @@
 using BillingService.GrpcServices;
+using BillingService.Messaging;
 using BillingService.Payments;
+using VstOnlineStore.Messaging;
 using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
 
@@ -10,6 +12,10 @@ builder.Services.AddSingleton<IPaymentProvider, SimulatedPaymentProvider>();
 builder.Services.AddSingleton<IPaymentProvider, PayPalPaymentProvider>();
 builder.Services.AddSingleton<IPaymentProvider, StripePaymentProvider>();
 builder.Services.AddSingleton<PaymentProviderResolver>();
+builder.Services.Configure<RabbitMqInvoiceOptions>(
+    builder.Configuration.GetSection(RabbitMqInvoiceOptions.SectionName));
+builder.Services.AddSingleton<IPaymentSucceededEventPublisher,
+    RabbitMqPaymentSucceededEventPublisher>();
 builder.Services.AddVstOpenTelemetry(
     builder.Configuration,
     "BillingService");

@@ -96,6 +96,7 @@ public sealed class AuditOperationsGrpcService(
             AuditContracts.AuditEventType.Payment => DomainEventType.PAYMENT,
             AuditContracts.AuditEventType.StockRelease => DomainEventType.STOCK_RELEASE,
             AuditContracts.AuditEventType.OrderCompleted => DomainEventType.ORDER_COMPLETED,
+            AuditContracts.AuditEventType.Invoice => DomainEventType.INVOICE,
             _ => throw new ArgumentOutOfRangeException(
                 nameof(eventType),
                 eventType,
@@ -122,6 +123,7 @@ public sealed class AuditOperationsGrpcService(
             DomainEventType.PAYMENT => AuditContracts.AuditEventType.Payment,
             DomainEventType.STOCK_RELEASE => AuditContracts.AuditEventType.StockRelease,
             DomainEventType.ORDER_COMPLETED => AuditContracts.AuditEventType.OrderCompleted,
+            DomainEventType.INVOICE => AuditContracts.AuditEventType.Invoice,
             _ => throw new ArgumentOutOfRangeException(nameof(eventType), eventType, null)
         };
 

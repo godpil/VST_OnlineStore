@@ -1,6 +1,9 @@
+using System.Net.Mail;
+using BillingService.Messaging;
 using BillingService.Payments;
 using Grpc.Core;
 using VstOnlineStore.Contracts.BillingService;
+using VstOnlineStore.Messaging;
 using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
 
@@ -8,6 +11,7 @@ namespace BillingService.GrpcServices;
 
 public sealed class BillingOperationsGrpcService(
     PaymentProviderResolver paymentProviders,
+    IPaymentSucceededEventPublisher invoiceEvents,
     IAuditEventPublisher audit,
     IStructuredLogger logger) : BillingOperations.BillingOperationsBase {
 
@@ -62,8 +66,8 @@ public sealed class BillingOperationsGrpcService(
                 request.Currency
             });
 
-        if (request.AmountInCents <= 0 || string.IsNullOrWhiteSpace(request.Currency)) {
-            const string message = "Betrag und Währung müssen gültig sein.";
+        if (!IsPaymentRequestValid(request)) {
+            const string message = "Betrag, Währung, E-Mail-Adresse und Rechnungspositionen müssen gültig sein.";
             logger.Warn(
                 "Payment request validation failed.",
                 new {
@@ -154,11 +158,61 @@ public sealed class BillingOperationsGrpcService(
             result.Success ? AuditStatusCode.SUCCESS : AuditStatusCode.FAILURE,
             cancellationToken: context.CancellationToken);
 
+        var invoiceId = Guid.Empty;
+        var invoiceQueued = false;
+        if (result.Success) {
+            invoiceId = Guid.NewGuid();
+            var correlationId = GetCorrelationId(context);
+            var paymentEvent = new PaymentSucceededEvent(
+                Guid.NewGuid(),
+                invoiceId,
+                correlationId,
+                DateTime.UtcNow,
+                request.Reference,
+                request.CustomerEmail,
+                request.AmountInCents,
+                request.Currency,
+                paymentProvider.Name,
+                result.TransactionId,
+                request.InvoiceItems.Select(item => new PaymentSucceededLineItem(
+                    item.ProductId,
+                    item.Description,
+                    item.Quantity,
+                    item.UnitPriceInCents)).ToArray());
+            invoiceQueued = await invoiceEvents.PublishAsync(
+                paymentEvent,
+                // Nach erfolgreicher Belastung muss die Rechnung auch dann
+                // eingeplant werden, wenn der ursprüngliche Client abbricht.
+                CancellationToken.None);
+
+            await audit.PublishAsync(
+                AuditEventType.INVOICE,
+                "BillingService",
+                new {
+                    phase = invoiceQueued ? "INVOICE_QUEUED" : "INVOICE_QUEUE_FAILED",
+                    invoiceId,
+                    request.Reference,
+                    paymentProvider = paymentProvider.Name,
+                    result.TransactionId,
+                    recipientDomain = GetRecipientDomain(request.CustomerEmail),
+                    invoiceQueued
+                },
+                "BillingService",
+                invoiceQueued ? AuditStatusCode.SUCCESS : AuditStatusCode.FAILURE,
+                cancellationToken: context.CancellationToken);
+        }
+
+        var responseMessage = result.Success && !invoiceQueued
+            ? $"{result.Message} Die Rechnung konnte noch nicht zur Erstellung eingeplant werden."
+            : result.Message;
+
         return new PaymentResponse {
             Success = result.Success,
             TransactionId = result.TransactionId,
             Provider = paymentProvider.Name,
-            Message = result.Message
+            Message = responseMessage,
+            InvoiceId = invoiceQueued ? invoiceId.ToString("D") : string.Empty,
+            InvoiceQueued = invoiceQueued
         };
     }
 
@@ -209,8 +263,47 @@ public sealed class BillingOperationsGrpcService(
             providerKey,
             provider = provider?.Name,
             isTestMode = provider?.IsTestMode,
+            customerEmailSupplied = !string.IsNullOrWhiteSpace(request.CustomerEmail),
+            recipientDomain = GetRecipientDomain(request.CustomerEmail),
+            invoiceItemCount = request.InvoiceItems.Count,
             success,
             transactionId,
             message
         };
+
+    private static bool IsPaymentRequestValid(PaymentRequest request) {
+        if (request.AmountInCents <= 0
+            || string.IsNullOrWhiteSpace(request.Currency)
+            || !MailAddress.TryCreate(request.CustomerEmail, out _)
+            || request.InvoiceItems.Count == 0
+            || request.InvoiceItems.Any(item =>
+                string.IsNullOrWhiteSpace(item.ProductId)
+                || string.IsNullOrWhiteSpace(item.Description)
+                || item.Quantity <= 0
+                || item.UnitPriceInCents < 0)) {
+            return false;
+        }
+
+        try {
+            var invoiceTotal = request.InvoiceItems.Sum(item =>
+                checked(item.UnitPriceInCents * item.Quantity));
+            return invoiceTotal == request.AmountInCents;
+        }
+        catch (OverflowException) {
+            return false;
+        }
+    }
+
+    private static Guid GetCorrelationId(ServerCallContext context) {
+        var httpContext = context.GetHttpContext();
+        if (CorrelationId.TryGet(httpContext, out var correlationId)) {
+            return correlationId;
+        }
+
+        throw new InvalidOperationException(
+            "Für die Rechnungserstellung ist keine Correlation-ID verfügbar.");
+    }
+
+    private static string? GetRecipientDomain(string email) =>
+        MailAddress.TryCreate(email, out var address) ? address.Host : null;
 }

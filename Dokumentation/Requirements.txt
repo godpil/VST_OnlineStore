@@ -8,3 +8,4 @@ Voraussetzungen:
 	(s. IAuditEventPublisher)
 	-> Benötigt erlangOTPv.27(https://www.erlang.org/downloads)
 	-> Benötigt RabbitMQ-Server v.4.3.4 (https://github.com/rabbitmq/rabbitmq-server/releases/download/v4.3.4/rabbitmq-server-4.3.4.exe)
+	-> Anmeldedaten: Benutzer: guest, Passwort: guest für localhost:5672 

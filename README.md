@@ -1,5 +1,5 @@
 01.06.2026 - 17:57
-P. Förderer
+Philipp Förderer
 @Universität Iserlohn, Vertiefung Softwaretechnik
 Unter Leitung von Prof. Dr. Doga Arinir
 
@@ -30,7 +30,12 @@ Theorie nachvollzogen - 18.04.26
 IDE Setup & KOmponenten - 22.04.26
 Entwurfsmuster - 02.05.2026
 Microserviceentwürfe zum Test - 03.05.26
-Webfrontendansätze - 01.06.26
+Frühe Webfrontendansätze (inzwischen entfernt) - 01.06.26
+(ja und seitdem gibt es Commits =)    )
+--
+
+//Ab hier folgt eine Menge AutoGen Doku (inzwischen ist die Qualität aber annehmbar)
+
 
 Betriebsskript
 --------------
@@ -67,6 +72,27 @@ gestartet oder beendet.
 absoluten Pfad. Erfasst werden die täglich rollierenden Service-Logs,
 Standardausgabe und Standardfehler, die OTLP-JSONL-Datei, Audit-Snapshots,
 Warehouse-Daten und das Prozessmanifest.
+
+Service-Architektur
+-------------------
+
+Der öffentliche synchrone Aufrufpfad lautet immer
+`Browser -> StoreProxy -> ShopService`. Der StoreProxy ist ausschließlich
+YARP-Gateway und kennt keine gRPC-Verträge oder Adressen fachlicher
+Downstream-Services. Der ShopService orchestriert die synchronen Aufrufe an
+WarehouseService, BillingService, InvoiceService und AuditService.
+
+Der BillingService übermittelt erfolgreiche Zahlungen ausschließlich
+asynchron über RabbitMQ an den InvoiceService. Fachliche Audit-Ereignisse
+werden von den Laufzeitservices ebenfalls ausschließlich über RabbitMQ an den
+AuditService übertragen; dessen gRPC-Schnittstelle erlaubt nur Lese- und
+Statusabfragen. OTLP-Exporte zum OpenTelemetry Collector sind davon getrennte
+Beobachtbarkeitsdaten.
+
+Der StoreBackend ist kein eigenständiger fachlicher Orchestrierungsschritt,
+sondern der interne Persistenzadapter des WarehouseService. Deshalb ist die
+synchrone gRPC-Verbindung `WarehouseService -> StoreBackend` innerhalb dieser
+Servicegrenze zulässig.
 
 Strukturiertes Logging und OpenTelemetry
 ----------------------------------------
@@ -133,7 +159,9 @@ darauf zu, sodass der JSON-Adapter später durch Entity Framework ersetzt werden
 kann.
 
 Der AuditService selbst veröffentlicht keinen REST-Endpunkt. Die chronologisch
-sortierte Ereigniskette ist ausschließlich über den StoreProxy abrufbar:
+sortierte Ereigniskette ist ausschließlich über den StoreProxy abrufbar. Der
+StoreProxy leitet den Aufruf per YARP an den ShopService weiter; nur der
+ShopService fragt den AuditService intern per gRPC ab:
 
 ```text
 GET /audit/orders/{correlationId}
@@ -146,9 +174,10 @@ StoreProxy-Routen
 -----------------
 
 Der StoreProxy veröffentlicht ausschließlich die explizit freigegebenen
-Routen. Die Shop-Routen werden über YARP weitergeleitet; die Audit-Abfrage
-übersetzt der StoreProxy in einen internen gRPC-Aufruf. Methoden,
-Gesamt-Timeouts und Limits sind wie folgt festgelegt:
+Routen und leitet sie über YARP an den ShopService weiter. Der StoreProxy kennt
+keinen fachlichen Downstream-Service; interne gRPC-Aufrufe an Warehouse,
+Billing, Invoice und Audit werden ausschließlich durch den ShopService
+orchestriert. Methoden, Gesamt-Timeouts und Limits sind wie folgt festgelegt:
 
 | Route | Methode | Timeout | Rate Limit pro Client |
 |---|---|---:|---:|
@@ -157,6 +186,7 @@ Gesamt-Timeouts und Limits sind wie folgt festgelegt:
 | `/api/checkout` | `POST` | 30 Sekunden | 10 pro Minute |
 | `/api/services/status` | `GET` | 5 Sekunden | 30 pro Minute |
 | `/audit/orders/{correlationId}` | `GET` | 5 Sekunden | 30 pro Minute |
+| `/api/invoices/{invoiceId}/pdf` | `GET` | 12 Sekunden | 30 pro Minute |
 
 Der Checkout-Request darf höchstens 65.536 Bytes groß sein. Überschreitungen
 werden als JSON mit HTTP 413 beantwortet; Rate-Limit-Verletzungen liefern HTTP

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4a3325">
     <title>Das Holzwerk</title>
-    <link rel="stylesheet" href="css/store.css?v=3">
+    <link rel="stylesheet" href="css/store.css?v=4">
 </head>
 
 <body>
@@ -64,20 +64,9 @@
                 </p>
             </div>
 
-            <article class="payment-provider-card">
-                <div class="payment-provider-heading">
-                    <div class="provider-symbol" aria-hidden="true">€</div>
-                    <div>
-                        <p class="provider-label">Payment-Provider</p>
-                        <h3>Holzwerk DemoPay</h3>
-                    </div>
-                    <span class="provider-status">Testbetrieb</span>
-                </div>
-                <p>
-                    Simulierter Finanzdienstleister für die aktuelle Entwicklungsphase.
-                    Ein realer Anbieter kann später über die vorhandene Provider-Schnittstelle angebunden werden.
-                </p>
-            </article>
+            <div id="payment-provider-cards" class="payment-provider-list" aria-live="polite">
+                <div class="loading">Zahlungsanbieter werden geladen...</div>
+            </div>
         </section>
 
         <section id="versand" class="content-section secondary-section">
@@ -105,6 +94,12 @@
                 <span>Gesamtsumme</span>
                 <strong id="cart-total">0,00 €</strong>
             </div>
+            <fieldset class="payment-provider-selection">
+                <legend>Zahlungsanbieter</legend>
+                <div id="checkout-payment-providers" class="payment-provider-options">
+                    <span class="loading">Anbieter werden geladen...</span>
+                </div>
+            </fieldset>
             <button id="checkout-button" class="checkout-button" type="button" disabled>Bezahlen</button>
             <p class="cart-hint">Die Artikel werden erst beim Bezahlen im Lager reserviert.</p>
             <p id="cart-message" class="cart-message" role="status" aria-live="polite"></p>
@@ -113,9 +108,9 @@
 
     <div id="store-message" class="store-message" role="status" aria-live="polite"></div>
 
-    <script src="js/StoreAPI.js?v=3"></script>
-    <script src="js/productCard.js?v=3"></script>
-    <script src="js/WebstoreApp.js?v=3"></script>
+    <script src="js/StoreAPI.js?v=4"></script>
+    <script src="js/productCard.js?v=4"></script>
+    <script src="js/WebstoreApp.js?v=4"></script>
 </body>
 
 </html>

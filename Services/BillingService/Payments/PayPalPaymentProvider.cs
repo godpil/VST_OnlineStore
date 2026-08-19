@@ -3,15 +3,15 @@ using VstOnlineStore.Observability;
 namespace BillingService.Payments;
 
 /// <summary>
-/// Vorläufiger Adapter für den späteren Finanzdienstleister.
-/// Er bestätigt gültige Demo-Zahlungen ohne ein externes System aufzurufen.
+/// PayPal-Adapter für den lokalen Testbetrieb. Die öffentliche Provider-
+/// Schnittstelle bleibt identisch zu einer späteren PayPal-Sandbox-Anbindung.
 /// </summary>
-public sealed class SimulatedPaymentProvider(
+public sealed class PayPalPaymentProvider(
     IStructuredLogger logger) : IPaymentProvider {
 
-    public string Key => "demo";
+    public string Key => "paypal";
 
-    public string Name => "Holzwerk DemoPay";
+    public string Name => "PayPal";
 
     public bool IsTestMode => true;
 
@@ -23,9 +23,8 @@ public sealed class SimulatedPaymentProvider(
         CancellationToken cancellationToken = default) {
 
         cancellationToken.ThrowIfCancellationRequested();
-
         logger.Debug(
-            "DemoPay payment started.",
+            "PayPal test payment started.",
             PaymentLogContext.Create(
                 Key,
                 Name,
@@ -36,13 +35,12 @@ public sealed class SimulatedPaymentProvider(
 
         var success = amountInCents > 0
             && currency.Equals("EUR", StringComparison.OrdinalIgnoreCase);
-
         var result = new PaymentProviderResult(
             success,
-            success ? $"DEMO-{Guid.NewGuid():N}" : string.Empty,
+            success ? $"PAYPAL-TEST-{Guid.NewGuid():N}" : string.Empty,
             success
-                ? "Die Zahlung wurde vom Demo-Finanzdienstleister bestätigt."
-                : "Der Demo-Finanzdienstleister hat die Zahlung abgelehnt.");
+                ? "Die Zahlung wurde vom PayPal-Testadapter bestätigt."
+                : "Der PayPal-Testadapter hat die Zahlung abgelehnt.");
 
         PaymentLogContext.LogResult(logger, this, reference, amountInCents, currency, result);
         return Task.FromResult(result);

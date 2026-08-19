@@ -7,6 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddGrpc();
 builder.Services.AddSingleton<IPaymentProvider, SimulatedPaymentProvider>();
+builder.Services.AddSingleton<IPaymentProvider, PayPalPaymentProvider>();
+builder.Services.AddSingleton<IPaymentProvider, StripePaymentProvider>();
+builder.Services.AddSingleton<PaymentProviderResolver>();
 builder.Services.AddVstOpenTelemetry(
     builder.Configuration,
     "BillingService");

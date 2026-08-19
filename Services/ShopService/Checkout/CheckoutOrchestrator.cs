@@ -21,7 +21,10 @@ public sealed class CheckoutOrchestrator(
         CheckoutRequest request,
         CancellationToken cancellationToken = default) {
 
-        var auditState = new OrderAuditState(request.Items ?? []);
+        var requestedPaymentProvider = request.PaymentProvider?.Trim();
+        var auditState = new OrderAuditState(
+            request.Items ?? [],
+            requestedPaymentProvider);
         await RecordAuditAsync(
             AuditContracts.AuditEventType.OrderStarted,
             "ShopService",
@@ -30,7 +33,7 @@ public sealed class CheckoutOrchestrator(
             auditState,
             cancellationToken);
 
-        var validation = ValidateAndGroup(request.Items);
+        var validation = ValidateAndGroup(request.Items, requestedPaymentProvider);
         if (!validation.Success) {
             auditState.Phase = "ORDER_VALIDATION_FAILED";
             auditState.FailureReason = validation.Message;
@@ -63,6 +66,77 @@ public sealed class CheckoutOrchestrator(
             AuditContracts.AuditStatusCode.Success,
             auditState,
             cancellationToken);
+
+        BillingContracts.PaymentProviderInfo? selectedPaymentProvider;
+        try {
+            var availableProviders = await billing.ListPaymentProvidersAsync(
+                new BillingContracts.PaymentProvidersRequest(),
+                cancellationToken: cancellationToken);
+            selectedPaymentProvider = availableProviders.Providers.FirstOrDefault(provider =>
+                provider.Key.Equals(
+                    requestedPaymentProvider,
+                    StringComparison.OrdinalIgnoreCase));
+
+            if (selectedPaymentProvider is null) {
+                auditState.Phase = "PAYMENT_PROVIDER_REJECTED";
+                auditState.FailureReason = "Der ausgewählte Zahlungsanbieter ist nicht verfügbar.";
+                auditState.Message = auditState.FailureReason;
+                await RecordAuditAsync(
+                    AuditContracts.AuditEventType.Payment,
+                    "ShopService",
+                    "BillingService",
+                    AuditContracts.AuditStatusCode.Failure,
+                    auditState,
+                    cancellationToken);
+                logger.Warn(
+                    "Checkout rejected an unknown payment provider.",
+                    new {
+                        requestedPaymentProvider
+                    });
+                return await CompleteWithFailureAsync(
+                    auditState,
+                    StatusCodes.Status400BadRequest,
+                    auditState.FailureReason,
+                    cancellationToken);
+            }
+        }
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable) {
+            auditState.Phase = "PAYMENT_PROVIDER_LOOKUP_FAILED";
+            auditState.FailureReason = "Der BillingService ist nicht erreichbar.";
+            auditState.Message = auditState.FailureReason;
+            await RecordAuditAsync(
+                AuditContracts.AuditEventType.Payment,
+                "ShopService",
+                "BillingService",
+                AuditContracts.AuditStatusCode.Failure,
+                auditState,
+                cancellationToken);
+            TryLogWarning(exception, requestedPaymentProvider ?? string.Empty);
+            return await CompleteWithFailureAsync(
+                auditState,
+                StatusCodes.Status503ServiceUnavailable,
+                auditState.FailureReason,
+                cancellationToken);
+        }
+
+        auditState.PaymentProviderKey = selectedPaymentProvider.Key;
+        auditState.PaymentProvider = selectedPaymentProvider.Name;
+        auditState.Phase = "PAYMENT_PROVIDER_SELECTED";
+        auditState.Message = $"{selectedPaymentProvider.Name} wurde als Zahlungsanbieter ausgewählt.";
+        await RecordAuditAsync(
+            AuditContracts.AuditEventType.Payment,
+            "ShopService",
+            selectedPaymentProvider.Name,
+            AuditContracts.AuditStatusCode.Success,
+            auditState,
+            cancellationToken);
+        logger.Info(
+            "Payment provider selected for checkout.",
+            new {
+                providerKey = selectedPaymentProvider.Key,
+                providerName = selectedPaymentProvider.Name,
+                selectedPaymentProvider.IsTestMode
+            });
 
         WarehouseContracts.FeaturedProductsResponse catalog;
         try {
@@ -181,8 +255,9 @@ public sealed class CheckoutOrchestrator(
                 new BillingContracts.PaymentRequest {
                     AmountInCents = totalInCents,
                     Currency = "EUR",
-                    PaymentMethod = "demo",
-                    Reference = reference
+                    PaymentMethod = "test",
+                    Reference = reference,
+                    PaymentProvider = selectedPaymentProvider.Key
                 },
                 cancellationToken: cancellationToken);
 
@@ -408,10 +483,18 @@ public sealed class CheckoutOrchestrator(
     }
 
     private static ValidationResult ValidateAndGroup(
-        IReadOnlyList<CheckoutItemRequest>? items) {
+        IReadOnlyList<CheckoutItemRequest>? items,
+        string? paymentProvider) {
 
         if (items is null || items.Count == 0) {
             return new ValidationResult(false, "Der Warenkorb ist leer.", null);
+        }
+
+        if (string.IsNullOrWhiteSpace(paymentProvider)) {
+            return new ValidationResult(
+                false,
+                "Bitte wählen Sie einen Zahlungsanbieter aus.",
+                null);
         }
 
         var parsedItems = new List<(Guid ProductId, int Quantity)>();
@@ -456,7 +539,8 @@ public sealed class CheckoutOrchestrator(
         IReadOnlyDictionary<Guid, int>? Quantities);
 
     private sealed class OrderAuditState(
-        IReadOnlyList<CheckoutItemRequest> requestedItems) {
+        IReadOnlyList<CheckoutItemRequest> requestedItems,
+        string? requestedPaymentProvider) {
 
         public string Phase { get; set; } = "ORDER_STARTED";
         public IReadOnlyList<OrderItemSnapshot> Items { get; set; } = requestedItems
@@ -468,6 +552,7 @@ public sealed class CheckoutOrchestrator(
         public bool? ReservationSucceeded { get; set; }
         public IReadOnlyList<ProductStockSnapshot> Stock { get; set; } = [];
         public bool? PaymentSucceeded { get; set; }
+        public string? PaymentProviderKey { get; set; } = requestedPaymentProvider;
         public string? PaymentProvider { get; set; }
         public string? TransactionId { get; set; }
         public string? Message { get; set; }

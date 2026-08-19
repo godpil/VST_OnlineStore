@@ -91,8 +91,9 @@ $collectorPort = 6687
 $rabbitMqPort = 5672
 $websiteUrl = "http://localhost:6680/"
 $apiReadinessUrl = "http://localhost:6680/api/products/featured"
+$paymentProvidersReadinessUrl = "http://localhost:6680/api/payment-providers"
 $auditReadinessUrl = "http://localhost:6680/audit/orders/$([Guid]::NewGuid().ToString('D'))"
-$browserUrl = "{0}?version=3&started={1}" -f `
+$browserUrl = "{0}?version=4&started={1}" -f `
     $websiteUrl.TrimEnd("/"), `
     [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 
@@ -850,6 +851,16 @@ function Wait-ApplicationApi {
             if ($productCount -lt 1 -and $null -ne $products) {
                 $productCount = 1
             }
+            $paymentProviders = @(
+                Invoke-RestMethod `
+                    -Uri $paymentProvidersReadinessUrl `
+                    -Method Get `
+                    -TimeoutSec 5)
+            $paymentProviderKeys = @($paymentProviders | ForEach-Object { $_.key })
+            $hasRequiredPaymentProviders = `
+                $paymentProviderKeys -contains "demo" -and `
+                $paymentProviderKeys -contains "paypal" -and `
+                $paymentProviderKeys -contains "stripe"
             $website = Invoke-WebRequest -Uri $websiteUrl -UseBasicParsing -TimeoutSec 5
             $auditResponse = Invoke-WebRequest `
                 -Uri $auditReadinessUrl `
@@ -865,12 +876,14 @@ function Wait-ApplicationApi {
             $hasCurrentWebsite = `
                 $website.Content.Contains("<title>Das Holzwerk</title>") -and `
                 $website.Content.Contains('id="open-cart"') -and `
-                $website.Content.Contains("Holzwerk DemoPay")
+                $website.Content.Contains('id="payment-provider-cards"') -and `
+                $website.Content.Contains('id="checkout-payment-providers"')
 
             if ($website.StatusCode -eq 200 -and
                 $auditResponse.StatusCode -eq 200 -and
                 $auditSnapshotCount -eq 0 -and
                 $productCount -gt 0 -and
+                $hasRequiredPaymentProviders -and
                 $hasCurrentWebsite) {
                 return $productCount
             }

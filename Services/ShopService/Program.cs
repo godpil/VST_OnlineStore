@@ -69,6 +69,28 @@ public class Program {
                 }
             });
 
+        app.MapGet(
+            "/api/payment-providers",
+            async (
+                BillingContracts.BillingOperations.BillingOperationsClient billing,
+                CancellationToken cancellationToken) => {
+
+                try {
+                    var response = await billing.ListPaymentProvidersAsync(
+                        new BillingContracts.PaymentProvidersRequest(),
+                        cancellationToken: cancellationToken);
+
+                    return Results.Ok(response.Providers.Select(provider => new {
+                        key = provider.Key,
+                        name = provider.Name,
+                        isTestMode = provider.IsTestMode
+                    }));
+                }
+                catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable) {
+                    return DownstreamUnavailable("BillingService");
+                }
+            });
+
         app.MapPost(
             "/api/checkout",
             async (

@@ -1,6 +1,8 @@
 namespace ShopService.Checkout;
 
-public sealed record CheckoutRequest(IReadOnlyList<CheckoutItemRequest>? Items);
+public sealed record CheckoutRequest(
+    IReadOnlyList<CheckoutItemRequest>? Items,
+    string? PaymentProvider);
 
 public sealed record CheckoutItemRequest(string ProductId, int Quantity);
 

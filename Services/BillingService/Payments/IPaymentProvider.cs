@@ -1,7 +1,11 @@
 namespace BillingService.Payments;
 
 public interface IPaymentProvider {
+    string Key { get; }
+
     string Name { get; }
+
+    bool IsTestMode { get; }
 
     Task<PaymentProviderResult> ChargeAsync(
         long amountInCents,

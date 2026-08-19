@@ -6,6 +6,7 @@ package billingservice;
 
 service BillingOperations {
   rpc ProcessPayment (PaymentRequest) returns (PaymentResponse);
+  rpc ListPaymentProviders (PaymentProvidersRequest) returns (PaymentProvidersResponse);
   rpc GetStatus (BillingStatusRequest) returns (BillingStatusResponse);
 }
 
@@ -14,6 +15,7 @@ message PaymentRequest {
   string currency = 2;
   string payment_method = 3;
   string reference = 4;
+  string payment_provider = 5;
 }
 
 message PaymentResponse {
@@ -21,6 +23,18 @@ message PaymentResponse {
   string transaction_id = 2;
   string provider = 3;
   string message = 4;
+}
+
+message PaymentProvidersRequest {}
+
+message PaymentProvidersResponse {
+  repeated PaymentProviderInfo providers = 1;
+}
+
+message PaymentProviderInfo {
+  string key = 1;
+  string name = 2;
+  bool is_test_mode = 3;
 }
 
 message BillingStatusRequest {}

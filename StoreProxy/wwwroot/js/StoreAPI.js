@@ -37,20 +37,28 @@ const StoreAPI = (() => {
         return await request("/products/featured", { method: "GET" });
     }
 
-    async function checkout(items) {
+    async function getPaymentProviders() {
+        return await request("/payment-providers", { method: "GET" });
+    }
+
+    async function checkout(items, paymentProvider) {
         if (!Array.isArray(items) || items.length === 0) {
             throw new Error("Der Warenkorb ist leer.");
+        }
+        if (typeof paymentProvider !== "string" || paymentProvider.trim().length === 0) {
+            throw new Error("Bitte wählen Sie einen Zahlungsanbieter aus.");
         }
 
         return await request("/checkout", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ items })
+            body: JSON.stringify({ items, paymentProvider })
         });
     }
 
     return Object.freeze({
         getFeaturedProducts,
+        getPaymentProviders,
         checkout
     });
 })();

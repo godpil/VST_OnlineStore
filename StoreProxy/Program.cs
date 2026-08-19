@@ -34,6 +34,8 @@ public class Program {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.AddPolicy("featured-products", context =>
                 CreateFixedWindowPartition(context, permitLimit: 120));
+            options.AddPolicy("payment-providers", context =>
+                CreateFixedWindowPartition(context, permitLimit: 120));
             options.AddPolicy("checkout", context =>
                 CreateFixedWindowPartition(context, permitLimit: 10));
             options.AddPolicy("service-status", context =>

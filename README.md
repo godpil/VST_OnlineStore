@@ -153,6 +153,7 @@ Gesamt-Timeouts und Limits sind wie folgt festgelegt:
 | Route | Methode | Timeout | Rate Limit pro Client |
 |---|---|---:|---:|
 | `/api/products/featured` | `GET` | 5 Sekunden | 120 pro Minute |
+| `/api/payment-providers` | `GET` | 5 Sekunden | 120 pro Minute |
 | `/api/checkout` | `POST` | 30 Sekunden | 10 pro Minute |
 | `/api/services/status` | `GET` | 5 Sekunden | 30 pro Minute |
 | `/audit/orders/{correlationId}` | `GET` | 5 Sekunden | 30 pro Minute |
@@ -172,3 +173,39 @@ Ein eigener YARP-Transform setzt vor jeder Weiterleitung genau die kanonische
 `X-Correlation-ID`. Weiterleitungsfehler werden als strukturierte JSON-Antwort
 mit Status, neutraler Meldung und Correlation-ID zurückgegeben; interne
 Fehlerdetails erscheinen ausschließlich im strukturierten Log.
+
+Zahlungsanbieter
+----------------
+
+Der BillingService stellt die drei Adapter `demo`, `paypal` und `stripe`
+hinter einer gemeinsamen `IPaymentProvider`-Schnittstelle bereit. Die Fassade
+`PaymentProviderResolver` wählt den Adapter anhand des Checkout-Requests aus.
+Der Shop lädt die registrierten Adapter dynamisch über
+`GET /api/payment-providers`; dadurch muss die Oberfläche bei einem weiteren
+registrierten Adapter nicht um eine fest codierte Auswahlliste ergänzt werden.
+
+Der Checkout erwartet neben den Positionen den Provider-Schlüssel:
+
+```json
+{
+  "items": [
+    {
+      "productId": "d63f3cb9-e42e-4d3e-a84d-bfe557e049cc",
+      "quantity": 1
+    }
+  ],
+  "paymentProvider": "stripe"
+}
+```
+
+Alle drei Adapter laufen aktuell ausdrücklich im Testbetrieb und bewegen kein
+echtes Geld. Eine produktive PayPal- oder Stripe-Anbindung benötigt zusätzlich
+Sandbox-/Produktionszugangsdaten, die jeweilige Freigabe im Browser und eine
+Webhook-basierte Abschlussverarbeitung. Diese Details bleiben innerhalb des
+jeweiligen Adapters und verändern den Shop-Checkout nicht.
+
+Provider-Auswahl, Zahlungsbeginn und Ergebnis werden als strukturierte Logs im
+BillingService geschrieben. Fachlich entstehen zusätzlich Audit-Snapshots für
+`PAYMENT_PROVIDER_SELECTED`, `PAYMENT_COMPLETED`, Ablehnungen und technische
+Provider-Fehler. Zugangsdaten oder Zahlungsinstrumente werden weder in den Logs
+noch im Audit-Payload gespeichert.

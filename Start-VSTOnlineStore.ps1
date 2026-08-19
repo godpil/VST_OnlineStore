@@ -92,6 +92,7 @@ $rabbitMqPort = 5672
 $websiteUrl = "http://localhost:6680/"
 $apiReadinessUrl = "http://localhost:6680/api/products/featured"
 $paymentProvidersReadinessUrl = "http://localhost:6680/api/payment-providers"
+$serviceStatusReadinessUrl = "http://localhost:6680/api/services/status"
 $auditReadinessUrl = "http://localhost:6680/audit/orders/$([Guid]::NewGuid().ToString('D'))"
 $browserUrl = "{0}?version=5&started={1}" -f `
     $websiteUrl.TrimEnd("/"), `
@@ -870,6 +871,20 @@ function Wait-ApplicationApi {
                 $paymentProviderKeys -contains "demo" -and `
                 $paymentProviderKeys -contains "paypal" -and `
                 $paymentProviderKeys -contains "stripe"
+            $serviceStatuses = @(
+                Invoke-RestMethod `
+                    -Uri $serviceStatusReadinessUrl `
+                    -Method Get `
+                    -TimeoutSec 5)
+            $availableServiceNames = @(
+                $serviceStatuses |
+                    Where-Object { $_.available -eq $true } |
+                    ForEach-Object { $_.service })
+            $hasRequiredServices = `
+                $availableServiceNames -contains "WarehouseService" -and `
+                $availableServiceNames -contains "BillingService" -and `
+                $availableServiceNames -contains "InvoiceService" -and `
+                $availableServiceNames -contains "AuditService"
             $website = Invoke-WebRequest -Uri $websiteUrl -UseBasicParsing -TimeoutSec 5
             $auditResponse = Invoke-WebRequest `
                 -Uri $auditReadinessUrl `
@@ -895,6 +910,7 @@ function Wait-ApplicationApi {
                 $auditSnapshotCount -eq 0 -and
                 $productCount -gt 0 -and
                 $hasRequiredPaymentProviders -and
+                $hasRequiredServices -and
                 $hasCurrentWebsite) {
                 return $productCount
             }
@@ -953,7 +969,7 @@ function Start-Application {
 
         Write-Step "Vollstaendigen Aufrufpfad pruefen"
         $productCount = Wait-ApplicationApi
-        Write-Host "$productCount Produkte, Branding, Warenkorb, Payment-Provider, Rechnungsfelder und Audit-Abfrage erfolgreich ueber den Proxy geladen." -ForegroundColor Green
+        Write-Host "$productCount Produkte, Branding, Warenkorb, Payment-Provider, Service-Orchestrierung, Rechnungsfelder und Audit-Abfrage erfolgreich ueber den Proxy geladen." -ForegroundColor Green
 
         if (-not $NoBrowser) {
             Write-Step "Website oeffnen"

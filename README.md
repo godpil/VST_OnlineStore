@@ -76,6 +76,19 @@ Warehouse-Daten und das Prozessmanifest.
 Service-Architektur
 -------------------
 
+Jeder ausführbare Service besitzt eine eigene Beschreibung mit Voraussetzungen
+und Startanleitung:
+
+| Service | Rolle | Dokumentation |
+|---|---|---|
+| StoreProxy | öffentlicher Einstiegspunkt und YARP-Gateway | [README](StoreProxy/README.md) |
+| ShopService | REST-Fassade und fachlicher Orchestrator | [README](Services/ShopService/README.md) |
+| WarehouseService | interne Lager- und Katalog-Servicegrenze | [README](Services/WarehouseService/README.md) |
+| StoreBackend | interner Persistenzadapter des WarehouseService | [README](StoreBackend/README.md) |
+| BillingService | interne Zahlungsfassade | [README](Services/BillingService/README.md) |
+| InvoiceService | asynchrone Rechnungs- und PDF-Erstellung | [README](Services/InvoiceService/README.md) |
+| AuditService | persistente fachliche Ereigniskette | [README](Services/AuditService/README.md) |
+
 Der öffentliche synchrone Aufrufpfad lautet immer
 `Browser -> StoreProxy -> ShopService`. Der StoreProxy ist ausschließlich
 YARP-Gateway und kennt keine gRPC-Verträge oder Adressen fachlicher
@@ -187,13 +200,36 @@ orchestriert. Methoden, Gesamt-Timeouts und Limits sind wie folgt festgelegt:
 | `/api/service-statuses` | `GET` | 5 Sekunden | 30 pro Minute |
 | `/api/order-audits/{correlationId}/snapshots` | `GET` | 5 Sekunden | 30 pro Minute |
 | `/api/invoices/{invoiceId}/pdf` | `GET` | 12 Sekunden | 30 pro Minute |
+| `/health` | `GET` | 2 Sekunden | 30 pro Minute |
+| `/openapi/v1.json` | `GET` | 5 Sekunden | 120 pro Minute |
+| `/swagger/{remainder}` | `GET` | 5 Sekunden | 120 pro Minute |
+
+OpenAPI-Dokumentation
+---------------------
+
+Alle öffentlichen HTTP-Endpunkte sind maschinenlesbar nach OpenAPI 3.1
+dokumentiert. Das JSON-Dokument ist über den StoreProxy unter
+`http://localhost:6680/openapi/v1.json` erreichbar. Die interaktive Swagger UI
+steht unter `http://localhost:6680/swagger` bereit und verwendet dasselbe
+Dokument. Sie beschreibt Query- und Pfadparameter, JSON-Requests,
+Erfolgsantworten, PDF-Ausgaben sowie die RFC-9457-Fehlerantworten.
+
+Die internen gRPC-Schnittstellen sind nicht Teil von OpenAPI. Ihre Verträge
+bleiben in den Dateien unter `Contracts/*.proto` dokumentiert.
 
 Der Request zum Erstellen einer Bestellung darf höchstens 65.536 Bytes groß
 sein. Erfolgreiche Bestellungen liefern `201 Created`; ihre `orderId` entspricht
 der durchgängig propagierten Correlation-ID. Überschreitungen
-werden als JSON mit HTTP 413 beantwortet; Rate-Limit-Verletzungen liefern HTTP
-429 und einen `Retry-After`-Header. Automatische Wiederholungen des Checkouts
-sind wegen der möglichen Zahlungswirkung bewusst nicht aktiviert.
+werden mit HTTP 413 beantwortet; Rate-Limit-Verletzungen liefern HTTP 429 und
+einen `Retry-After`-Header. Syntaktisch gültige, aber fachlich nicht
+verarbeitbare Bestellungen liefern HTTP 422. Automatische Wiederholungen des
+Checkouts sind wegen der möglichen Zahlungswirkung bewusst nicht aktiviert.
+
+Alle öffentlichen HTTP-Fehlerantworten verwenden RFC-9457-Problem-Details mit
+dem Medientyp `application/problem+json`. Neben `type`, `title`, `status`,
+`detail` und `instance` enthalten sie die Erweiterung `correlationID`;
+fachspezifische Antworten können beispielsweise `orderId`, `invoiceId` oder
+`retryAfterSeconds` ergänzen.
 
 YARP prüft den ShopService alle zehn Sekunden aktiv über `/health`. Zwei
 aufeinanderfolgende Fehlschläge markieren das Ziel als nicht verfügbar.
@@ -203,8 +239,9 @@ ShopService-Instanzen vorbereitet, verwendet aktuell jedoch genau ein Ziel.
 
 Ein eigener YARP-Transform setzt vor jeder Weiterleitung genau die kanonische
 `X-Correlation-ID`. Weiterleitungsfehler werden als strukturierte JSON-Antwort
-mit Status, neutraler Meldung und Correlation-ID zurückgegeben; interne
-Fehlerdetails erscheinen ausschließlich im strukturierten Log.
+im Problem-Details-Format mit Status, neutraler Meldung und Correlation-ID
+zurückgegeben; interne Fehlerdetails erscheinen ausschließlich im
+strukturierten Log.
 
 Zahlungsanbieter
 ----------------
@@ -241,5 +278,3 @@ BillingService geschrieben. Fachlich entstehen zusätzlich Audit-Snapshots für
 `PAYMENT_PROVIDER_SELECTED`, `PAYMENT_COMPLETED`, Ablehnungen und technische
 Provider-Fehler. Zugangsdaten oder Zahlungsinstrumente werden weder in den Logs
 noch im Audit-Payload gespeichert.
-
-Scheiss KI

@@ -59,7 +59,7 @@ public sealed class CheckoutOrchestrator(
 
             return await CompleteWithFailureAsync(
                 auditState,
-                StatusCodes.Status400BadRequest,
+                StatusCodes.Status422UnprocessableEntity,
                 validation.Message,
                 cancellationToken);
         }
@@ -106,7 +106,7 @@ public sealed class CheckoutOrchestrator(
                     });
                 return await CompleteWithFailureAsync(
                     auditState,
-                    StatusCodes.Status400BadRequest,
+                    StatusCodes.Status422UnprocessableEntity,
                     auditState.FailureReason,
                     cancellationToken);
             }
@@ -183,7 +183,7 @@ public sealed class CheckoutOrchestrator(
 
                 return await CompleteWithFailureAsync(
                     auditState,
-                    StatusCodes.Status400BadRequest,
+                    StatusCodes.Status422UnprocessableEntity,
                     auditState.FailureReason,
                     cancellationToken);
             }
@@ -313,7 +313,7 @@ public sealed class CheckoutOrchestrator(
                     cancellationToken);
                 return await CompleteWithFailureAsync(
                     auditState,
-                    StatusCodes.Status502BadGateway,
+                    StatusCodes.Status422UnprocessableEntity,
                     payment.Message,
                     cancellationToken,
                     totalInCents);

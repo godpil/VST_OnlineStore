@@ -16,7 +16,7 @@ const StoreAPI = (() => {
         });
 
         const contentType = response.headers.get("content-type") ?? "";
-        const body = contentType.includes("application/json")
+        const body = contentType.includes("application/json") || contentType.includes("+json")
             ? await response.json()
             : await response.text();
 

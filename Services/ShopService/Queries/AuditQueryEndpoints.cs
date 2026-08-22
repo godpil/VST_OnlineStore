@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Grpc.Core;
+using ShopService.Api;
 using VstOnlineStore.Observability;
 using AuditContracts = VstOnlineStore.Contracts.AuditService;
 
@@ -10,8 +11,20 @@ internal static class AuditQueryEndpoints {
         this IEndpointRouteBuilder endpoints) {
 
         endpoints.MapGet(
-            "/api/order-audits/{correlationId}/snapshots",
-            GetOrderAuditSnapshotsAsync);
+                "/api/order-audits/{correlationId}/snapshots",
+                GetOrderAuditSnapshotsAsync)
+            .WithName("ListOrderAuditSnapshots")
+            .WithTags("Order audits")
+            .WithSummary("Audit-Snapshots einer Bestellung abrufen")
+            .WithDescription(
+                "Liefert die chronologisch sortierte Ereigniskette für die angegebene " +
+                "Correlation-ID. Eine unbekannte ID ergibt ein leeres Array.")
+            .Produces<OrderAuditSnapshotResponse[]>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .ProducesProblem(StatusCodes.Status502BadGateway)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         return endpoints;
     }
@@ -30,19 +43,19 @@ internal static class AuditQueryEndpoints {
                 deadline: DateTime.UtcNow.AddSeconds(5),
                 cancellationToken: cancellationToken);
 
-            var snapshots = response.Snapshots.Select(snapshot => new {
-                eventID = Guid.Parse(snapshot.EventId),
-                correlationID = Guid.Parse(snapshot.CorrelationId),
-                eventType = ToEventTypeText(snapshot.EventType),
-                responsibleService = snapshot.ResponsibleService,
-                timestamp = snapshot.Timestamp.ToDateTime(),
-                payload = ParsePayload(snapshot.PayloadJson),
-                previousEventID = string.IsNullOrWhiteSpace(snapshot.PreviousEventId)
-                    ? (Guid?)null
-                    : Guid.Parse(snapshot.PreviousEventId),
-                actor = snapshot.Actor,
-                statusCode = ToStatusCodeText(snapshot.StatusCode)
-            }).ToArray();
+            var snapshots = response.Snapshots.Select(snapshot =>
+                new OrderAuditSnapshotResponse(
+                    Guid.Parse(snapshot.EventId),
+                    Guid.Parse(snapshot.CorrelationId),
+                    ToEventTypeText(snapshot.EventType),
+                    snapshot.ResponsibleService,
+                    snapshot.Timestamp.ToDateTime(),
+                    ParsePayload(snapshot.PayloadJson),
+                    string.IsNullOrWhiteSpace(snapshot.PreviousEventId)
+                        ? null
+                        : Guid.Parse(snapshot.PreviousEventId),
+                    snapshot.Actor,
+                    ToStatusCodeText(snapshot.StatusCode))).ToArray();
 
             return Results.Ok(snapshots);
         }
@@ -57,7 +70,7 @@ internal static class AuditQueryEndpoints {
                 exception);
 
             return Results.Problem(
-                title: "AuditService nicht erreichbar",
+                detail: "Der AuditService ist nicht erreichbar.",
                 statusCode: StatusCodes.Status503ServiceUnavailable);
         }
         catch (Exception exception) when (exception is JsonException or FormatException) {
@@ -67,7 +80,7 @@ internal static class AuditQueryEndpoints {
                 exception);
 
             return Results.Problem(
-                title: "Ungültige Antwort des AuditService",
+                detail: "Der AuditService hat eine ungültige Antwort geliefert.",
                 statusCode: StatusCodes.Status502BadGateway);
         }
     }

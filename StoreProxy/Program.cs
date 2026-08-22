@@ -27,6 +27,7 @@ public class Program {
                     return ValueTask.CompletedTask;
                 }));
         builder.Services.AddRequestTimeouts();
+        builder.Services.AddVstProblemDetails();
         builder.Services.AddRateLimiter(options => {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.AddPolicy("products", context =>
@@ -41,6 +42,8 @@ public class Program {
                 CreateFixedWindowPartition(context, permitLimit: 30));
             options.AddPolicy("invoice-pdf", context =>
                 CreateFixedWindowPartition(context, permitLimit: 30));
+            options.AddPolicy("api-documentation", context =>
+                CreateFixedWindowPartition(context, permitLimit: 120));
             options.OnRejected = WriteRateLimitResponseAsync;
         });
         builder.Services.AddVstOpenTelemetry(
@@ -53,6 +56,8 @@ public class Program {
         var app = builder.Build();
 
         app.UseCorrelationId();
+        app.UseExceptionHandler();
+        app.UseStatusCodePages();
         app.UseStructuredRequestLogging();
         app.UseDefaultFiles();
         app.UseStaticFiles();
@@ -85,9 +90,6 @@ public class Program {
         CancellationToken cancellationToken) {
 
         var context = rejectionContext.HttpContext;
-        var correlationId = CorrelationId.TryGet(context, out var currentCorrelationId)
-            ? currentCorrelationId
-            : Guid.NewGuid();
         var retryAfterSeconds = rejectionContext.Lease.TryGetMetadata(
             MetadataName.RetryAfter,
             out var retryAfter)
@@ -110,12 +112,15 @@ public class Program {
                     retryAfterSeconds
                 });
 
-        await context.Response.WriteAsJsonAsync(
-            new {
-                status = StatusCodes.Status429TooManyRequests,
-                message = "Too many requests. Please try again later.",
-                correlationID = correlationId
-            },
-            cancellationToken);
+        var extensions = new Dictionary<string, object?>();
+        if (retryAfterSeconds is not null) {
+            extensions["retryAfterSeconds"] = retryAfterSeconds.Value;
+        }
+
+        await Results.Problem(
+                detail: "Zu viele Anfragen. Bitte versuchen Sie es später erneut.",
+                statusCode: StatusCodes.Status429TooManyRequests,
+                extensions: extensions)
+            .ExecuteAsync(context);
     }
 }

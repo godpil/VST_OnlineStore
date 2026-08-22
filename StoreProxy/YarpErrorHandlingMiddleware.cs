@@ -24,9 +24,6 @@ public sealed class YarpErrorHandlingMiddleware(
             errorFeature.Error,
             context.Response.StatusCode,
             errorFeature.Exception);
-        var correlationId = CorrelationId.TryGet(context, out var currentCorrelationId)
-            ? currentCorrelationId
-            : Guid.NewGuid();
 
         var logContext = new {
             httpMethod = context.Request.Method,
@@ -57,15 +54,10 @@ public sealed class YarpErrorHandlingMiddleware(
         }
 
         context.Response.Clear();
-        context.Response.StatusCode = statusCode;
-
-        await context.Response.WriteAsJsonAsync(
-            new {
-                status = statusCode,
-                message = GetClientMessage(statusCode),
-                correlationID = correlationId
-            },
-            CancellationToken.None);
+        await Results.Problem(
+                detail: GetClientMessage(statusCode),
+                statusCode: statusCode)
+            .ExecuteAsync(context);
     }
 
     private static int ResolveStatusCode(
@@ -112,11 +104,11 @@ public sealed class YarpErrorHandlingMiddleware(
 
     private static string GetClientMessage(int statusCode) => statusCode switch {
         StatusCodes.Status503ServiceUnavailable =>
-            "ShopService is currently unavailable.",
+            "Der ShopService ist derzeit nicht erreichbar.",
         StatusCodes.Status504GatewayTimeout =>
-            "ShopService did not respond in time.",
+            "Der ShopService hat nicht rechtzeitig geantwortet.",
         StatusCodes.Status413PayloadTooLarge =>
-            "The request body exceeds the maximum size of 65536 bytes.",
-        _ => "The request could not be forwarded to ShopService."
+            "Der Request-Body überschreitet die maximale Größe von 65536 Bytes.",
+        _ => "Die Anfrage konnte nicht an den ShopService weitergeleitet werden."
     };
 }

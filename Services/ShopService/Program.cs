@@ -1,4 +1,6 @@
 using Grpc.Core;
+using Microsoft.OpenApi;
+using ShopService.Api;
 using ShopService.Checkout;
 using ShopService.Orchestration;
 using ShopService.Queries;
@@ -18,6 +20,10 @@ public class Program {
         builder.Services.AddVstOpenTelemetry(
             builder.Configuration,
             "ShopService");
+        builder.Services.AddVstProblemDetails();
+        builder.Services.AddOpenApi(options => {
+            options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1;
+        });
         builder.Services.AddRabbitMqAuditPublishing(
             builder.Configuration,
             "ShopService");
@@ -41,7 +47,16 @@ public class Program {
         var app = builder.Build();
 
         app.UseCorrelationId();
+        app.UseExceptionHandler();
+        app.UseStatusCodePages();
         app.UseStructuredRequestLogging();
+        app.UseSwaggerUI(options => {
+            options.DocumentTitle = "VST OnlineStore API";
+            options.RoutePrefix = "swagger";
+            options.SwaggerEndpoint("/openapi/v1.json", "VST OnlineStore API v1");
+        });
+
+        app.MapOpenApi("/openapi/{documentName}.json");
 
         // Öffentliche REST-Schnittstelle. Nur der ShopService kennt die
         // darunterliegenden fachlichen Microservices.
@@ -53,9 +68,9 @@ public class Program {
                 CancellationToken cancellationToken) => {
 
                 if (!featured) {
-                    return Results.BadRequest(new {
-                        message = "Der Produktfilter 'featured=true' ist erforderlich."
-                    });
+                    return Results.Problem(
+                        detail: "Der Produktfilter 'featured=true' ist erforderlich.",
+                        statusCode: StatusCodes.Status400BadRequest);
                 }
 
                 try {
@@ -63,19 +78,31 @@ public class Program {
                         new WarehouseContracts.FeaturedProductsRequest(),
                         cancellationToken: cancellationToken);
 
-                    return Results.Ok(response.Products.Select(product => new {
-                        id = product.Id,
-                        name = product.Name,
-                        price = product.PriceInCents / 100m,
-                        image = product.Image,
-                        availableQuantity = product.AvailableQuantity,
-                        isSoldOut = product.IsSoldOut
-                    }));
+                    return Results.Ok(response.Products.Select(product =>
+                        new ProductResponse(
+                            product.Id,
+                            product.Name,
+                            product.PriceInCents / 100m,
+                            product.Image,
+                            product.AvailableQuantity,
+                            product.IsSoldOut)).ToArray());
                 }
                 catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable) {
                     return DownstreamUnavailable("WarehouseService");
                 }
-            });
+            })
+            .WithName("ListFeaturedProducts")
+            .WithTags("Products")
+            .WithSummary("Ausgewählte Produkte abrufen")
+            .WithDescription(
+                "Liefert den öffentlichen Produktkatalog. Der Query-Parameter " +
+                "featured muss den Wert true haben.")
+            .Produces<ProductResponse[]>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .ProducesProblem(StatusCodes.Status502BadGateway)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         app.MapGet(
             "/api/payment-providers",
@@ -88,16 +115,25 @@ public class Program {
                         new BillingContracts.PaymentProvidersRequest(),
                         cancellationToken: cancellationToken);
 
-                    return Results.Ok(response.Providers.Select(provider => new {
-                        key = provider.Key,
-                        name = provider.Name,
-                        isTestMode = provider.IsTestMode
-                    }));
+                    return Results.Ok(response.Providers.Select(provider =>
+                        new PaymentProviderResponse(
+                            provider.Key,
+                            provider.Name,
+                            provider.IsTestMode)).ToArray());
                 }
                 catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable) {
                     return DownstreamUnavailable("BillingService");
                 }
-            });
+            })
+            .WithName("ListPaymentProviders")
+            .WithTags("Payment providers")
+            .WithSummary("Zahlungsanbieter abrufen")
+            .WithDescription("Liefert die für eine Bestellung auswählbaren Zahlungsanbieter.")
+            .Produces<PaymentProviderResponse[]>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .ProducesProblem(StatusCodes.Status502BadGateway)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         app.MapPost(
             "/api/orders",
@@ -122,8 +158,31 @@ public class Program {
                         statusCode: StatusCodes.Status201Created);
                 }
 
-                return Results.Json(outcome.Response, statusCode: outcome.StatusCode);
-            });
+                return Results.Problem(
+                    detail: outcome.Response.Message,
+                    statusCode: outcome.StatusCode,
+                    extensions: new Dictionary<string, object?> {
+                        ["orderId"] = outcome.Response.OrderId,
+                        ["total"] = outcome.Response.Total,
+                        ["currency"] = outcome.Response.Currency
+                    });
+            })
+            .WithName("CreateOrder")
+            .WithTags("Orders")
+            .WithSummary("Bestellung anlegen")
+            .WithDescription(
+                "Validiert den Warenkorb, reserviert den Bestand und führt die Zahlung aus. " +
+                "Die zurückgegebene orderId entspricht der Correlation-ID des Vorgangs.")
+            .Accepts<CheckoutRequest>("application/json")
+            .Produces<CheckoutResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status413PayloadTooLarge)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .ProducesProblem(StatusCodes.Status502BadGateway)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         // Belegt die zentrale Steuerung aller fachlichen Services und dient
         // gleichzeitig als Diagnose-Endpunkt für den Vertical Slice.
@@ -135,17 +194,34 @@ public class Program {
                 }
                 catch (RpcException) {
                     return Results.Problem(
-                        title: "Mindestens ein Microservice ist nicht erreichbar",
+                        detail: "Mindestens ein Microservice ist nicht erreichbar.",
                         statusCode: StatusCodes.Status503ServiceUnavailable);
                 }
-            });
+            })
+            .WithName("ListServiceStatuses")
+            .WithTags("Service statuses")
+            .WithSummary("Status der fachlichen Services abrufen")
+            .WithDescription(
+                "Prüft WarehouseService, BillingService, InvoiceService und AuditService.")
+            .Produces<DownstreamServiceStatus[]>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .ProducesProblem(StatusCodes.Status502BadGateway)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         // StoreProxy veröffentlicht diese URLs, kommuniziert jedoch nur per
         // YARP mit dem ShopService. Die gRPC-Orchestrierung bleibt hier.
         app.MapInvoiceQueryEndpoints();
         app.MapAuditQueryEndpoints();
 
-        app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "ShopService" }));
+        app.MapGet(
+                "/health",
+                () => Results.Ok(new HealthResponse("ok", "ShopService")))
+            .WithName("GetShopHealth")
+            .WithTags("Health")
+            .WithSummary("Health-Status des ShopService abrufen")
+            .Produces<HealthResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         app.Run();
     }
@@ -160,7 +236,7 @@ public class Program {
 
     private static IResult DownstreamUnavailable(string serviceName) {
         return Results.Problem(
-            title: $"{serviceName} nicht erreichbar",
+            detail: $"{serviceName} ist nicht erreichbar.",
             statusCode: StatusCodes.Status503ServiceUnavailable);
     }
 }

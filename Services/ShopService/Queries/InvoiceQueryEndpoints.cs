@@ -9,8 +9,20 @@ internal static class InvoiceQueryEndpoints {
         this IEndpointRouteBuilder endpoints) {
 
         endpoints.MapGet(
-            "/api/invoices/{invoiceId:guid}/pdf",
-            GetInvoicePdfAsync);
+                "/api/invoices/{invoiceId:guid}/pdf",
+                GetInvoicePdfAsync)
+            .WithName("GetInvoicePdf")
+            .WithTags("Invoices")
+            .WithSummary("Rechnung als PDF abrufen")
+            .WithDescription(
+                "Liefert die erzeugte Rechnung als PDF. Solange die asynchrone Erstellung " +
+                "noch läuft, antwortet der Endpunkt mit 404.")
+            .Produces<byte[]>(StatusCodes.Status200OK, contentType: "application/pdf")
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .ProducesProblem(StatusCodes.Status502BadGateway)
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
 
         return endpoints;
     }
@@ -60,10 +72,12 @@ internal static class InvoiceQueryEndpoints {
             logger.Warn(
                 "Invoice PDF was not available within the ShopService wait window.",
                 new { invoiceId, waitWindowSeconds = 10 });
-            return Results.NotFound(new {
-                message = "Die Rechnung wird noch erstellt. Bitte versuchen Sie es erneut.",
-                invoiceId
-            });
+            return Results.Problem(
+                detail: "Die Rechnung wird noch erstellt. Bitte versuchen Sie es erneut.",
+                statusCode: StatusCodes.Status404NotFound,
+                extensions: new Dictionary<string, object?> {
+                    ["invoiceId"] = invoiceId
+                });
         }
         catch (RpcException exception) when (exception.StatusCode is
             StatusCode.Unavailable or StatusCode.DeadlineExceeded) {
@@ -72,7 +86,7 @@ internal static class InvoiceQueryEndpoints {
                 new { invoiceId, grpcStatus = exception.StatusCode.ToString() },
                 exception);
             return Results.Problem(
-                title: "InvoiceService nicht erreichbar",
+                detail: "Der InvoiceService ist nicht erreichbar.",
                 statusCode: StatusCodes.Status503ServiceUnavailable);
         }
     }

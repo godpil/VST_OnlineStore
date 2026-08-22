@@ -16,7 +16,16 @@ Snapshots. Der ShopService kann die Ereigniskette einer Bestellung anschließend
 - RabbitMQ-Exchange: `vst.audit.events`
 - RabbitMQ-Queue: `vst.audit.snapshots`
 - Dead-Letter-Queue: `vst.audit.snapshots.dead-letter`
-- Persistenz: `Services/AuditService/Data/audit-snapshots.json`
+- PostgreSQL: `127.0.0.1:6688`, Datenbank `vst_audit`
+- Tabelle: `audit_snapshots`
+- Legacy-Import: `Services/AuditService/Data/audit-snapshots.json`
+
+Das relationale Schema verwendet native UUIDs, `timestamptz` und `jsonb`.
+Constraints sichern eindeutige Event- und Sequenznummern sowie die Verkettung
+über `previous_event_id`. Datenbanktrigger lehnen `UPDATE`, `DELETE` und
+`TRUNCATE` ab. Beim ersten Start mit leerer Datenbank werden vorhandene
+Snapshots aus der bisherigen JSON-Datei einmalig und in Sequenzreihenfolge
+übernommen.
 
 Der Service veröffentlicht keine fachliche REST-API. Die öffentliche Abfrage
 läuft über StoreProxy und ShopService. Der Text-Endpunkt `/` ist nur eine
@@ -26,28 +35,36 @@ einfache Prozessdiagnose.
 
 - .NET 10 SDK
 - RabbitMQ auf `localhost:5672`
+- PostgreSQL auf `127.0.0.1:6688`
 - freier TCP-Port `6686`
-- Schreibzugriff auf `Services/AuditService/Data/audit-snapshots.json`
 - optional der vom Betriebsskript verwaltete OpenTelemetry Collector
+
+Das Betriebsskript lädt PostgreSQL 18.6 beim ersten Start als geprüftes
+Windows-Binärarchiv herunter, initialisiert einen projektlokalen Datencluster
+unter `Data/PostgreSQL/18` und erstellt die Datenbank automatisch. Der Cluster
+akzeptiert ausschließlich Verbindungen über die lokale Adresse und ist für die
+Entwicklungs- und Demonstrationsumgebung bestimmt.
 
 ## Start
 
 Bevorzugter Einzelstart vom Repository-Wurzelverzeichnis:
 
 ```powershell
+.\Start-VSTOnlineStore.ps1 -Action StartService -ServiceName PostgreSQL
 .\Start-VSTOnlineStore.ps1 -Action StartService -ServiceName AuditService
 ```
 
-Direkter Start über das .NET SDK:
+Direkter Start über das .NET SDK, nachdem PostgreSQL gestartet wurde:
 
 ```powershell
 dotnet restore .\Services\AuditService\AuditService.csproj
 dotnet run --project .\Services\AuditService\AuditService.csproj --launch-profile AuditService
 ```
 
-Andere Services müssen nicht vorher laufen. Der AuditService konsumiert neue
-Ereignisse, sobald diese über RabbitMQ eintreffen.
+Andere fachliche Services müssen nicht vorher laufen. Der AuditService
+konsumiert neue Ereignisse, sobald diese über RabbitMQ eintreffen.
 
 ```powershell
 .\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName AuditService
+.\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName PostgreSQL
 ```

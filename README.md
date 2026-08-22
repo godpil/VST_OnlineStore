@@ -53,16 +53,18 @@ und sorgt für die Verwaltung des gesamten Stacks oder einzelner Komponenten:
 .\Start-VSTOnlineStore.ps1 -Action Stop
 
 # Eine Komponente gezielt starten oder stoppen
+.\Start-VSTOnlineStore.ps1 -Action StartService -ServiceName PostgreSQL
 .\Start-VSTOnlineStore.ps1 -Action StartService -ServiceName AuditService -SkipBuild
 .\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName AuditService
+.\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName PostgreSQL
 
 # Alle bekannten Datei- und Logsenken anzeigen
 .\Start-VSTOnlineStore.ps1 -Action FileSinks
 ```
 
-Als `ServiceName` werden `StoreBackend`, `WarehouseService`, `BillingService`,
-`InvoiceService`, `AuditService`, `ShopService`, `StoreProxy` und
-`OpenTelemetryCollector` unterstützt. Einzelstarts verändern das bestehende
+Als `ServiceName` werden `PostgreSQL`, `StoreBackend`, `WarehouseService`,
+`BillingService`, `InvoiceService`, `AuditService`, `ShopService`, `StoreProxy`
+und `OpenTelemetryCollector` unterstützt. Einzelstarts verändern das bestehende
 Prozessmanifest, ohne andere Komponenten zu verlieren. Einzelstopps beenden nur
 einen anhand von Prozess-ID und Startzeit eindeutig als verwaltet erkannten
 Prozess. Abhängigkeiten werden bei der Einzelsteuerung bewusst nicht automatisch
@@ -70,8 +72,8 @@ gestartet oder beendet.
 
 `FileSinks` zeigt pro Senke Status, Anzahl, Gesamtgröße, letzte Änderung und
 absoluten Pfad. Erfasst werden die täglich rollierenden Service-Logs,
-Standardausgabe und Standardfehler, die OTLP-JSONL-Datei, Audit-Snapshots,
-Warehouse-Daten und das Prozessmanifest.
+Standardausgabe und Standardfehler, die OTLP-JSONL-Datei, den PostgreSQL-Cluster,
+das PostgreSQL-Log, Warehouse-Daten und das Prozessmanifest.
 
 Service-Architektur
 -------------------
@@ -106,6 +108,23 @@ Der StoreBackend ist kein eigenständiger fachlicher Orchestrierungsschritt,
 sondern der interne Persistenzadapter des WarehouseService. Deshalb ist die
 synchrone gRPC-Verbindung `WarehouseService -> StoreBackend` innerhalb dieser
 Servicegrenze zulässig.
+
+PostgreSQL
+----------
+
+Der AuditService ist der einzige Service mit relationaler Persistenz. Das
+Betriebsskript lädt beim ersten Start PostgreSQL 18.6 als gepinntes
+Windows-Binärarchiv von EDB, prüft dessen SHA-256-Prüfsumme und initialisiert
+einen ausschließlich lokal erreichbaren Cluster auf `127.0.0.1:6688`. Binaries
+und Daten liegen getrennt unter `Tools/PostgreSQL/18.6-1` beziehungsweise
+`Data/PostgreSQL/18` und werden nicht in Git aufgenommen.
+
+Die Datenbank `vst_audit` wird automatisch erstellt. Beim Beenden des Stacks
+wird PostgreSQL zuletzt und kontrolliert im Fast-Modus heruntergefahren, sodass
+laufende Transaktionen zurückgerollt und die Datendateien konsistent geschlossen
+werden. Das lokale Trust-Verfahren ist auf die Entwicklungs- und
+Demonstrationsumgebung beschränkt; eine entfernte oder produktive Bereitstellung
+benötigt Benutzerrollen, SCRAM-Authentifizierung und ein Secret-Management.
 
 Strukturiertes Logging und OpenTelemetry
 ----------------------------------------
@@ -165,11 +184,16 @@ Statuswerte `SUCCESS`, `FAILURE`, `COMPENSATING` oder `COMPENSATED`.
 
 Die Ereignisse einer Correlation-ID bilden über `previousEventID` eine
 unveränderliche Kette. `eventID`, Zeitstempel, Sequenznummer und Verknüpfung
-werden atomar im AuditService vergeben. Der aktuelle Datenbankadapter simuliert
-eine append-only Tabelle in `Services/AuditService/Data/audit-snapshots.json`.
-Die Anwendungsschicht greift ausschließlich über `IAuditSnapshotRepository`
-darauf zu, sodass der JSON-Adapter später durch Entity Framework ersetzt werden
-kann.
+werden atomar im AuditService vergeben. Der PostgreSQL-Adapter speichert sie in
+der Tabelle `audit_snapshots`; UUID-, Foreign-Key-, Check- und Unique-Constraints
+sichern die Struktur, während Datenbanktrigger Änderungen und Löschungen
+verhindern. Der JSON-Payload wird als `jsonb` gespeichert. Die Anwendungsschicht
+greift weiterhin ausschließlich über `IAuditSnapshotRepository` darauf zu.
+
+Existiert beim ersten Datenbankstart bereits die frühere Datei
+`Services/AuditService/Data/audit-snapshots.json`, übernimmt der AuditService
+deren validierte Ereigniskette einmalig in eine leere Datenbank. Danach ist
+PostgreSQL die aktive Persistenz; die Datei bleibt nur als Legacy-Quelle erhalten.
 
 Der AuditService selbst veröffentlicht keinen REST-Endpunkt. Die chronologisch
 sortierte Ereigniskette ist ausschließlich über den StoreProxy abrufbar. Der

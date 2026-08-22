@@ -94,6 +94,8 @@ StyleCopReport.xml
 Logs/OpenTelemetry/
 Logs/*/
 Tools/OpenTelemetryCollector/
+Tools/PostgreSQL/
+Data/PostgreSQL/
 *.vspscc
 *.vssscc
 .builds

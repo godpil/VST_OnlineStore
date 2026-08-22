@@ -33,6 +33,7 @@ Zugriff erfolgt über dieselben Pfade am StoreProxy auf Port `6680`.
 - BillingService auf Port `6684`
 - InvoiceService auf Port `6685`
 - AuditService auf Port `6686`
+- indirekt PostgreSQL auf Port `6688` für den AuditService
 - indirekt StoreBackend auf Port `6681` für den WarehouseService
 - RabbitMQ auf `localhost:5672`
 - freier TCP-Port `6682`

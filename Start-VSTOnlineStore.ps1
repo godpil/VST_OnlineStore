@@ -90,10 +90,10 @@ $collectorConfigPath = Join-Path $projectRoot "Observability\otel-collector-conf
 $collectorPort = 6687
 $rabbitMqPort = 5672
 $websiteUrl = "http://localhost:6680/"
-$apiReadinessUrl = "http://localhost:6680/api/products/featured"
+$apiReadinessUrl = "http://localhost:6680/api/products?featured=true"
 $paymentProvidersReadinessUrl = "http://localhost:6680/api/payment-providers"
-$serviceStatusReadinessUrl = "http://localhost:6680/api/services/status"
-$auditReadinessUrl = "http://localhost:6680/audit/orders/$([Guid]::NewGuid().ToString('D'))"
+$serviceStatusReadinessUrl = "http://localhost:6680/api/service-statuses"
+$auditReadinessUrl = "http://localhost:6680/api/order-audits/$([Guid]::NewGuid().ToString('D'))/snapshots"
 $browserUrl = "{0}?version=5&started={1}" -f `
     $websiteUrl.TrimEnd("/"), `
     [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()

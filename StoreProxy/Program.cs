@@ -29,15 +29,15 @@ public class Program {
         builder.Services.AddRequestTimeouts();
         builder.Services.AddRateLimiter(options => {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-            options.AddPolicy("featured-products", context =>
+            options.AddPolicy("products", context =>
                 CreateFixedWindowPartition(context, permitLimit: 120));
             options.AddPolicy("payment-providers", context =>
                 CreateFixedWindowPartition(context, permitLimit: 120));
-            options.AddPolicy("checkout", context =>
+            options.AddPolicy("orders", context =>
                 CreateFixedWindowPartition(context, permitLimit: 10));
-            options.AddPolicy("service-status", context =>
+            options.AddPolicy("service-statuses", context =>
                 CreateFixedWindowPartition(context, permitLimit: 30));
-            options.AddPolicy("audit-orders", context =>
+            options.AddPolicy("order-audit-snapshots", context =>
                 CreateFixedWindowPartition(context, permitLimit: 30));
             options.AddPolicy("invoice-pdf", context =>
                 CreateFixedWindowPartition(context, permitLimit: 30));

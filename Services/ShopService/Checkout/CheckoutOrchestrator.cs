@@ -21,11 +21,15 @@ public sealed class CheckoutOrchestrator(
 
     public async Task<CheckoutOutcome> CheckoutAsync(
         CheckoutRequest request,
+        Guid orderId,
         CancellationToken cancellationToken = default) {
+
+        ArgumentOutOfRangeException.ThrowIfEqual(orderId, Guid.Empty);
 
         var requestedPaymentProvider = request.PaymentProvider?.Trim();
         var customerEmail = request.CustomerEmail?.Trim();
         var auditState = new OrderAuditState(
+            orderId,
             request.Items ?? [],
             requestedPaymentProvider,
             GetRecipientDomain(customerEmail));
@@ -341,6 +345,7 @@ public sealed class CheckoutOrchestrator(
                 StatusCodes.Status200OK,
                 new CheckoutResponse(
                     true,
+                    orderId.ToString("D"),
                     "Vielen Dank! Die Zahlung war erfolgreich und die Ware ist reserviert.",
                     totalInCents / 100m,
                     "EUR",
@@ -457,7 +462,7 @@ public sealed class CheckoutOrchestrator(
             auditState,
             cancellationToken);
 
-        return Failed(statusCode, message, totalInCents);
+        return Failed(auditState.OrderId, statusCode, message, totalInCents);
     }
 
     private Task RecordAuditAsync(
@@ -552,6 +557,7 @@ public sealed class CheckoutOrchestrator(
     }
 
     private static CheckoutOutcome Failed(
+        Guid orderId,
         int statusCode,
         string message,
         long totalInCents = 0) =>
@@ -559,6 +565,7 @@ public sealed class CheckoutOrchestrator(
             statusCode,
             new CheckoutResponse(
                 false,
+                orderId.ToString("D"),
                 message,
                 totalInCents / 100m,
                 "EUR",
@@ -579,10 +586,12 @@ public sealed class CheckoutOrchestrator(
         IReadOnlyDictionary<Guid, int>? Quantities);
 
     private sealed class OrderAuditState(
+        Guid orderId,
         IReadOnlyList<CheckoutItemRequest> requestedItems,
         string? requestedPaymentProvider,
         string? customerEmailDomain) {
 
+        public Guid OrderId { get; } = orderId;
         public string Phase { get; set; } = "ORDER_STARTED";
         public IReadOnlyList<OrderItemSnapshot> Items { get; set; } = requestedItems
             .Select(item => new OrderItemSnapshot(item.ProductId, item.Quantity))

@@ -34,14 +34,14 @@ const StoreAPI = (() => {
     }
 
     async function getFeaturedProducts() {
-        return await request("/products/featured", { method: "GET" });
+        return await request("/products?featured=true", { method: "GET" });
     }
 
     async function getPaymentProviders() {
         return await request("/payment-providers", { method: "GET" });
     }
 
-    async function checkout(items, paymentProvider, customerEmail) {
+    async function createOrder(items, paymentProvider, customerEmail) {
         if (!Array.isArray(items) || items.length === 0) {
             throw new Error("Der Warenkorb ist leer.");
         }
@@ -52,7 +52,7 @@ const StoreAPI = (() => {
             throw new Error("Bitte geben Sie eine E-Mail-Adresse für die Rechnung an.");
         }
 
-        return await request("/checkout", {
+        return await request("/orders", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -66,6 +66,6 @@ const StoreAPI = (() => {
     return Object.freeze({
         getFeaturedProducts,
         getPaymentProviders,
-        checkout
+        createOrder
     });
 })();

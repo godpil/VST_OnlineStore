@@ -46,10 +46,17 @@ public class Program {
         // Öffentliche REST-Schnittstelle. Nur der ShopService kennt die
         // darunterliegenden fachlichen Microservices.
         app.MapGet(
-            "/api/products/featured",
+            "/api/products",
             async (
+                bool featured,
                 WarehouseContracts.WarehouseCatalog.WarehouseCatalogClient warehouse,
                 CancellationToken cancellationToken) => {
+
+                if (!featured) {
+                    return Results.BadRequest(new {
+                        message = "Der Produktfilter 'featured=true' ist erforderlich."
+                    });
+                }
 
                 try {
                     var response = await warehouse.GetFeaturedProductsAsync(
@@ -93,20 +100,35 @@ public class Program {
             });
 
         app.MapPost(
-            "/api/checkout",
+            "/api/orders",
             async (
                 CheckoutRequest request,
+                HttpContext httpContext,
                 CheckoutOrchestrator orchestrator,
                 CancellationToken cancellationToken) => {
 
-                var outcome = await orchestrator.CheckoutAsync(request, cancellationToken);
+                if (!CorrelationId.TryGet(httpContext, out var orderId)) {
+                    throw new InvalidOperationException(
+                        "Für die Bestellung wurde keine Correlation-ID erzeugt.");
+                }
+
+                var outcome = await orchestrator.CheckoutAsync(
+                    request,
+                    orderId,
+                    cancellationToken);
+                if (outcome.Response.Success) {
+                    return Results.Json(
+                        outcome.Response,
+                        statusCode: StatusCodes.Status201Created);
+                }
+
                 return Results.Json(outcome.Response, statusCode: outcome.StatusCode);
             });
 
         // Belegt die zentrale Steuerung aller fachlichen Services und dient
         // gleichzeitig als Diagnose-Endpunkt für den Vertical Slice.
         app.MapGet(
-            "/api/services/status",
+            "/api/service-statuses",
             async (ServiceStatusOrchestrator orchestrator, CancellationToken cancellationToken) => {
                 try {
                     return Results.Ok(await orchestrator.GetStatusAsync(cancellationToken));

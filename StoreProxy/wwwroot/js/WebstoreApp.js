@@ -336,7 +336,7 @@ async function checkoutCart() {
             productId,
             quantity
         }));
-        const result = await StoreAPI.checkout(
+        const result = await StoreAPI.createOrder(
             items,
             storeState.selectedPaymentProvider,
             storeState.customerEmail);

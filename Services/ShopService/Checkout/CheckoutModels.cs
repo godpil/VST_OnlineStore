@@ -9,6 +9,7 @@ public sealed record CheckoutItemRequest(string ProductId, int Quantity);
 
 public sealed record CheckoutResponse(
     bool Success,
+    string OrderId,
     string Message,
     decimal Total,
     string Currency,

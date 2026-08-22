@@ -10,7 +10,7 @@ internal static class AuditQueryEndpoints {
         this IEndpointRouteBuilder endpoints) {
 
         endpoints.MapGet(
-            "/audit/orders/{correlationId}",
+            "/api/order-audits/{correlationId}/snapshots",
             GetOrderAuditSnapshotsAsync);
 
         return endpoints;

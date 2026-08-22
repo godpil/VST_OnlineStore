@@ -164,7 +164,7 @@ StoreProxy leitet den Aufruf per YARP an den ShopService weiter; nur der
 ShopService fragt den AuditService intern per gRPC ab:
 
 ```text
-GET /audit/orders/{correlationId}
+GET /api/order-audits/{correlationId}/snapshots
 ```
 
 Eine unbekannte Correlation-ID liefert `200 OK` mit einem leeren JSON-Array;
@@ -181,14 +181,16 @@ orchestriert. Methoden, Gesamt-Timeouts und Limits sind wie folgt festgelegt:
 
 | Route | Methode | Timeout | Rate Limit pro Client |
 |---|---|---:|---:|
-| `/api/products/featured` | `GET` | 5 Sekunden | 120 pro Minute |
+| `/api/products?featured=true` | `GET` | 5 Sekunden | 120 pro Minute |
 | `/api/payment-providers` | `GET` | 5 Sekunden | 120 pro Minute |
-| `/api/checkout` | `POST` | 30 Sekunden | 10 pro Minute |
-| `/api/services/status` | `GET` | 5 Sekunden | 30 pro Minute |
-| `/audit/orders/{correlationId}` | `GET` | 5 Sekunden | 30 pro Minute |
+| `/api/orders` | `POST` | 30 Sekunden | 10 pro Minute |
+| `/api/service-statuses` | `GET` | 5 Sekunden | 30 pro Minute |
+| `/api/order-audits/{correlationId}/snapshots` | `GET` | 5 Sekunden | 30 pro Minute |
 | `/api/invoices/{invoiceId}/pdf` | `GET` | 12 Sekunden | 30 pro Minute |
 
-Der Checkout-Request darf höchstens 65.536 Bytes groß sein. Überschreitungen
+Der Request zum Erstellen einer Bestellung darf höchstens 65.536 Bytes groß
+sein. Erfolgreiche Bestellungen liefern `201 Created`; ihre `orderId` entspricht
+der durchgängig propagierten Correlation-ID. Überschreitungen
 werden als JSON mit HTTP 413 beantwortet; Rate-Limit-Verletzungen liefern HTTP
 429 und einen `Retry-After`-Header. Automatische Wiederholungen des Checkouts
 sind wegen der möglichen Zahlungswirkung bewusst nicht aktiviert.

@@ -3,6 +3,7 @@ using AuditService.Application.Ports;
 using AuditService.GrpcServices;
 using AuditService.Messaging;
 using AuditService.Storage;
+using Microsoft.EntityFrameworkCore;
 using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
 
@@ -14,21 +15,14 @@ builder.Services.AddVstOpenTelemetry(
     "AuditService");
 builder.Services.Configure<RabbitMqAuditOptions>(
     builder.Configuration.GetSection(RabbitMqAuditOptions.SectionName));
-builder.Services.AddSingleton<JsonAuditSnapshotRepository>(services => {
-    var configuredPath = builder.Configuration["AuditData:FilePath"]
-        ?? "Data/audit-snapshots.json";
-    var dataFilePath = Path.IsPathRooted(configuredPath)
-        ? configuredPath
-        : Path.GetFullPath(Path.Combine(
-            builder.Environment.ContentRootPath,
-            configuredPath));
-
-    return new JsonAuditSnapshotRepository(
-        dataFilePath,
-        services.GetRequiredService<IStructuredLogger>());
-});
-builder.Services.AddSingleton<IAuditSnapshotRepository>(services =>
-    services.GetRequiredService<JsonAuditSnapshotRepository>());
+var auditConnectionString = builder.Configuration.GetConnectionString("AuditDatabase")
+    ?? throw new InvalidOperationException(
+        "Die Connection-String-Konfiguration 'AuditDatabase' fehlt.");
+builder.Services.AddPooledDbContextFactory<AuditDbContext>(options =>
+    options.UseNpgsql(auditConnectionString));
+builder.Services.AddSingleton<IAuditSnapshotRepository,
+    PostgreSqlAuditSnapshotRepository>();
+builder.Services.AddSingleton<AuditDatabaseInitializer>();
 builder.Services.AddSingleton<AuditApplicationService>();
 builder.Services.AddHostedService<RabbitMqAuditEventConsumer>();
 
@@ -38,8 +32,8 @@ app.UseCorrelationId();
 app.UseStructuredRequestLogging();
 
 await app.Services
-    .GetRequiredService<JsonAuditSnapshotRepository>()
-    .ReadFromDiskAsync();
+    .GetRequiredService<AuditDatabaseInitializer>()
+    .InitializeAsync();
 
 app.MapGrpcService<AuditOperationsGrpcService>();
 app.MapGet("/", () => "AuditService gRPC endpoint");

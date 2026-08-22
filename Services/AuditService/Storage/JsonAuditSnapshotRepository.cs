@@ -7,9 +7,8 @@ using VstOnlineStore.Observability;
 namespace AuditService.Storage;
 
 /// <summary>
-/// Simuliert eine append-only Datenbanktabelle als JSON-Datei. Jeder Schreibzugriff
-/// erzeugt zunächst eine vollständige temporäre Datei und ersetzt erst danach den
-/// sichtbaren Datenbestand.
+/// Legacy-Adapter für die frühere JSON-Persistenz und lokale Datenübernahmen.
+/// Die aktive Laufzeitpersistenz erfolgt über PostgreSQL.
 /// </summary>
 public sealed class JsonAuditSnapshotRepository(
     string dataFilePath,
@@ -44,7 +43,7 @@ public sealed class JsonAuditSnapshotRepository(
                 JsonOptions,
                 cancellationToken) ?? [];
 
-            ValidateSnapshots(snapshots);
+            AuditSnapshotValidator.Validate(snapshots);
             _snapshots.Clear();
             _snapshots.AddRange(snapshots.OrderBy(snapshot => snapshot.SequenceNumber));
 
@@ -147,46 +146,4 @@ public sealed class JsonAuditSnapshotRepository(
         File.Move(temporaryFilePath, dataFilePath, overwrite: true);
     }
 
-    private static void ValidateSnapshots(
-        IReadOnlyCollection<AuditSnapshot> snapshots) {
-
-        if (snapshots.Any(snapshot =>
-                snapshot.EventId == Guid.Empty
-                || snapshot.CorrelationId == Guid.Empty
-                || snapshot.Timestamp.Kind != DateTimeKind.Utc
-                || snapshot.SequenceNumber <= 0
-                || string.IsNullOrWhiteSpace(snapshot.ResponsibleService)
-                || string.IsNullOrWhiteSpace(snapshot.Actor)
-                || snapshot.Payload.ValueKind == JsonValueKind.Undefined)) {
-            throw new InvalidDataException(
-                "Die Audit-Datei enthält mindestens einen ungültigen Snapshot.");
-        }
-
-        if (snapshots.Select(snapshot => snapshot.EventId).Distinct().Count() != snapshots.Count
-            || snapshots.Select(snapshot => snapshot.SequenceNumber).Distinct().Count() != snapshots.Count) {
-            throw new InvalidDataException(
-                "Event-IDs und Sequenznummern der Audit-Datei müssen eindeutig sein.");
-        }
-
-        var orderedSnapshots = snapshots
-            .OrderBy(snapshot => snapshot.SequenceNumber)
-            .ToArray();
-        var previousByCorrelation = new Dictionary<Guid, Guid>();
-
-        foreach (var snapshot in orderedSnapshots) {
-            previousByCorrelation.TryGetValue(
-                snapshot.CorrelationId,
-                out var expectedPreviousEventId);
-            var expected = expectedPreviousEventId == Guid.Empty
-                ? (Guid?)null
-                : expectedPreviousEventId;
-
-            if (snapshot.PreviousEventId != expected) {
-                throw new InvalidDataException(
-                    $"Die Ereigniskette für Correlation-ID {snapshot.CorrelationId:D} ist ungültig.");
-            }
-
-            previousByCorrelation[snapshot.CorrelationId] = snapshot.EventId;
-        }
-    }
 }

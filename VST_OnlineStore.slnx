@@ -27,10 +27,5 @@
   <Folder Name="/Shared/">
     <Project Path="Shared/VstOnlineStore.Observability/VstOnlineStore.Observability.csproj" />
   </Folder>
-  <Folder Name="/Tutorials &amp; HowTo/">
-    <Project Path="GRPCTester/GRPCTester.csproj" Id="cbbc539e-a309-469d-9b82-465c3f059e47" />
-    <Project Path="PilService/PilService.csproj" Id="6899d698-94e0-4126-8ae6-ad74f396e68b" />
-  </Folder>
   <Project Path="StoreProxy/StoreProxy.csproj" Id="53efa80c-516a-48ca-9101-009a39aa8a8b" />
-  <Project Path="Tools/Tools.csproj" />
 </Solution>

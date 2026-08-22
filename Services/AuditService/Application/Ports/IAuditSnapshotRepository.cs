@@ -3,8 +3,8 @@ using AuditService.Domain;
 namespace AuditService.Application.Ports;
 
 /// <summary>
-/// Persistenzport für unveränderliche Audit-Snapshots. Der aktuelle
-/// JSON-Adapter und ein späterer Entity-Framework-Adapter implementieren
+/// Persistenzport für unveränderliche Audit-Snapshots. Der PostgreSQL-Adapter
+/// und der nur noch für Legacy-Importe vorhandene JSON-Adapter implementieren
 /// ausschließlich diese Schnittstelle.
 /// </summary>
 public interface IAuditSnapshotRepository {

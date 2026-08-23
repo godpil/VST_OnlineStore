@@ -11,6 +11,8 @@ builder.Services.AddGrpc();
 builder.Services.AddSingleton<IPaymentProvider, SimulatedPaymentProvider>();
 builder.Services.AddSingleton<IPaymentProvider, PayPalPaymentProvider>();
 builder.Services.AddSingleton<IPaymentProvider, StripePaymentProvider>();
+builder.Services.Configure<PaymentProviderOptions>(
+    builder.Configuration.GetSection(PaymentProviderOptions.SectionName));
 builder.Services.AddSingleton<PaymentProviderResolver>();
 builder.Services.Configure<RabbitMqInvoiceOptions>(
     builder.Configuration.GetSection(RabbitMqInvoiceOptions.SectionName));

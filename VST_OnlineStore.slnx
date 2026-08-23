@@ -27,5 +27,9 @@
   <Folder Name="/Shared/">
     <Project Path="Shared/VstOnlineStore.Observability/VstOnlineStore.Observability.csproj" />
   </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/BillingService.UnitTests/BillingService.UnitTests.csproj" />
+    <Project Path="Tests/ShopService.IntegrationTests/ShopService.IntegrationTests.csproj" />
+  </Folder>
   <Project Path="StoreProxy/StoreProxy.csproj" Id="53efa80c-516a-48ca-9101-009a39aa8a8b" />
 </Solution>

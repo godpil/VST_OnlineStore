@@ -66,3 +66,13 @@ Ein verwalteter Einzelprozess wird so beendet:
 ```powershell
 .\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName ShopService
 ```
+
+## Integrationstests
+
+```powershell
+dotnet test .\Tests\ShopService.IntegrationTests\ShopService.IntegrationTests.csproj
+```
+
+Die Tests durchlaufen die öffentliche Bestellressource für den Happy Path,
+unzureichenden Bestand (`fail1`) und eine Zahlungsablehnung mit Freigabe der
+Bestandsreservierung (`fail2`).

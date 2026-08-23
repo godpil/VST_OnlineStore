@@ -21,6 +21,13 @@ Rechnungserstellung.
 Der Service veröffentlicht keine fachliche REST-API. Der Text-Endpunkt `/` ist
 nur eine einfache Prozessdiagnose.
 
+## Payment-Konfiguration
+
+Unter `PaymentProviders` bestimmen `DefaultProviderKey` und
+`TimeoutMilliseconds`, welcher Adapter bei fehlender Auswahl verwendet wird
+und wie lange die Provider-Fassade auf eine Antwort wartet. Standardmäßig wird
+`demo` mit einem Timeout von 5000 Millisekunden verwendet.
+
 ## Voraussetzungen
 
 - .NET 10 SDK
@@ -54,3 +61,12 @@ werden; die Kopplung erfolgt über den Broker.
 ```powershell
 .\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName BillingService
 ```
+
+## Unit-Tests
+
+```powershell
+dotnet test .\Tests\BillingService.UnitTests\BillingService.UnitTests.csproj
+```
+
+Die Tests prüfen Erfolg, Ablehnung, einen Timeout für jeden der drei Anbieter
+und den konfigurationsgesteuerten Anbieterwechsel.

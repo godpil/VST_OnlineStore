@@ -19,9 +19,7 @@ public sealed class BillingOperationsGrpcService(
         PaymentRequest request,
         ServerCallContext context) {
 
-        var requestedProviderKey = string.IsNullOrWhiteSpace(request.PaymentProvider)
-            ? "demo"
-            : request.PaymentProvider.Trim();
+        var requestedProviderKey = request.PaymentProvider.Trim();
 
         if (!paymentProviders.TryResolve(requestedProviderKey, out var paymentProvider)) {
             const string message = "Der ausgewählte Zahlungsanbieter ist nicht verfügbar.";
@@ -99,7 +97,8 @@ public sealed class BillingOperationsGrpcService(
 
         PaymentProviderResult result;
         try {
-            result = await paymentProvider.ChargeAsync(
+            result = await paymentProviders.ChargeAsync(
+                paymentProvider,
                 request.AmountInCents,
                 request.Currency,
                 request.PaymentMethod,

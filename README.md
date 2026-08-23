@@ -58,6 +58,16 @@ und sorgt für die Verwaltung des gesamten Stacks oder einzelner Komponenten:
 .\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName AuditService
 .\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName PostgreSQL
 
+# PostgreSQL unabhängig vom restlichen Store verwalten
+.\Start-VSTPostgreSQL.ps1 -Action Start
+.\Start-VSTPostgreSQL.ps1 -Action Status
+.\Start-VSTPostgreSQL.ps1 -Action Stop
+
+# OpenTelemetry Collector unabhängig verwalten
+.\Start-VSTOpenTelemetryCollector.ps1 -Action Start
+.\Start-VSTOpenTelemetryCollector.ps1 -Action Status
+.\Start-VSTOpenTelemetryCollector.ps1 -Action Stop
+
 # Alle bekannten Datei- und Logsenken anzeigen
 .\Start-VSTOnlineStore.ps1 -Action FileSinks
 ```
@@ -113,11 +123,13 @@ PostgreSQL
 ----------
 
 Der AuditService ist der einzige Service mit relationaler Persistenz. Das
-Betriebsskript lädt beim ersten Start PostgreSQL 18.6 als gepinntes
-Windows-Binärarchiv von EDB, prüft dessen SHA-256-Prüfsumme und initialisiert
-einen ausschließlich lokal erreichbaren Cluster auf `127.0.0.1:6688`. Binaries
-und Daten liegen getrennt unter `Tools/PostgreSQL/18.6-1` beziehungsweise
-`Data/PostgreSQL/18` und werden nicht in Git aufgenommen.
+eigenständige Skript `Start-VSTPostgreSQL.ps1` lädt beim ersten Start PostgreSQL
+18.6 als gepinntes Windows-Binärarchiv von EDB, prüft dessen
+SHA-256-Prüfsumme und initialisiert einen ausschließlich lokal erreichbaren
+Cluster auf `127.0.0.1:6688`. Binaries und Daten liegen getrennt unter
+`Tools/PostgreSQL/18.6-1` beziehungsweise `Data/PostgreSQL/18` und werden nicht
+in Git aufgenommen. `Start-VSTOnlineStore.ps1` bindet diese Verwaltung ein und
+koordiniert sie beim Gesamtstart und beim Beenden des Stacks.
 
 Die Datenbank `vst_audit` wird automatisch erstellt. Beim Beenden des Stacks
 wird PostgreSQL zuletzt und kontrolliert im Fast-Modus heruntergefahren, sodass
@@ -155,12 +167,14 @@ Datei nach dem Muster
 vorherigen 13 Tage werden behalten; ältere Tagesdateien werden beim Start oder
 beim nächsten Tageswechsel entfernt.
 
-`Start-VSTOnlineStore.ps1` startet standardmäßig den nativen OpenTelemetry
-Collector für Windows. Beim ersten Start wird die gepinnte Version aus den
-offiziellen OpenTelemetry-Releases geladen und über die veröffentlichte
-SHA-256-Prüfsumme verifiziert. Alle ASP.NET- und gRPC-Komponenten exportieren ihre
-strukturierten Einträge zusätzlich per OTLP/gRPC. Die technische OTLP-Datei des
-Collectors liegt unter `Logs/OpenTelemetry/vst-online-store.jsonl`.
+Das eigenständige Skript `Start-VSTOpenTelemetryCollector.ps1` verwaltet den
+nativen OpenTelemetry Collector für Windows. Beim ersten Start wird die gepinnte
+Version aus den offiziellen OpenTelemetry-Releases geladen und über die
+veröffentlichte SHA-256-Prüfsumme verifiziert. `Start-VSTOnlineStore.ps1` bindet
+diese Verwaltung beim Gesamtstart ein. Alle ASP.NET- und gRPC-Komponenten
+exportieren ihre strukturierten Einträge zusätzlich per OTLP/gRPC. Die technische
+OTLP-Datei des Collectors liegt unter
+`Logs/OpenTelemetry/vst-online-store.jsonl`.
 
 Jeder eingehende Aufruf erzeugt einen strukturierten Abschluss-Eintrag. Die
 über `X-Correlation-ID` propagierte GUID steht im JSON-Feld `correlationID` und

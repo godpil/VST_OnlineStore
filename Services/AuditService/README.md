@@ -39,18 +39,19 @@ einfache Prozessdiagnose.
 - freier TCP-Port `6686`
 - optional der vom Betriebsskript verwaltete OpenTelemetry Collector
 
-Das Betriebsskript lädt PostgreSQL 18.6 beim ersten Start als geprüftes
-Windows-Binärarchiv herunter, initialisiert einen projektlokalen Datencluster
-unter `Data/PostgreSQL/18` und erstellt die Datenbank automatisch. Der Cluster
-akzeptiert ausschließlich Verbindungen über die lokale Adresse und ist für die
-Entwicklungs- und Demonstrationsumgebung bestimmt.
+Das eigenständige Skript `Start-VSTPostgreSQL.ps1` lädt PostgreSQL 18.6 beim
+ersten Start als geprüftes Windows-Binärarchiv herunter, initialisiert einen
+projektlokalen Datencluster unter `Data/PostgreSQL/18` und erstellt die
+Datenbank automatisch. Der Cluster akzeptiert ausschließlich Verbindungen über
+die lokale Adresse und ist für die Entwicklungs- und Demonstrationsumgebung
+bestimmt.
 
 ## Start
 
 Bevorzugter Einzelstart vom Repository-Wurzelverzeichnis:
 
 ```powershell
-.\Start-VSTOnlineStore.ps1 -Action StartService -ServiceName PostgreSQL
+.\Start-VSTPostgreSQL.ps1 -Action Start
 .\Start-VSTOnlineStore.ps1 -Action StartService -ServiceName AuditService
 ```
 
@@ -66,5 +67,5 @@ konsumiert neue Ereignisse, sobald diese über RabbitMQ eintreffen.
 
 ```powershell
 .\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName AuditService
-.\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName PostgreSQL
+.\Start-VSTPostgreSQL.ps1 -Action Stop
 ```

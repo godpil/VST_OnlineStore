@@ -1,0 +1,436 @@
+<#
+.SYNOPSIS
+    Installiert und verwaltet den projektlokalen PostgreSQL-Server.
+
+.DESCRIPTION
+    Laedt PostgreSQL beim ersten Start als geprueftes Windows-Binaerarchiv,
+    initialisiert den lokalen Datencluster und verwaltet die Datenbank
+    vst_audit auf Port 6688. Das Skript kann eigenstaendig ausgefuehrt oder
+    vom Startskript des OnlineStores eingebunden werden.
+
+.PARAMETER PostgreSqlAction
+    Start (Standard), Status oder Stop. Kann über den kurzen Parameternamen
+    -Action angegeben werden.
+
+.PARAMETER PostgreSqlHelp
+    Zeigt über -h oder -Help eine kompakte Uebersicht und Beispiele.
+
+.EXAMPLE
+    .\Start-VSTPostgreSQL.ps1
+
+.EXAMPLE
+    .\Start-VSTPostgreSQL.ps1 -Action Status
+
+.EXAMPLE
+    .\Start-VSTPostgreSQL.ps1 -Action Stop
+#>
+
+[CmdletBinding()]
+param(
+    [Alias("Action")]
+    [ValidateSet("Start", "Status", "Stop")]
+    [string]$PostgreSqlAction = "Start",
+
+    [Alias("h", "Help")]
+    [switch]$PostgreSqlHelp
+)
+
+$postgresProjectRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
+$postgresVersion = "18.6-1"
+$postgresMajorVersion = "18"
+$postgresArchiveName = "postgresql-$postgresVersion-windows-x64-binaries.zip"
+$postgresDownloadUrl = "https://get.enterprisedb.com/postgresql/$postgresArchiveName"
+$postgresArchiveSha256 = "fbe23da234ee31547bf8a36d29dfd81e82b849df2d2b78d2eecb43d360252f8c"
+$postgresInstallDirectory = Join-Path $postgresProjectRoot "Tools\PostgreSQL\$postgresVersion"
+$postgresBinDirectory = Join-Path $postgresInstallDirectory "bin"
+$postgresExecutablePath = Join-Path $postgresBinDirectory "postgres.exe"
+$postgresInitDbPath = Join-Path $postgresBinDirectory "initdb.exe"
+$postgresControlPath = Join-Path $postgresBinDirectory "pg_ctl.exe"
+$postgresPsqlPath = Join-Path $postgresBinDirectory "psql.exe"
+$postgresCreateDbPath = Join-Path $postgresBinDirectory "createdb.exe"
+$postgresDataDirectory = Join-Path $postgresProjectRoot "Data\PostgreSQL\$postgresMajorVersion"
+$postgresLogDirectory = Join-Path $postgresProjectRoot "Logs\PostgreSQL"
+$postgresLogPath = Join-Path $postgresLogDirectory "postgresql.log"
+$postgresControlOutputPath = Join-Path $postgresLogDirectory "pg_ctl.out.log"
+$postgresControlErrorPath = Join-Path $postgresLogDirectory "pg_ctl.err.log"
+$postgresPort = 6688
+$postgresDatabaseName = "vst_audit"
+
+function Write-PostgreSqlStep {
+    param([Parameter(Mandatory = $true)][string]$Message)
+
+    Write-Host "`n==> $Message" -ForegroundColor Cyan
+}
+
+function Show-PostgreSqlScriptHelp {
+    Write-Host @"
+Das Holzwerk - PostgreSQL-Verwaltung
+
+Syntax:
+  .\Start-VSTPostgreSQL.ps1 [-Action <Start|Status|Stop>] [-h]
+
+Konfiguration:
+  Version:    PostgreSQL $postgresVersion
+  Adresse:    localhost:$postgresPort
+  Datenbank:  $postgresDatabaseName
+  Daten:      $postgresDataDirectory
+  Log:        $postgresLogPath
+
+Beispiele:
+  .\Start-VSTPostgreSQL.ps1
+  .\Start-VSTPostgreSQL.ps1 -Action Status
+  .\Start-VSTPostgreSQL.ps1 -Action Stop
+"@
+}
+
+function Test-PostgreSqlTcpPort {
+    param(
+        [string]$HostName = "localhost",
+        [int]$Port = $postgresPort,
+        [int]$TimeoutMilliseconds = 400
+    )
+
+    $client = New-Object System.Net.Sockets.TcpClient
+    try {
+        $connection = $client.BeginConnect($HostName, $Port, $null, $null)
+        if (-not $connection.AsyncWaitHandle.WaitOne($TimeoutMilliseconds)) {
+            return $false
+        }
+
+        $client.EndConnect($connection)
+        return $true
+    }
+    catch {
+        return $false
+    }
+    finally {
+        $client.Dispose()
+    }
+}
+
+function Get-PostgreSqlProcess {
+    $postmasterPidPath = Join-Path $postgresDataDirectory "postmaster.pid"
+    if (-not (Test-Path -LiteralPath $postmasterPidPath)) {
+        return $null
+    }
+
+    $postmasterPidText = (Get-Content `
+        -LiteralPath $postmasterPidPath `
+        -TotalCount 1).Trim()
+    $postmasterPid = 0
+    if (-not [int]::TryParse($postmasterPidText, [ref]$postmasterPid)) {
+        return $null
+    }
+
+    $process = Get-Process -Id $postmasterPid -ErrorAction SilentlyContinue
+    if ($null -eq $process -or $process.ProcessName -ne "postgres") {
+        return $null
+    }
+
+    return $process
+}
+
+function Wait-PostgreSqlPort {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Diagnostics.Process]$Process,
+        [int]$TimeoutSeconds = 30
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    while ([DateTime]::UtcNow -lt $deadline) {
+        $Process.Refresh()
+        if ($Process.HasExited) {
+            throw "PostgreSQL wurde vorzeitig mit Exit-Code $($Process.ExitCode) beendet."
+        }
+
+        if (Test-PostgreSqlTcpPort) {
+            return
+        }
+
+        Start-Sleep -Milliseconds 250
+    }
+
+    throw "PostgreSQL ist nicht innerhalb von $TimeoutSeconds Sekunden auf Port $postgresPort gestartet."
+}
+
+function Install-PostgreSql {
+    $requiredTools = @(
+        $postgresExecutablePath,
+        $postgresInitDbPath,
+        $postgresControlPath,
+        $postgresPsqlPath,
+        $postgresCreateDbPath)
+    if (@($requiredTools | Where-Object { -not (Test-Path -LiteralPath $_) }).Count -eq 0) {
+        return
+    }
+
+    if (Test-Path -LiteralPath $postgresInstallDirectory) {
+        throw "Die PostgreSQL-Installation ist unvollstaendig: $postgresInstallDirectory"
+    }
+
+    Write-PostgreSqlStep "PostgreSQL $postgresVersion installieren"
+
+    $temporaryRoot = [System.IO.Path]::GetFullPath(
+        [System.IO.Path]::GetTempPath())
+    $temporaryDirectory = Join-Path `
+        $temporaryRoot `
+        ("vst-postgresql-" + [Guid]::NewGuid().ToString("N"))
+    $archivePath = Join-Path $temporaryDirectory $postgresArchiveName
+    $extractedDirectory = Join-Path $temporaryDirectory "extracted"
+    New-Item -ItemType Directory -Path $extractedDirectory -Force | Out-Null
+
+    try {
+        Invoke-WebRequest `
+            -Uri $postgresDownloadUrl `
+            -OutFile $archivePath `
+            -UseBasicParsing
+
+        $actualChecksum = (Get-FileHash `
+            -LiteralPath $archivePath `
+            -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actualChecksum -ne $postgresArchiveSha256) {
+            throw "Die SHA-256-Pruefsumme des PostgreSQL-Archivs ist ungueltig."
+        }
+
+        Expand-Archive `
+            -LiteralPath $archivePath `
+            -DestinationPath $extractedDirectory
+        $extractedPostgresDirectory = Join-Path $extractedDirectory "pgsql"
+        $extractedExecutable = Join-Path $extractedPostgresDirectory "bin\postgres.exe"
+        if (-not (Test-Path -LiteralPath $extractedExecutable)) {
+            throw "Das PostgreSQL-Archiv enthaelt keine postgres.exe."
+        }
+
+        $postgresInstallRoot = Split-Path -Parent $postgresInstallDirectory
+        New-Item -ItemType Directory -Path $postgresInstallRoot -Force | Out-Null
+        Move-Item `
+            -LiteralPath $extractedPostgresDirectory `
+            -Destination $postgresInstallDirectory
+    }
+    finally {
+        $resolvedTemporaryDirectory = [System.IO.Path]::GetFullPath(
+            $temporaryDirectory)
+        if ($resolvedTemporaryDirectory.StartsWith(
+                $temporaryRoot,
+                [StringComparison]::OrdinalIgnoreCase)) {
+            Remove-Item `
+                -LiteralPath $resolvedTemporaryDirectory `
+                -Recurse `
+                -Force `
+                -ErrorAction SilentlyContinue
+        }
+    }
+
+    Write-Host "Installiert: $postgresExecutablePath" -ForegroundColor Green
+}
+
+function Initialize-PostgreSqlCluster {
+    $versionFilePath = Join-Path $postgresDataDirectory "PG_VERSION"
+    if (Test-Path -LiteralPath $versionFilePath) {
+        $initializedMajorVersion = (Get-Content `
+            -LiteralPath $versionFilePath `
+            -Raw).Trim()
+        if ($initializedMajorVersion -ne $postgresMajorVersion) {
+            throw "Der PostgreSQL-Datencluster verwendet Version $initializedMajorVersion statt $postgresMajorVersion."
+        }
+        return
+    }
+
+    if (Test-Path -LiteralPath $postgresDataDirectory) {
+        $existingFiles = @(Get-ChildItem `
+            -LiteralPath $postgresDataDirectory `
+            -Force `
+            -ErrorAction SilentlyContinue)
+        if ($existingFiles.Count -gt 0) {
+            throw "Das PostgreSQL-Datenverzeichnis ist nicht leer und enthaelt keinen gueltigen Cluster: $postgresDataDirectory"
+        }
+    }
+
+    Write-PostgreSqlStep "Projektlokalen PostgreSQL-Cluster initialisieren"
+    New-Item `
+        -ItemType Directory `
+        -Path $postgresDataDirectory `
+        -Force | Out-Null
+
+    $initDbOutput = & $postgresInitDbPath `
+        "--pgdata=$postgresDataDirectory" `
+        "--username=postgres" `
+        "--encoding=UTF8" `
+        "--locale=C" `
+        "--auth-host=trust" `
+        "--auth-local=trust" 2>&1
+    $initDbExitCode = $LASTEXITCODE
+    $initDbOutput | ForEach-Object { Write-Host $_ }
+    if ($initDbExitCode -ne 0) {
+        throw "Der PostgreSQL-Datencluster konnte nicht initialisiert werden."
+    }
+}
+
+function Stop-PostgreSqlServer {
+    if (-not (Test-Path -LiteralPath $postgresControlPath) -or
+        -not (Test-Path -LiteralPath (Join-Path $postgresDataDirectory "PG_VERSION"))) {
+        return
+    }
+
+    $process = Get-PostgreSqlProcess
+    if ($null -eq $process) {
+        return
+    }
+
+    New-Item -ItemType Directory -Path $postgresLogDirectory -Force | Out-Null
+    $controlProcess = Start-Process `
+        -FilePath $postgresControlPath `
+        -ArgumentList @(
+            "stop",
+            "-D", ('"{0}"' -f $postgresDataDirectory),
+            "-m", "fast",
+            "-w",
+            "-t", "30") `
+        -WorkingDirectory $postgresProjectRoot `
+        -RedirectStandardOutput $postgresControlOutputPath `
+        -RedirectStandardError $postgresControlErrorPath `
+        -WindowStyle Hidden `
+        -PassThru
+    Wait-Process -Id $controlProcess.Id -Timeout 35 -ErrorAction Stop
+    $controlProcess.Refresh()
+    if ($controlProcess.ExitCode -ne 0) {
+        throw "PostgreSQL konnte nicht kontrolliert beendet werden."
+    }
+}
+
+function Start-PostgreSqlServer {
+    if (Test-PostgreSqlTcpPort) {
+        $existingProcess = Get-PostgreSqlProcess
+        if ($null -eq $existingProcess) {
+            throw "Port $postgresPort ist durch einen fremden Prozess belegt."
+        }
+
+        return [PSCustomObject]@{
+            Name = "PostgreSQL"
+            ProcessId = $existingProcess.Id
+            StartTimeUtc = $existingProcess.StartTime.ToUniversalTime().ToString("O")
+            Port = $postgresPort
+        }
+    }
+
+    Install-PostgreSql
+    Initialize-PostgreSqlCluster
+    New-Item -ItemType Directory -Path $postgresLogDirectory -Force | Out-Null
+
+    Write-PostgreSqlStep "PostgreSQL starten"
+    $controlProcess = Start-Process `
+        -FilePath $postgresControlPath `
+        -ArgumentList @(
+            "start",
+            "-D", ('"{0}"' -f $postgresDataDirectory),
+            "-l", ('"{0}"' -f $postgresLogPath),
+            "-o", ('"-h localhost -p {0}"' -f $postgresPort),
+            "-w",
+            "-t", "60") `
+        -WorkingDirectory $postgresProjectRoot `
+        -RedirectStandardOutput $postgresControlOutputPath `
+        -RedirectStandardError $postgresControlErrorPath `
+        -WindowStyle Hidden `
+        -PassThru
+    Wait-Process -Id $controlProcess.Id -Timeout 65 -ErrorAction Stop
+    $controlProcess.Refresh()
+    if ($controlProcess.ExitCode -ne 0) {
+        throw "PostgreSQL konnte nicht gestartet werden. Siehe $postgresLogPath"
+    }
+
+    try {
+        $databaseQuery = "SELECT 1 FROM pg_database WHERE datname = '$postgresDatabaseName';"
+        $databaseExists = & $postgresPsqlPath `
+            "--host=127.0.0.1" `
+            "--port=$postgresPort" `
+            "--username=postgres" `
+            "--dbname=postgres" `
+            "--tuples-only" `
+            "--no-align" `
+            "--set=ON_ERROR_STOP=1" `
+            "--command=$databaseQuery"
+        if ($LASTEXITCODE -ne 0) {
+            throw "Die PostgreSQL-Datenbanken konnten nicht abgefragt werden."
+        }
+
+        if (($databaseExists -join "").Trim() -ne "1") {
+            $createDbOutput = & $postgresCreateDbPath `
+                "--host=127.0.0.1" `
+                "--port=$postgresPort" `
+                "--username=postgres" `
+                "--encoding=UTF8" `
+                $postgresDatabaseName 2>&1
+            $createDbExitCode = $LASTEXITCODE
+            $createDbOutput | ForEach-Object { Write-Host $_ }
+            if ($createDbExitCode -ne 0) {
+                throw "Die PostgreSQL-Datenbank '$postgresDatabaseName' konnte nicht erstellt werden."
+            }
+        }
+
+        $process = Get-PostgreSqlProcess
+        if ($null -eq $process) {
+            throw "Die PostgreSQL-Prozess-ID ist ungueltig."
+        }
+
+        Wait-PostgreSqlPort -Process $process -TimeoutSeconds 30
+        Write-Host `
+            "Bereit: PostgreSQL auf Port $postgresPort, Datenbank $postgresDatabaseName" `
+            -ForegroundColor Green
+
+        return [PSCustomObject]@{
+            Name = "PostgreSQL"
+            ProcessId = $process.Id
+            StartTimeUtc = $process.StartTime.ToUniversalTime().ToString("O")
+            Port = $postgresPort
+        }
+    }
+    catch {
+        Stop-PostgreSqlServer
+        throw
+    }
+}
+
+function Show-PostgreSqlStatus {
+    $process = Get-PostgreSqlProcess
+    [PSCustomObject]@{
+        Component = "PostgreSQL"
+        Version = $postgresVersion
+        Port = $postgresPort
+        PortStatus = if (Test-PostgreSqlTcpPort) { "offen" } else { "geschlossen" }
+        ProcessId = if ($null -eq $process) { "-" } else { $process.Id }
+        Database = $postgresDatabaseName
+    } | Format-Table -AutoSize
+}
+
+if ($MyInvocation.InvocationName -eq ".") {
+    return
+}
+
+$ErrorActionPreference = "Stop"
+
+if ($PostgreSqlHelp) {
+    Show-PostgreSqlScriptHelp
+    return
+}
+
+switch ($PostgreSqlAction) {
+    "Start" {
+        $null = Start-PostgreSqlServer
+    }
+    "Status" {
+        Show-PostgreSqlStatus
+    }
+    "Stop" {
+        Write-PostgreSqlStep "PostgreSQL beenden"
+        $process = Get-PostgreSqlProcess
+        if ($null -eq $process) {
+            Write-Host "PostgreSQL laeuft nicht."
+            return
+        }
+
+        Write-Host "Stoppe PostgreSQL (PID $($process.Id)) ..."
+        Stop-PostgreSqlServer
+        Write-Host "PostgreSQL wurde kontrolliert beendet." -ForegroundColor Green
+    }
+}

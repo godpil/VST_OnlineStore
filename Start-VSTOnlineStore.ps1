@@ -98,7 +98,7 @@ $apiReadinessUrl = "http://localhost:6680/api/products?featured=true"
 $paymentProvidersReadinessUrl = "http://localhost:6680/api/payment-providers"
 $serviceStatusReadinessUrl = "http://localhost:6680/api/service-statuses"
 $auditReadinessUrl = "http://localhost:6680/api/order-audits/$([Guid]::NewGuid().ToString('D'))/snapshots"
-$browserUrl = "{0}?version=5&started={1}" -f `
+$browserUrl = "{0}?version=6&started={1}" -f `
     $websiteUrl.TrimEnd("/"), `
     [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 
@@ -444,20 +444,32 @@ function Stop-Application {
     Write-Step "Das Holzwerk beenden"
 
     $entries = @(Get-ManifestEntries)
-    $applicationEntries = @($entries | Where-Object { $_.Name -ne "PostgreSQL" })
+    $shutdownOrder = @(
+        "StoreProxy",
+        "ShopService",
+        "AuditService",
+        "InvoiceService",
+        "BillingService",
+        "WarehouseService",
+        "StoreBackend",
+        "OpenTelemetryCollector")
     $stoppedComponent = $false
-    if ($applicationEntries.Count -gt 0) {
-        [Array]::Reverse($applicationEntries)
-        foreach ($entry in $applicationEntries) {
-            if (-not (Test-ManifestProcess -Entry $entry)) {
-                Write-Host "Uebersprungen: $($entry.Name) laeuft nicht mehr."
-                continue
-            }
-
-            Write-Host "Stoppe $($entry.Name) (PID $($entry.ProcessId)) ..."
-            Stop-ManagedEntry -Entry $entry
-            $stoppedComponent = $true
+    foreach ($componentName in $shutdownOrder) {
+        $entry = $entries |
+            Where-Object { $_.Name -eq $componentName } |
+            Select-Object -First 1
+        if ($null -eq $entry) {
+            continue
         }
+
+        if (-not (Test-ManifestProcess -Entry $entry)) {
+            Write-Host "Uebersprungen: $($entry.Name) laeuft nicht mehr."
+            continue
+        }
+
+        Write-Host "Stoppe $($entry.Name) (PID $($entry.ProcessId)) ..."
+        Stop-ManagedEntry -Entry $entry
+        $stoppedComponent = $true
     }
 
     # PostgreSQL wird bewusst unabhaengig vom allgemeinen Prozessmanifest

@@ -3,7 +3,14 @@
     <Project Path="StoreBackend/StoreBackend.csproj" Id="1c1bbb07-fd76-4b60-b120-e222718078ad" />
   </Folder>
   <Folder Name="/Dokumentation/">
-    <File Path="Dokumentation/HappyPath.drawio" />
+    <File Path="docs/architecture.md" />
+    <File Path="docs/diagrams/README.md" />
+    <File Path="docs/diagrams/online-store-architecture.drawio" />
+    <File Path="docs/diagrams/system-context.svg" />
+    <File Path="docs/diagrams/component-diagram.svg" />
+    <File Path="docs/diagrams/sequence-happy-path.svg" />
+    <File Path="docs/diagrams/sequence-fail1.svg" />
+    <File Path="docs/diagrams/sequence-fail2.svg" />
   </Folder>
   <Folder Name="/Frontend/" />
   <Folder Name="/Frontend/Website/">

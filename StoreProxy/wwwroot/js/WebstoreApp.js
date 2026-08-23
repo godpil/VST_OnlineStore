@@ -6,8 +6,13 @@ const storeState = {
     paymentProviders: [],
     selectedPaymentProvider: null,
     customerEmail: "",
-    isCheckingOut: false
+    isCheckingOut: false,
+    readinessKnown: false,
+    isOperational: false,
+    serviceStatuses: []
 };
+
+let serviceStatusTimer;
 
 document.addEventListener("DOMContentLoaded", initializeStore);
 
@@ -16,6 +21,16 @@ async function initializeStore() {
     document.getElementById("close-cart")?.addEventListener("click", closeCart);
     document.getElementById("cart-overlay")?.addEventListener("click", closeCart);
     document.getElementById("checkout-button")?.addEventListener("click", checkoutCart);
+    document.getElementById("retry-service-status")?.addEventListener("click", async event => {
+        const retryButton = event.currentTarget;
+        retryButton.disabled = true;
+        try {
+            await refreshServiceReadiness(true);
+        }
+        finally {
+            retryButton.disabled = false;
+        }
+    });
     document.getElementById("customer-email")?.addEventListener("input", event => {
         storeState.customerEmail = event.target.value;
         renderCart();
@@ -25,12 +40,101 @@ async function initializeStore() {
             closeCart();
         }
     });
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            void refreshServiceReadiness(true);
+        }
+    });
+    window.addEventListener("online", () => void refreshServiceReadiness(true));
 
     renderCart();
+    const operational = await refreshServiceReadiness(false);
+    if (operational) {
+        await loadStoreData();
+    }
+    scheduleServiceStatusCheck();
+}
+
+async function loadStoreData() {
     await Promise.all([
         loadFeaturedProducts(),
         loadPaymentProviders()
     ]);
+}
+
+function scheduleServiceStatusCheck() {
+    window.clearTimeout(serviceStatusTimer);
+    serviceStatusTimer = window.setTimeout(async () => {
+        await refreshServiceReadiness(true);
+        scheduleServiceStatusCheck();
+    }, 5000);
+}
+
+async function refreshServiceReadiness(reloadOnRecovery) {
+    const wasOperational = storeState.isOperational;
+    try {
+        const statuses = await StoreAPI.getServiceStatuses();
+        const normalizedStatuses = Array.isArray(statuses) ? statuses : [];
+        const operational = normalizedStatuses.length > 0 &&
+            normalizedStatuses.every(status => status.available === true);
+        applyServiceReadiness(operational, normalizedStatuses, null);
+
+        if (reloadOnRecovery && !wasOperational && operational) {
+            await loadStoreData();
+            showStoreMessage("Der Shop ist wieder betriebsbereit.");
+        }
+        return operational;
+    }
+    catch (error) {
+        console.error("Fehler bei der Betriebszustandsprüfung:", error);
+        applyServiceReadiness(false, error.serviceStatuses ?? [], error);
+        return false;
+    }
+}
+
+function applyServiceReadiness(operational, statuses, error) {
+    storeState.readinessKnown = true;
+    storeState.isOperational = operational;
+    storeState.serviceStatuses = Array.isArray(statuses) ? statuses : [];
+
+    const banner = document.getElementById("service-status-banner");
+    const details = document.getElementById("service-status-details");
+    if (banner) {
+        banner.hidden = operational;
+    }
+    if (details) {
+        details.textContent = operational
+            ? ""
+            : createServiceFailureMessage(storeState.serviceStatuses, error);
+    }
+
+    document.body.classList.toggle("shop-unavailable", !operational);
+    renderProducts();
+    renderPaymentProviders();
+    renderCart();
+}
+
+function createServiceFailureMessage(statuses, error) {
+    const unavailable = statuses.filter(status => status.available !== true);
+    if (unavailable.length > 0) {
+        const serviceDescriptions = unavailable.map(status => {
+            const reason = status.failureKind === "TIMEOUT"
+                ? "Zeitüberschreitung"
+                : "nicht erreichbar";
+            return `${status.service}: ${reason}`;
+        });
+        return `Betroffen: ${serviceDescriptions.join(" · ")}`;
+    }
+
+    return error?.status === 504
+        ? "Die Betriebszustandsprüfung hat nicht rechtzeitig geantwortet."
+        : "Der Betriebszustand der erforderlichen Services konnte nicht bestätigt werden.";
+}
+
+function handleOperationalRequestFailure(error) {
+    if (Number(error?.status) >= 500) {
+        applyServiceReadiness(false, error.serviceStatuses ?? [], error);
+    }
 }
 
 async function loadFeaturedProducts() {
@@ -48,6 +152,7 @@ async function loadFeaturedProducts() {
     }
     catch (error) {
         console.error("Fehler beim Laden der Produkte:", error);
+        handleOperationalRequestFailure(error);
         container.textContent = "Produkte konnten nicht geladen werden.";
     }
 }
@@ -68,6 +173,7 @@ async function loadPaymentProviders() {
     }
     catch (error) {
         console.error("Fehler beim Laden der Zahlungsanbieter:", error);
+        handleOperationalRequestFailure(error);
         storeState.paymentProviders = [];
         storeState.selectedPaymentProvider = null;
         showPaymentProviderError("Zahlungsanbieter konnten nicht geladen werden.");
@@ -142,7 +248,7 @@ function createPaymentProviderOption(provider) {
     input.name = "payment-provider";
     input.value = provider.key;
     input.checked = provider.key === storeState.selectedPaymentProvider;
-    input.disabled = storeState.isCheckingOut;
+    input.disabled = storeState.isCheckingOut || !storeState.isOperational;
     input.addEventListener("change", () => {
         if (input.checked) {
             storeState.selectedPaymentProvider = provider.key;
@@ -179,11 +285,22 @@ function renderProducts() {
     }
 
     for (const product of storeState.products) {
-        container.appendChild(createProductCard(product, addProductToCart));
+        const card = createProductCard(product, addProductToCart);
+        const buyButton = card.querySelector(".buy-button");
+        if (buyButton && !storeState.isOperational) {
+            buyButton.disabled = true;
+            buyButton.textContent = "Shop nicht verfügbar";
+        }
+        container.appendChild(card);
     }
 }
 
 function addProductToCart(product) {
+    if (!storeState.isOperational) {
+        showStoreMessage("Der Shop ist derzeit nicht betriebsbereit.");
+        return;
+    }
+
     const currentQuantity = storeState.cart.get(product.id) ?? 0;
     if (currentQuantity >= product.availableQuantity) {
         showStoreMessage(`Von ${product.name} ist keine weitere Menge verfügbar.`);
@@ -249,11 +366,14 @@ function renderCart() {
     countElement.setAttribute("aria-label", `${itemCount} Artikel`);
     checkoutButton.disabled = itemCount === 0 || storeState.isCheckingOut;
     checkoutButton.disabled ||= storeState.selectedPaymentProvider === null;
+    checkoutButton.disabled ||= !storeState.readinessKnown || !storeState.isOperational;
     const customerEmailInput = document.getElementById("customer-email");
     checkoutButton.disabled ||= !customerEmailInput?.checkValidity();
-    checkoutButton.textContent = storeState.isCheckingOut ? "Zahlung läuft..." : "Bezahlen";
+    checkoutButton.textContent = storeState.isCheckingOut
+        ? "Zahlung läuft..."
+        : storeState.isOperational ? "Bezahlen" : "Shop nicht verfügbar";
     for (const option of document.querySelectorAll('input[name="payment-provider"]')) {
-        option.disabled = storeState.isCheckingOut;
+        option.disabled = storeState.isCheckingOut || !storeState.isOperational;
     }
 }
 
@@ -282,7 +402,8 @@ function createCartItem(product, quantity) {
     const plusButton = createQuantityButton("+", `Ein ${product.name} hinzufügen`, () => {
         changeCartQuantity(product.id, 1);
     });
-    plusButton.disabled = quantity >= product.availableQuantity;
+    minusButton.disabled = !storeState.isOperational;
+    plusButton.disabled = !storeState.isOperational || quantity >= product.availableQuantity;
     quantityControl.append(minusButton, quantityText, plusButton);
 
     const removeButton = document.createElement("button");
@@ -310,6 +431,13 @@ function createQuantityButton(label, ariaLabel, onClick) {
 
 async function checkoutCart() {
     if (storeState.cart.size === 0 || storeState.isCheckingOut) {
+        return;
+    }
+
+    if (!storeState.isOperational) {
+        showCartMessage(
+            "Der Shop ist derzeit nicht betriebsbereit. Es kann keine Bestellung gestartet werden.",
+            "error");
         return;
     }
 
@@ -358,8 +486,12 @@ async function checkoutCart() {
     catch (error) {
         invoiceWindow?.close();
         console.error("Fehler beim Bezahlen:", error);
+        handleOperationalRequestFailure(error);
         showCartMessage(error.message ?? "Der Kauf konnte nicht abgeschlossen werden.", "error");
-        await loadFeaturedProducts();
+        await refreshServiceReadiness(false);
+        if (storeState.isOperational) {
+            await loadFeaturedProducts();
+        }
     }
     finally {
         storeState.isCheckingOut = false;

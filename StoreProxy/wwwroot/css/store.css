@@ -59,6 +59,56 @@ header {
     border-bottom: 1px solid rgba(255, 255, 255, 0.14);
 }
 
+.service-status-banner {
+    position: sticky;
+    z-index: 15;
+    top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    padding: 18px 40px;
+    color: #fff;
+    background: #8b2525;
+    border-bottom: 3px solid #5f1515;
+    box-shadow: 0 8px 22px rgba(58, 12, 12, 0.28);
+}
+
+.service-status-banner[hidden] {
+    display: none;
+}
+
+.service-status-banner strong {
+    font-size: 18px;
+}
+
+.service-status-banner p {
+    margin: 4px 0 0;
+    line-height: 1.4;
+}
+
+.service-status-details {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.service-status-banner button {
+    flex: 0 0 auto;
+    color: #5f1515;
+    background: #fff;
+    font-weight: 750;
+}
+
+.service-status-banner button:hover:not(:disabled) {
+    color: #fff;
+    background: #5f1515;
+}
+
+body.shop-unavailable .hero,
+body.shop-unavailable main {
+    filter: grayscale(0.3);
+}
+
 .logo {
     font-size: 24px;
     font-weight: 750;
@@ -635,6 +685,13 @@ footer {
 @media (max-width: 760px) {
     header {
         flex-wrap: wrap;
+        padding: 16px 20px;
+    }
+
+    .service-status-banner {
+        position: static;
+        align-items: stretch;
+        flex-direction: column;
         padding: 16px 20px;
     }
 

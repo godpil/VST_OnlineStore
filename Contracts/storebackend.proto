@@ -9,6 +9,7 @@ service WarehouseStorage {
   rpc GetProducts (BackendProductsRequest) returns (BackendProductsResponse);
   rpc ReserveProducts (BackendProductQuantitiesRequest) returns (BackendStockChangeResponse);
   rpc ReleaseProducts (BackendProductQuantitiesRequest) returns (BackendStockChangeResponse);
+  rpc GetStatus (BackendStatusRequest) returns (BackendStatusResponse);
 }
 
 message BackendProductsRequest {}
@@ -39,6 +40,13 @@ message BackendStockChangeResponse {
   bool success = 1;
   repeated BackendProductStock products = 2;
   string message = 3;
+}
+
+message BackendStatusRequest {}
+
+message BackendStatusResponse {
+  bool available = 1;
+  string service = 2;
 }
 
 message BackendProductStock {

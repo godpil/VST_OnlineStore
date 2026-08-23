@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#4a3325">
     <title>Das Holzwerk</title>
-    <link rel="stylesheet" href="css/store.css?v=5">
+    <link rel="stylesheet" href="css/store.css?v=6">
 </head>
 
 <body>
@@ -26,6 +26,17 @@
             <span id="cart-count" class="cart-count" aria-label="0 Artikel">0</span>
         </button>
     </header>
+
+    <section id="service-status-banner" class="service-status-banner" role="alert" aria-live="assertive" hidden>
+        <div>
+            <strong>Der Shop ist derzeit nicht betriebsbereit.</strong>
+            <p>
+                Mindestens ein erforderlicher Service antwortet nicht. Bestellungen sind vorübergehend deaktiviert.
+            </p>
+            <p id="service-status-details" class="service-status-details"></p>
+        </div>
+        <button id="retry-service-status" type="button">Erneut prüfen</button>
+    </section>
 
     <section class="hero">
         <div class="hero-content">
@@ -116,9 +127,9 @@
 
     <div id="store-message" class="store-message" role="status" aria-live="polite"></div>
 
-    <script src="js/StoreAPI.js?v=5"></script>
-    <script src="js/productCard.js?v=5"></script>
-    <script src="js/WebstoreApp.js?v=5"></script>
+    <script src="js/StoreAPI.js?v=6"></script>
+    <script src="js/productCard.js?v=6"></script>
+    <script src="js/WebstoreApp.js?v=6"></script>
 </body>
 
 </html>

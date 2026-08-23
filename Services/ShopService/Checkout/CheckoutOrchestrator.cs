@@ -33,6 +33,57 @@ public sealed class CheckoutOrchestrator(
             request.Items ?? [],
             requestedPaymentProvider,
             GetRecipientDomain(customerEmail));
+
+        try {
+            return await CheckoutCoreAsync(
+                request,
+                requestedPaymentProvider,
+                customerEmail,
+                auditState,
+                cancellationToken);
+        }
+        catch (Exception exception)
+            when (IsRequestCancellation(exception, cancellationToken)) {
+            TryLogCancellation(exception, auditState);
+            await CompensateUnexpectedReservationAsync(auditState);
+
+            auditState.Phase = "ORDER_CANCELLED";
+            auditState.FailureReason = "Der Bestellvorgang wurde abgebrochen.";
+            auditState.Message = auditState.FailureReason;
+            await RecordAuditAsync(
+                AuditEventType.ORDER_COMPLETED,
+                "ShopService",
+                "ShopService",
+                AuditStatusCode.FAILURE,
+                auditState,
+                CancellationToken.None);
+            throw;
+        }
+        catch (Exception exception) {
+            TryLogUnexpectedError(exception, auditState);
+            await CompensateUnexpectedReservationAsync(auditState);
+
+            auditState.Phase = "ORDER_UNEXPECTED_ERROR";
+            auditState.FailureReason = "Der Bestellvorgang ist aufgrund eines unerwarteten Fehlers fehlgeschlagen.";
+            auditState.Message = auditState.FailureReason;
+            await RecordAuditAsync(
+                AuditEventType.ORDER_COMPLETED,
+                "ShopService",
+                "ShopService",
+                AuditStatusCode.FAILURE,
+                auditState,
+                CancellationToken.None);
+            throw;
+        }
+    }
+
+    private async Task<CheckoutOutcome> CheckoutCoreAsync(
+        CheckoutRequest request,
+        string? requestedPaymentProvider,
+        string? customerEmail,
+        OrderAuditState auditState,
+        CancellationToken cancellationToken) {
+
         await RecordAuditAsync(
             AuditEventType.ORDER_STARTED,
             "ShopService",
@@ -111,9 +162,11 @@ public sealed class CheckoutOrchestrator(
                     cancellationToken);
             }
         }
-        catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable) {
+        catch (RpcException exception)
+            when (!IsRequestCancellation(exception, cancellationToken)) {
+            var failure = GetDownstreamFailure("BillingService", exception);
             auditState.Phase = "PAYMENT_PROVIDER_LOOKUP_FAILED";
-            auditState.FailureReason = "Der BillingService ist nicht erreichbar.";
+            auditState.FailureReason = failure.Message;
             auditState.Message = auditState.FailureReason;
             await RecordAuditAsync(
                 AuditEventType.PAYMENT,
@@ -122,10 +175,14 @@ public sealed class CheckoutOrchestrator(
                 AuditStatusCode.FAILURE,
                 auditState,
                 cancellationToken);
-            TryLogWarning(exception, requestedPaymentProvider ?? string.Empty);
+            TryLogDownstreamError(
+                exception,
+                "BillingService",
+                "ListPaymentProviders",
+                auditState);
             return await CompleteWithFailureAsync(
                 auditState,
-                StatusCodes.Status503ServiceUnavailable,
+                failure.StatusCode,
                 auditState.FailureReason,
                 cancellationToken);
         }
@@ -155,11 +212,28 @@ public sealed class CheckoutOrchestrator(
                 new WarehouseContracts.FeaturedProductsRequest(),
                 cancellationToken: cancellationToken);
         }
-        catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable) {
+        catch (RpcException exception)
+            when (!IsRequestCancellation(exception, cancellationToken)) {
+            var failure = GetDownstreamFailure("WarehouseService", exception);
+            auditState.Phase = "WAREHOUSE_CATALOG_FAILED";
+            auditState.FailureReason = failure.Message;
+            auditState.Message = failure.Message;
+            await RecordAuditAsync(
+                AuditEventType.STOCK_RESERVATION,
+                "ShopService",
+                "WarehouseService",
+                AuditStatusCode.FAILURE,
+                auditState,
+                cancellationToken);
+            TryLogDownstreamError(
+                exception,
+                "WarehouseService",
+                "GetFeaturedProducts",
+                auditState);
             return await CompleteWithFailureAsync(
                 auditState,
-                StatusCodes.Status503ServiceUnavailable,
-                "Der WarehouseService ist nicht erreichbar.",
+                failure.StatusCode,
+                failure.Message,
                 cancellationToken);
         }
 
@@ -206,9 +280,11 @@ public sealed class CheckoutOrchestrator(
                 stockRequest,
                 cancellationToken: cancellationToken);
         }
-        catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable) {
+        catch (RpcException exception)
+            when (!IsRequestCancellation(exception, cancellationToken)) {
+            var failure = GetDownstreamFailure("WarehouseService", exception);
             auditState.Phase = "STOCK_RESERVATION_FAILED";
-            auditState.FailureReason = "Der WarehouseService ist nicht erreichbar.";
+            auditState.FailureReason = failure.Message;
             auditState.Message = auditState.FailureReason;
             await RecordAuditAsync(
                 AuditEventType.STOCK_RESERVATION,
@@ -217,10 +293,15 @@ public sealed class CheckoutOrchestrator(
                 AuditStatusCode.FAILURE,
                 auditState,
                 cancellationToken);
+            TryLogDownstreamError(
+                exception,
+                "WarehouseService",
+                "ReserveCart",
+                auditState);
 
             return await CompleteWithFailureAsync(
                 auditState,
-                StatusCodes.Status503ServiceUnavailable,
+                failure.StatusCode,
                 auditState.FailureReason,
                 cancellationToken,
                 totalInCents);
@@ -345,7 +426,7 @@ public sealed class CheckoutOrchestrator(
                 StatusCodes.Status200OK,
                 new CheckoutResponse(
                     true,
-                    orderId.ToString("D"),
+                    auditState.OrderId.ToString("D"),
                     "Vielen Dank! Die Zahlung war erfolgreich und die Ware ist reserviert.",
                     totalInCents / 100m,
                     "EUR",
@@ -356,10 +437,12 @@ public sealed class CheckoutOrchestrator(
                         ? $"/api/invoices/{payment.InvoiceId}/pdf"
                         : null));
         }
-        catch (RpcException exception) {
+        catch (RpcException exception)
+            when (!IsRequestCancellation(exception, cancellationToken)) {
+            var failure = GetDownstreamFailure("BillingService", exception);
             auditState.PaymentSucceeded = false;
             auditState.Phase = "PAYMENT_FAILED";
-            auditState.FailureReason = "Der BillingService ist nicht erreichbar.";
+            auditState.FailureReason = failure.Message;
             auditState.Message = auditState.FailureReason;
             await RecordAuditAsync(
                 AuditEventType.PAYMENT,
@@ -373,11 +456,15 @@ public sealed class CheckoutOrchestrator(
                 stockRequest,
                 auditState,
                 cancellationToken);
-            TryLogWarning(exception, reference);
+            TryLogDownstreamError(
+                exception,
+                "BillingService",
+                "ProcessPayment",
+                auditState);
             return await CompleteWithFailureAsync(
                 auditState,
-                StatusCodes.Status503ServiceUnavailable,
-                "Der BillingService ist nicht erreichbar. Die Reservierung wurde zurückgenommen.",
+                failure.StatusCode,
+                $"{failure.Message} Die Reservierung wurde zurückgenommen.",
                 cancellationToken,
                 totalInCents);
         }
@@ -432,6 +519,7 @@ public sealed class CheckoutOrchestrator(
         }
         catch (RpcException exception) {
             auditState.Phase = "STOCK_RELEASE_FAILED";
+            auditState.FailureReason = "Reservierung konnte nach Abrechnungsfehler nicht zurückgenommen werden.";
             auditState.Message = "Reservierung konnte nach Abrechnungsfehler nicht zurückgenommen werden.";
             await RecordAuditAsync(
                 AuditEventType.STOCK_RELEASE,
@@ -440,8 +528,33 @@ public sealed class CheckoutOrchestrator(
                 AuditStatusCode.FAILURE,
                 auditState,
                 CancellationToken.None);
-            TryLogError(exception, auditState.Message);
+            TryLogDownstreamError(
+                exception,
+                "WarehouseService",
+                "ReleaseCart",
+                auditState);
         }
+    }
+
+    private async Task CompensateUnexpectedReservationAsync(
+        OrderAuditState auditState) {
+
+        if (auditState.ReservationSucceeded is not true ||
+            auditState.PaymentSucceeded is true) {
+            return;
+        }
+
+        var request = new WarehouseContracts.CartStockRequest();
+        request.Items.AddRange(auditState.Items.Select(item =>
+            new WarehouseContracts.CartProductQuantity {
+                ProductId = item.ProductId,
+                Quantity = item.Quantity
+            }));
+
+        await ReleaseReservationAsync(
+            request,
+            auditState,
+            CancellationToken.None);
     }
 
     private async Task<CheckoutOutcome> CompleteWithFailureAsync(
@@ -480,12 +593,23 @@ public sealed class CheckoutOrchestrator(
             statusCode,
             cancellationToken);
 
-    private void TryLogWarning(Exception exception, string reference) {
+    private void TryLogDownstreamError(
+        RpcException exception,
+        string downstreamService,
+        string operation,
+        OrderAuditState auditState) {
+
         try {
-            logger.Warn(
-                "Billing failed.",
+            logger.Error(
+                "Downstream service call failed.",
                 new {
-                    reference,
+                    downstreamService,
+                    operation,
+                    orderId = auditState.OrderId,
+                    auditState.Reference,
+                    auditState.Phase,
+                    grpcStatus = exception.StatusCode.ToString(),
+                    grpcDetail = exception.Status.Detail,
                     exceptionType = exception.GetType().FullName,
                     exceptionMessage = exception.Message
                 },
@@ -494,6 +618,48 @@ public sealed class CheckoutOrchestrator(
         catch (Exception) {
             // Eine nicht verfügbare Log-Senke darf das fachliche Rollback
             // und die HTTP-Antwort nicht verhindern.
+        }
+    }
+
+    private void TryLogCancellation(
+        Exception exception,
+        OrderAuditState auditState) {
+
+        try {
+            logger.Warn(
+                "Checkout was cancelled by the client.",
+                new {
+                    orderId = auditState.OrderId,
+                    auditState.Reference,
+                    auditState.Phase,
+                    exceptionType = exception.GetType().FullName,
+                    exceptionMessage = exception.Message
+                },
+                exception);
+        }
+        catch (Exception) {
+            // Siehe TryLogDownstreamError.
+        }
+    }
+
+    private void TryLogUnexpectedError(
+        Exception exception,
+        OrderAuditState auditState) {
+
+        try {
+            logger.Error(
+                "Checkout failed unexpectedly.",
+                new {
+                    orderId = auditState.OrderId,
+                    auditState.Reference,
+                    auditState.Phase,
+                    exceptionType = exception.GetType().FullName,
+                    exceptionMessage = exception.Message
+                },
+                exception);
+        }
+        catch (Exception) {
+            // Siehe TryLogDownstreamError.
         }
     }
 
@@ -556,6 +722,28 @@ public sealed class CheckoutOrchestrator(
         return new ValidationResult(true, string.Empty, quantities);
     }
 
+    private static DownstreamFailure GetDownstreamFailure(
+        string downstreamService,
+        RpcException exception) =>
+        exception.StatusCode switch {
+            StatusCode.Unavailable => new DownstreamFailure(
+                StatusCodes.Status503ServiceUnavailable,
+                $"Der {downstreamService} ist nicht erreichbar."),
+            StatusCode.DeadlineExceeded => new DownstreamFailure(
+                StatusCodes.Status504GatewayTimeout,
+                $"Der {downstreamService} hat nicht rechtzeitig geantwortet."),
+            _ => new DownstreamFailure(
+                StatusCodes.Status502BadGateway,
+                $"Der {downstreamService} konnte die Anfrage nicht verarbeiten.")
+        };
+
+    private static bool IsRequestCancellation(
+        Exception exception,
+        CancellationToken cancellationToken) =>
+        cancellationToken.IsCancellationRequested &&
+        (exception is OperationCanceledException ||
+         exception is RpcException { StatusCode: StatusCode.Cancelled });
+
     private static CheckoutOutcome Failed(
         Guid orderId,
         int statusCode,
@@ -584,6 +772,10 @@ public sealed class CheckoutOrchestrator(
         bool Success,
         string Message,
         IReadOnlyDictionary<Guid, int>? Quantities);
+
+    private sealed record DownstreamFailure(
+        int StatusCode,
+        string Message);
 
     private sealed class OrderAuditState(
         Guid orderId,

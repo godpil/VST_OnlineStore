@@ -184,7 +184,7 @@ internal sealed class RabbitMqAuditEventPublisher(
         Guid? correlationId) {
 
         try {
-            logger.Warn(
+            logger.Error(
                 "Audit event could not be published to RabbitMQ.",
                 new {
                     eventType = eventType.ToString(),

@@ -24,7 +24,8 @@ internal static class AuditQueryEndpoints {
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .ProducesProblem(StatusCodes.Status502BadGateway)
-            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .ProducesProblem(StatusCodes.Status504GatewayTimeout);
 
         return endpoints;
     }
@@ -59,19 +60,36 @@ internal static class AuditQueryEndpoints {
 
             return Results.Ok(snapshots);
         }
-        catch (RpcException exception) when (exception.StatusCode is
-            StatusCode.Unavailable or StatusCode.DeadlineExceeded) {
-            logger.Warn(
-                "Audit snapshot query failed.",
+        catch (RpcException exception)
+            when (!(cancellationToken.IsCancellationRequested &&
+                    exception.StatusCode == StatusCode.Cancelled)) {
+            logger.Error(
+                "Downstream service call failed.",
                 new {
+                    downstreamService = "AuditService",
+                    operation = "GetOrderSnapshots",
                     correlationId,
-                    grpcStatus = exception.StatusCode.ToString()
+                    grpcStatus = exception.StatusCode.ToString(),
+                    grpcDetail = exception.Status.Detail,
+                    exceptionType = exception.GetType().FullName,
+                    exceptionMessage = exception.Message
                 },
                 exception);
 
+            var statusCode = exception.StatusCode switch {
+                StatusCode.Unavailable => StatusCodes.Status503ServiceUnavailable,
+                StatusCode.DeadlineExceeded => StatusCodes.Status504GatewayTimeout,
+                _ => StatusCodes.Status502BadGateway
+            };
             return Results.Problem(
-                detail: "Der AuditService ist nicht erreichbar.",
-                statusCode: StatusCodes.Status503ServiceUnavailable);
+                detail: statusCode switch {
+                    StatusCodes.Status503ServiceUnavailable =>
+                        "Der AuditService ist nicht erreichbar.",
+                    StatusCodes.Status504GatewayTimeout =>
+                        "Der AuditService hat nicht rechtzeitig geantwortet.",
+                    _ => "Der AuditService konnte die Anfrage nicht verarbeiten."
+                },
+                statusCode: statusCode);
         }
         catch (Exception exception) when (exception is JsonException or FormatException) {
             logger.Error(

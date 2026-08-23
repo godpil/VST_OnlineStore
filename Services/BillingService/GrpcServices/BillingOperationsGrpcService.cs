@@ -31,7 +31,6 @@ public sealed class BillingOperationsGrpcService(
                     request.AmountInCents,
                     request.Currency
                 });
-            //YAYY Da sind die Payment Provider :D
             await audit.PublishAsync(
                 AuditEventType.PAYMENT,
                 "BillingService",
@@ -105,7 +104,35 @@ public sealed class BillingOperationsGrpcService(
                 request.Reference,
                 context.CancellationToken);
         }
-        catch (OperationCanceledException) when (context.CancellationToken.IsCancellationRequested) {
+        catch (OperationCanceledException exception)
+            when (context.CancellationToken.IsCancellationRequested) {
+            const string message = "Der Zahlungsvorgang wurde abgebrochen.";
+            logger.Warn(
+                "Payment provider call was cancelled by the client.",
+                new {
+                    providerKey = paymentProvider.Key,
+                    providerName = paymentProvider.Name,
+                    request.Reference,
+                    request.AmountInCents,
+                    request.Currency,
+                    exceptionType = exception.GetType().FullName,
+                    exceptionMessage = exception.Message
+                },
+                exception);
+            await audit.PublishAsync(
+                AuditEventType.PAYMENT,
+                "BillingService",
+                CreateAuditPayload(
+                    request,
+                    paymentProvider.Key,
+                    paymentProvider,
+                    false,
+                    null,
+                    message,
+                    "PAYMENT_CANCELLED"),
+                paymentProvider.Name,
+                AuditStatusCode.FAILURE,
+                cancellationToken: CancellationToken.None);
             throw;
         }
         catch (Exception exception) {

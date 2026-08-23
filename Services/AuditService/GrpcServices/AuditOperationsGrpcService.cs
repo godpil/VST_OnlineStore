@@ -1,6 +1,7 @@
 using AuditService.Application;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using VstOnlineStore.Observability;
 using AuditContracts = VstOnlineStore.Contracts.AuditService;
 using DomainEventType = AuditService.Domain.AuditEventType;
 using DomainStatusCode = AuditService.Domain.AuditStatusCode;
@@ -8,7 +9,8 @@ using DomainStatusCode = AuditService.Domain.AuditStatusCode;
 namespace AuditService.GrpcServices;
 
 public sealed class AuditOperationsGrpcService(
-    AuditApplicationService applicationService) : AuditContracts.AuditOperations.AuditOperationsBase {
+    AuditApplicationService applicationService,
+    IStructuredLogger logger) : AuditContracts.AuditOperations.AuditOperationsBase {
 
     public override async Task<AuditContracts.GetOrderSnapshotsResponse> GetOrderSnapshots(
         AuditContracts.GetOrderSnapshotsRequest request,
@@ -16,14 +18,37 @@ public sealed class AuditOperationsGrpcService(
 
         if (!Guid.TryParse(request.CorrelationId, out var correlationId)
             || correlationId == Guid.Empty) {
+            logger.Warn(
+                "Audit snapshot query rejected invalid input.",
+                new {
+                    operation = "GetOrderSnapshots",
+                    reason = "INVALID_CORRELATION_ID"
+                });
             throw new RpcException(new Status(
                 StatusCode.InvalidArgument,
                 "Die Correlation-ID ist ungültig."));
         }
 
-        var snapshots = await applicationService.GetOrderSnapshotsAsync(
-            correlationId,
-            context.CancellationToken);
+        IReadOnlyList<Domain.AuditSnapshot> snapshots;
+        try {
+            snapshots = await applicationService.GetOrderSnapshotsAsync(
+                correlationId,
+                context.CancellationToken);
+        }
+        catch (Exception exception)
+            when (!(context.CancellationToken.IsCancellationRequested &&
+                    exception is OperationCanceledException)) {
+            logger.Error(
+                "Audit snapshot query failed.",
+                new {
+                    operation = "GetOrderSnapshots",
+                    correlationId,
+                    exceptionType = exception.GetType().FullName,
+                    exceptionMessage = exception.Message
+                },
+                exception);
+            throw;
+        }
         var response = new AuditContracts.GetOrderSnapshotsResponse();
         response.Snapshots.AddRange(snapshots.Select(ToContract));
         return response;

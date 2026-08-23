@@ -65,6 +65,7 @@ public class Program {
             async (
                 bool featured,
                 WarehouseContracts.WarehouseCatalog.WarehouseCatalogClient warehouse,
+                IStructuredLogger logger,
                 CancellationToken cancellationToken) => {
 
                 if (!featured) {
@@ -87,8 +88,13 @@ public class Program {
                             product.AvailableQuantity,
                             product.IsSoldOut)).ToArray());
                 }
-                catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable) {
-                    return DownstreamUnavailable("WarehouseService");
+                catch (RpcException exception)
+                    when (!IsRequestCancellation(exception, cancellationToken)) {
+                    return DownstreamFailure(
+                        "WarehouseService",
+                        "GetFeaturedProducts",
+                        exception,
+                        logger);
                 }
             })
             .WithName("ListFeaturedProducts")
@@ -102,12 +108,14 @@ public class Program {
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .ProducesProblem(StatusCodes.Status502BadGateway)
-            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .ProducesProblem(StatusCodes.Status504GatewayTimeout);
 
         app.MapGet(
             "/api/payment-providers",
             async (
                 BillingContracts.BillingOperations.BillingOperationsClient billing,
+                IStructuredLogger logger,
                 CancellationToken cancellationToken) => {
 
                 try {
@@ -121,8 +129,13 @@ public class Program {
                             provider.Name,
                             provider.IsTestMode)).ToArray());
                 }
-                catch (RpcException exception) when (exception.StatusCode == StatusCode.Unavailable) {
-                    return DownstreamUnavailable("BillingService");
+                catch (RpcException exception)
+                    when (!IsRequestCancellation(exception, cancellationToken)) {
+                    return DownstreamFailure(
+                        "BillingService",
+                        "ListPaymentProviders",
+                        exception,
+                        logger);
                 }
             })
             .WithName("ListPaymentProviders")
@@ -133,7 +146,8 @@ public class Program {
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .ProducesProblem(StatusCodes.Status502BadGateway)
-            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .ProducesProblem(StatusCodes.Status504GatewayTimeout);
 
         app.MapPost(
             "/api/orders",
@@ -182,7 +196,8 @@ public class Program {
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .ProducesProblem(StatusCodes.Status502BadGateway)
-            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .ProducesProblem(StatusCodes.Status504GatewayTimeout);
 
         // Belegt die zentrale Steuerung aller fachlichen Services und dient
         // gleichzeitig als Diagnose-Endpunkt für den Vertical Slice.
@@ -192,10 +207,12 @@ public class Program {
                 try {
                     return Results.Ok(await orchestrator.GetStatusAsync(cancellationToken));
                 }
-                catch (RpcException) {
-                    return Results.Problem(
-                        detail: "Mindestens ein Microservice ist nicht erreichbar.",
-                        statusCode: StatusCodes.Status503ServiceUnavailable);
+                catch (RpcException exception)
+                    when (!IsRequestCancellation(exception, cancellationToken)) {
+                    var (statusCode, detail) = MapDownstreamFailure(
+                        "Mindestens ein Microservice",
+                        exception);
+                    return Results.Problem(detail: detail, statusCode: statusCode);
                 }
             })
             .WithName("ListServiceStatuses")
@@ -207,7 +224,8 @@ public class Program {
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .ProducesProblem(StatusCodes.Status502BadGateway)
-            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .ProducesProblem(StatusCodes.Status504GatewayTimeout);
 
         // StoreProxy veröffentlicht diese URLs, kommuniziert jedoch nur per
         // YARP mit dem ShopService. Die gRPC-Orchestrierung bleibt hier.
@@ -234,9 +252,46 @@ public class Program {
         return new Uri(address);
     }
 
-    private static IResult DownstreamUnavailable(string serviceName) {
-        return Results.Problem(
-            detail: $"{serviceName} ist nicht erreichbar.",
-            statusCode: StatusCodes.Status503ServiceUnavailable);
+    private static IResult DownstreamFailure(
+        string serviceName,
+        string operation,
+        RpcException exception,
+        IStructuredLogger logger) {
+
+        logger.Error(
+            "Downstream service call failed.",
+            new {
+                downstreamService = serviceName,
+                operation,
+                grpcStatus = exception.StatusCode.ToString(),
+                grpcDetail = exception.Status.Detail,
+                exceptionType = exception.GetType().FullName,
+                exceptionMessage = exception.Message
+            },
+            exception);
+
+        var (statusCode, detail) = MapDownstreamFailure(serviceName, exception);
+        return Results.Problem(detail: detail, statusCode: statusCode);
     }
+
+    private static (int StatusCode, string Detail) MapDownstreamFailure(
+        string serviceName,
+        RpcException exception) =>
+        exception.StatusCode switch {
+            StatusCode.Unavailable => (
+                StatusCodes.Status503ServiceUnavailable,
+                $"{serviceName} ist nicht erreichbar."),
+            StatusCode.DeadlineExceeded => (
+                StatusCodes.Status504GatewayTimeout,
+                $"{serviceName} hat nicht rechtzeitig geantwortet."),
+            _ => (
+                StatusCodes.Status502BadGateway,
+                $"{serviceName} konnte die Anfrage nicht verarbeiten.")
+        };
+
+    private static bool IsRequestCancellation(
+        RpcException exception,
+        CancellationToken cancellationToken) =>
+        cancellationToken.IsCancellationRequested &&
+        exception.StatusCode == StatusCode.Cancelled;
 }

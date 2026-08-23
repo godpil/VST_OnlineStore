@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Grpc.Core;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -78,6 +79,71 @@ public sealed class CheckoutIntegrationTests {
         Assert.Equal(1, scenario.ReleaseCalls);
     }
 
+    [Fact]
+    public async Task WarehouseNichtErreichbar_ErzeugtErrorLogUndTerminaleSnapshots() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.WarehouseUnavailable);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/orders",
+            CreateRequest(scenario.ProductId));
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal(0, scenario.ReservationCalls);
+        Assert.Contains(
+            scenario.Logs,
+            log => log.Level == StructuredLogLevel.ERROR &&
+                log.Message == "Downstream service call failed." &&
+                HasStringProperty(log.Context, "downstreamService", "WarehouseService") &&
+                HasStringProperty(log.Context, "operation", "GetFeaturedProducts") &&
+                HasStringProperty(log.Context, "grpcStatus", "Unavailable"));
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.STOCK_RESERVATION &&
+                audit.StatusCode == AuditStatusCode.FAILURE &&
+                HasStringProperty(audit.Payload, "phase", "WAREHOUSE_CATALOG_FAILED"));
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.ORDER_COMPLETED &&
+                audit.StatusCode == AuditStatusCode.FAILURE);
+    }
+
+    [Fact]
+    public async Task WarehouseTimeout_ErzeugtGatewayTimeoutLogUndTerminaleSnapshots() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.WarehouseTimeout);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/orders",
+            CreateRequest(scenario.ProductId));
+
+        Assert.Equal(HttpStatusCode.GatewayTimeout, response.StatusCode);
+        Assert.Equal(1, scenario.ReservationCalls);
+        Assert.Equal(0, scenario.PaymentCalls);
+        Assert.Contains(
+            scenario.Logs,
+            log => log.Level == StructuredLogLevel.ERROR &&
+                log.Message == "Downstream service call failed." &&
+                HasStringProperty(log.Context, "operation", "ReserveCart") &&
+                HasStringProperty(log.Context, "grpcStatus", "DeadlineExceeded"));
+        Assert.Contains(
+            scenario.Logs,
+            log => log.Level == StructuredLogLevel.ERROR &&
+                log.Message == "Request completed with server error." &&
+                HasNumberProperty(log.Context, "statusCode", 504));
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.STOCK_RESERVATION &&
+                audit.StatusCode == AuditStatusCode.FAILURE &&
+                HasStringProperty(audit.Payload, "phase", "STOCK_RESERVATION_FAILED"));
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.ORDER_COMPLETED &&
+                audit.StatusCode == AuditStatusCode.FAILURE);
+    }
+
     private static CheckoutRequest CreateRequest(Guid productId) =>
         new(
             [new CheckoutItemRequest(productId.ToString("D"), 2)],
@@ -101,8 +167,10 @@ public sealed class CheckoutIntegrationTests {
                 services.AddSingleton(
                     new BillingContracts.BillingOperations.BillingOperationsClient(
                         new CheckoutCallInvoker(scenario)));
-                services.AddSingleton<IAuditEventPublisher, NoOpAuditEventPublisher>();
-                services.AddSingleton<IStructuredLogger, NoOpStructuredLogger>();
+                services.AddSingleton<IAuditEventPublisher>(
+                    new RecordingAuditEventPublisher(scenario));
+                services.AddSingleton<IStructuredLogger>(
+                    new RecordingStructuredLogger(scenario));
             });
         }
     }
@@ -110,7 +178,9 @@ public sealed class CheckoutIntegrationTests {
     private enum CheckoutScenarioMode {
         Success,
         StockUnavailable,
-        PaymentDeclined
+        PaymentDeclined,
+        WarehouseUnavailable,
+        WarehouseTimeout
     }
 
     private sealed class CheckoutScenario(CheckoutScenarioMode mode) {
@@ -120,6 +190,8 @@ public sealed class CheckoutIntegrationTests {
         public int ReservationCalls { get; set; }
         public int PaymentCalls { get; set; }
         public int ReleaseCalls { get; set; }
+        public List<RecordedLog> Logs { get; } = [];
+        public List<RecordedAuditEvent> AuditEvents { get; } = [];
     }
 
     private sealed class CheckoutCallInvoker(CheckoutScenario scenario) : CallInvoker {
@@ -128,6 +200,17 @@ public sealed class CheckoutIntegrationTests {
             string? host,
             CallOptions options,
             TRequest request) {
+
+            if (method.Name == "GetFeaturedProducts" &&
+                scenario.Mode == CheckoutScenarioMode.WarehouseUnavailable) {
+                return Failed<TResponse>(StatusCode.Unavailable);
+            }
+
+            if (method.Name == "ReserveCart" &&
+                scenario.Mode == CheckoutScenarioMode.WarehouseTimeout) {
+                scenario.ReservationCalls++;
+                return Failed<TResponse>(StatusCode.DeadlineExceeded);
+            }
 
             object response = method.Name switch {
                 "ListPaymentProviders" => CreatePaymentProviders(),
@@ -251,9 +334,25 @@ public sealed class CheckoutIntegrationTests {
                 () => new Status(StatusCode.OK, string.Empty),
                 () => new Metadata(),
                 () => { });
+
+        private static AsyncUnaryCall<TResponse> Failed<TResponse>(StatusCode statusCode) {
+            var status = new Status(statusCode, "Gezielt simulierter gRPC-Fehler.");
+            return new AsyncUnaryCall<TResponse>(
+                Task.FromException<TResponse>(new RpcException(status)),
+                Task.FromResult(new Metadata()),
+                () => status,
+                () => new Metadata(),
+                () => { });
+        }
     }
 
-    private sealed class NoOpAuditEventPublisher : IAuditEventPublisher {
+    private sealed class RecordingAuditEventPublisher(CheckoutScenario scenario)
+        : IAuditEventPublisher {
+
+        private static readonly JsonSerializerOptions JsonOptions = new() {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
         public Task PublishAsync(
             AuditEventType eventType,
             string responsibleService,
@@ -261,16 +360,61 @@ public sealed class CheckoutIntegrationTests {
             string actor,
             AuditStatusCode statusCode,
             Guid? correlationId = null,
-            CancellationToken cancellationToken = default) =>
-            Task.CompletedTask;
+            CancellationToken cancellationToken = default) {
+
+            scenario.AuditEvents.Add(new RecordedAuditEvent(
+                eventType,
+                statusCode,
+                JsonSerializer.SerializeToElement(payload, JsonOptions)));
+            return Task.CompletedTask;
+        }
     }
 
-    private sealed class NoOpStructuredLogger : IStructuredLogger {
+    private sealed class RecordingStructuredLogger(CheckoutScenario scenario)
+        : IStructuredLogger {
+
+        private static readonly JsonSerializerOptions JsonOptions = new() {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
         public void Log(
             StructuredLogLevel logLevel,
             string message,
             object? context = null,
             Exception? exception = null) {
+
+            scenario.Logs.Add(new RecordedLog(
+                logLevel,
+                message,
+                JsonSerializer.SerializeToElement(context, JsonOptions)));
         }
     }
+
+    private static bool HasStringProperty(
+        JsonElement context,
+        string propertyName,
+        string expected) =>
+        context.ValueKind == JsonValueKind.Object &&
+        context.TryGetProperty(propertyName, out var property) &&
+        property.ValueKind == JsonValueKind.String &&
+        property.GetString() == expected;
+
+    private static bool HasNumberProperty(
+        JsonElement context,
+        string propertyName,
+        int expected) =>
+        context.ValueKind == JsonValueKind.Object &&
+        context.TryGetProperty(propertyName, out var property) &&
+        property.TryGetInt32(out var actual) &&
+        actual == expected;
+
+    private sealed record RecordedLog(
+        StructuredLogLevel Level,
+        string Message,
+        JsonElement Context);
+
+    private sealed record RecordedAuditEvent(
+        AuditEventType EventType,
+        AuditStatusCode StatusCode,
+        JsonElement Payload);
 }

@@ -1,6 +1,7 @@
 using Grpc.Core;
 using StoreBackend.Contracts;
 using VstOnlineStore.Contracts.WarehouseService;
+using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
 
 namespace WarehouseService.GrpcServices;
@@ -11,28 +12,36 @@ namespace WarehouseService.GrpcServices;
 /// </summary>
 public sealed class WarehouseCatalogGrpcService(
     WarehouseStorage.WarehouseStorageClient backend,
-    IAuditEventPublisher audit) : WarehouseCatalog.WarehouseCatalogBase {
+    IAuditEventPublisher audit,
+    IStructuredLogger logger) : WarehouseCatalog.WarehouseCatalogBase {
 
     public override async Task<FeaturedProductsResponse> GetFeaturedProducts(
         FeaturedProductsRequest request,
         ServerCallContext context) {
 
-        var backendResponse = await backend.GetProductsAsync(
-            new BackendProductsRequest(),
-            cancellationToken: context.CancellationToken);
-        var response = new FeaturedProductsResponse();
+        try {
+            var backendResponse = await backend.GetProductsAsync(
+                new BackendProductsRequest(),
+                cancellationToken: context.CancellationToken);
+            var response = new FeaturedProductsResponse();
 
-        response.Products.AddRange(
-            backendResponse.Products.Select(product => new WarehouseProduct {
-                Id = product.Id,
-                Name = product.Name,
-                PriceInCents = product.PriceInCents,
-                Image = product.Image,
-                AvailableQuantity = product.AvailableQuantity,
-                IsSoldOut = product.IsSoldOut
-            }));
+            response.Products.AddRange(
+                backendResponse.Products.Select(product => new WarehouseProduct {
+                    Id = product.Id,
+                    Name = product.Name,
+                    PriceInCents = product.PriceInCents,
+                    Image = product.Image,
+                    AvailableQuantity = product.AvailableQuantity,
+                    IsSoldOut = product.IsSoldOut
+                }));
 
-        return response;
+            return response;
+        }
+        catch (Exception exception)
+            when (!IsRequestCancellation(exception, context.CancellationToken)) {
+            LogBackendFailure(exception, "GetProducts", null);
+            throw;
+        }
     }
 
     public override async Task<CartStockResponse> ReserveCart(
@@ -66,9 +75,25 @@ public sealed class WarehouseCatalogGrpcService(
             Quantity = item.Quantity
         }));
 
-        var backendResponse = reserve
-            ? await backend.ReserveProductsAsync(backendRequest, cancellationToken: cancellationToken)
-            : await backend.ReleaseProductsAsync(backendRequest, cancellationToken: cancellationToken);
+        BackendStockChangeResponse backendResponse;
+        try {
+            backendResponse = reserve
+                ? await backend.ReserveProductsAsync(backendRequest, cancellationToken: cancellationToken)
+                : await backend.ReleaseProductsAsync(backendRequest, cancellationToken: cancellationToken);
+        }
+        catch (Exception exception)
+            when (!IsRequestCancellation(exception, cancellationToken)) {
+            await PublishFailureSnapshotAsync(
+                request,
+                reserve,
+                exception,
+                CancellationToken.None);
+            LogBackendFailure(
+                exception,
+                reserve ? "ReserveProducts" : "ReleaseProducts",
+                reserve);
+            throw;
+        }
 
         var response = new CartStockResponse {
             Success = backendResponse.Success,
@@ -105,4 +130,54 @@ public sealed class WarehouseCatalogGrpcService(
 
         return response;
     }
+
+    private Task PublishFailureSnapshotAsync(
+        CartStockRequest request,
+        bool reserve,
+        Exception exception,
+        CancellationToken cancellationToken) =>
+        audit.PublishAsync(
+            reserve ? AuditEventType.STOCK_RESERVATION : AuditEventType.STOCK_RELEASE,
+            "WarehouseService",
+            new {
+                phase = reserve
+                    ? "STORE_BACKEND_RESERVATION_FAILED"
+                    : "STORE_BACKEND_RELEASE_FAILED",
+                success = false,
+                downstreamService = "StoreBackend",
+                grpcStatus = (exception as RpcException)?.StatusCode.ToString(),
+                exceptionType = exception.GetType().FullName,
+                exceptionMessage = exception.Message,
+                items = request.Items.Select(item => new {
+                    item.ProductId,
+                    item.Quantity
+                })
+            },
+            "StoreBackend",
+            AuditStatusCode.FAILURE,
+            cancellationToken: cancellationToken);
+
+    private void LogBackendFailure(
+        Exception exception,
+        string operation,
+        bool? reserve) =>
+        logger.Error(
+            "Downstream service call failed.",
+            new {
+                downstreamService = "StoreBackend",
+                operation,
+                reserve,
+                grpcStatus = (exception as RpcException)?.StatusCode.ToString(),
+                grpcDetail = (exception as RpcException)?.Status.Detail,
+                exceptionType = exception.GetType().FullName,
+                exceptionMessage = exception.Message
+            },
+            exception);
+
+    private static bool IsRequestCancellation(
+        Exception exception,
+        CancellationToken cancellationToken) =>
+        cancellationToken.IsCancellationRequested &&
+        (exception is OperationCanceledException ||
+         exception is RpcException { StatusCode: StatusCode.Cancelled });
 }

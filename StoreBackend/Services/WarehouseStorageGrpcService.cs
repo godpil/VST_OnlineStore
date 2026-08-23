@@ -20,19 +20,33 @@ public sealed class WarehouseStorageGrpcService(
         BackendProductsRequest request,
         ServerCallContext context) {
 
-        var products = await warehouse.GetProductsAsync(context.CancellationToken);
-        var response = new BackendProductsResponse();
+        try {
+            var products = await warehouse.GetProductsAsync(context.CancellationToken);
+            var response = new BackendProductsResponse();
 
-        response.Products.AddRange(products.Select(product => new StoredProduct {
-            Id = product.Id.ToString(),
-            Name = product.Name,
-            PriceInCents = decimal.ToInt64(product.Price * 100m),
-            Image = product.Image,
-            AvailableQuantity = product.AvailableQuantity,
-            IsSoldOut = product.IsSoldOut
-        }));
+            response.Products.AddRange(products.Select(product => new StoredProduct {
+                Id = product.Id.ToString(),
+                Name = product.Name,
+                PriceInCents = decimal.ToInt64(product.Price * 100m),
+                Image = product.Image,
+                AvailableQuantity = product.AvailableQuantity,
+                IsSoldOut = product.IsSoldOut
+            }));
 
-        return response;
+            return response;
+        }
+        catch (Exception exception)
+            when (!IsRequestCancellation(exception, context.CancellationToken)) {
+            logger.Error(
+                "Warehouse persistence operation failed.",
+                new {
+                    operation = "GetProducts",
+                    exceptionType = exception.GetType().FullName,
+                    exceptionMessage = exception.Message
+                },
+                exception);
+            throw;
+        }
     }
 
     public override async Task<BackendStockChangeResponse> ReserveProducts(
@@ -53,6 +67,21 @@ public sealed class WarehouseStorageGrpcService(
         var items = new List<WarehouseOrderItem>();
         foreach (var item in request.Items) {
             if (!Guid.TryParse(item.ProductId, out var productId)) {
+                logger.Warn(
+                    "Warehouse stock change rejected invalid input.",
+                    new {
+                        operation = reserve ? "ReserveProducts" : "ReleaseProducts",
+                        reason = "INVALID_PRODUCT_ID",
+                        item.ProductId,
+                        item.Quantity
+                    });
+                await PublishFailureSnapshotAsync(
+                    request,
+                    reserve,
+                    "Mindestens eine Produkt-ID ist ungültig.",
+                    "INVALID_PRODUCT_ID",
+                    null,
+                    cancellationToken);
                 return new BackendStockChangeResponse {
                     Success = false,
                     Message = "Mindestens eine Produkt-ID ist ungültig."
@@ -62,9 +91,35 @@ public sealed class WarehouseStorageGrpcService(
             items.Add(new WarehouseOrderItem(productId, item.Quantity));
         }
 
-        var result = reserve
-            ? await warehouse.ReserveProductsAsync(items, cancellationToken)
-            : await warehouse.ReleaseProductsAsync(items, cancellationToken);
+        StockChangeResult result;
+        try {
+            result = reserve
+                ? await warehouse.ReserveProductsAsync(items, cancellationToken)
+                : await warehouse.ReleaseProductsAsync(items, cancellationToken);
+        }
+        catch (Exception exception)
+            when (!IsRequestCancellation(exception, cancellationToken)) {
+            logger.Error(
+                "Warehouse persistence operation failed.",
+                new {
+                    operation = reserve ? "ReserveProducts" : "ReleaseProducts",
+                    reserve,
+                    productCount = items.Count,
+                    exceptionType = exception.GetType().FullName,
+                    exceptionMessage = exception.Message
+                },
+                exception);
+            await PublishFailureSnapshotAsync(
+                request,
+                reserve,
+                "Die Lageränderung konnte nicht gespeichert werden.",
+                reserve
+                    ? "STOCK_PERSISTENCE_FAILED"
+                    : "STOCK_RELEASE_PERSISTENCE_FAILED",
+                exception,
+                CancellationToken.None);
+            throw;
+        }
 
         logger.Info(
             "Warehouse stock changed.",
@@ -110,4 +165,37 @@ public sealed class WarehouseStorageGrpcService(
 
         return response;
     }
+
+    private Task PublishFailureSnapshotAsync(
+        BackendProductQuantitiesRequest request,
+        bool reserve,
+        string message,
+        string phase,
+        Exception? exception,
+        CancellationToken cancellationToken) =>
+        audit.PublishAsync(
+            reserve ? AuditEventType.STOCK_RESERVATION : AuditEventType.STOCK_RELEASE,
+            "StoreBackend",
+            new {
+                phase,
+                reserve,
+                success = false,
+                message,
+                exceptionType = exception?.GetType().FullName,
+                exceptionMessage = exception?.Message,
+                items = request.Items.Select(item => new {
+                    item.ProductId,
+                    item.Quantity
+                })
+            },
+            "StoreBackend",
+            AuditStatusCode.FAILURE,
+            cancellationToken: cancellationToken);
+
+    private static bool IsRequestCancellation(
+        Exception exception,
+        CancellationToken cancellationToken) =>
+        cancellationToken.IsCancellationRequested &&
+        (exception is OperationCanceledException ||
+         exception is RpcException { StatusCode: StatusCode.Cancelled });
 }

@@ -20,15 +20,41 @@ public sealed class StructuredRequestLoggingMiddleware(
             await next(context);
             stopwatch.Stop();
 
-            logger.Info(
-                "Request completed.",
+            var logContext = new {
+                httpMethod = context.Request.Method,
+                path = context.Request.Path.Value ?? "/",
+                protocol = context.Request.Protocol,
+                statusCode = context.Response.StatusCode,
+                durationMs = stopwatch.Elapsed.TotalMilliseconds
+            };
+
+            if (context.Response.StatusCode >= StatusCodes.Status500InternalServerError) {
+                logger.Error("Request completed with server error.", logContext);
+            }
+            else if (context.Response.StatusCode >= StatusCodes.Status400BadRequest) {
+                logger.Warn("Request completed with client error.", logContext);
+            }
+            else {
+                logger.Info("Request completed.", logContext);
+            }
+        }
+        catch (OperationCanceledException exception)
+            when (context.RequestAborted.IsCancellationRequested) {
+            stopwatch.Stop();
+
+            logger.Warn(
+                "Request was cancelled by the client.",
                 new {
                     httpMethod = context.Request.Method,
                     path = context.Request.Path.Value ?? "/",
                     protocol = context.Request.Protocol,
-                    statusCode = context.Response.StatusCode,
-                    durationMs = stopwatch.Elapsed.TotalMilliseconds
-                });
+                    durationMs = stopwatch.Elapsed.TotalMilliseconds,
+                    exceptionType = exception.GetType().FullName,
+                    exceptionMessage = exception.Message
+                },
+                exception);
+
+            throw;
         }
         catch (Exception exception) {
             stopwatch.Stop();

@@ -42,9 +42,24 @@ public class Program {
 
         // Vor dem ersten Zugriff über WarehouseService muss der aktuelle
         // Lagerbestand vollständig von der Festplatte geladen sein.
-        await app.Services
-            .GetRequiredService<JsonWarehouseRepository>()
-            .ReadFromDiskAsync();
+        try {
+            await app.Services
+                .GetRequiredService<JsonWarehouseRepository>()
+                .ReadFromDiskAsync();
+        }
+        catch (Exception exception) {
+            app.Services
+                .GetRequiredService<IStructuredLogger>()
+                .Error(
+                    "Warehouse data initialization failed.",
+                    new {
+                        operation = "ReadFromDisk",
+                        exceptionType = exception.GetType().FullName,
+                        exceptionMessage = exception.Message
+                    },
+                    exception);
+            throw;
+        }
 
         app.MapGrpcService<WarehouseStorageGrpcService>();
         app.MapGet("/", () => "StoreBackend gRPC endpoint");

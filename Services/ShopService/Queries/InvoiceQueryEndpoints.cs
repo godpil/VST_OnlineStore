@@ -22,7 +22,8 @@ internal static class InvoiceQueryEndpoints {
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .ProducesProblem(StatusCodes.Status502BadGateway)
-            .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .ProducesProblem(StatusCodes.Status504GatewayTimeout);
 
         return endpoints;
     }
@@ -79,15 +80,36 @@ internal static class InvoiceQueryEndpoints {
                     ["invoiceId"] = invoiceId
                 });
         }
-        catch (RpcException exception) when (exception.StatusCode is
-            StatusCode.Unavailable or StatusCode.DeadlineExceeded) {
-            logger.Warn(
-                "Invoice PDF query failed.",
-                new { invoiceId, grpcStatus = exception.StatusCode.ToString() },
+        catch (RpcException exception)
+            when (!(cancellationToken.IsCancellationRequested &&
+                    exception.StatusCode == StatusCode.Cancelled)) {
+            logger.Error(
+                "Downstream service call failed.",
+                new {
+                    downstreamService = "InvoiceService",
+                    operation = "GetInvoicePdf",
+                    invoiceId,
+                    grpcStatus = exception.StatusCode.ToString(),
+                    grpcDetail = exception.Status.Detail,
+                    exceptionType = exception.GetType().FullName,
+                    exceptionMessage = exception.Message
+                },
                 exception);
+
+            var statusCode = exception.StatusCode switch {
+                StatusCode.Unavailable => StatusCodes.Status503ServiceUnavailable,
+                StatusCode.DeadlineExceeded => StatusCodes.Status504GatewayTimeout,
+                _ => StatusCodes.Status502BadGateway
+            };
             return Results.Problem(
-                detail: "Der InvoiceService ist nicht erreichbar.",
-                statusCode: StatusCodes.Status503ServiceUnavailable);
+                detail: statusCode switch {
+                    StatusCodes.Status503ServiceUnavailable =>
+                        "Der InvoiceService ist nicht erreichbar.",
+                    StatusCodes.Status504GatewayTimeout =>
+                        "Der InvoiceService hat nicht rechtzeitig geantwortet.",
+                    _ => "Der InvoiceService konnte die Anfrage nicht verarbeiten."
+                },
+                statusCode: statusCode);
         }
     }
 }

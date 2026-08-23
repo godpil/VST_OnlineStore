@@ -25,14 +25,37 @@ public sealed class InvoiceOperationsGrpcService(
 
         if (!Guid.TryParse(request.InvoiceId, out var invoiceId)
             || invoiceId == Guid.Empty) {
+            logger.Warn(
+                "Invoice PDF query rejected invalid input.",
+                new {
+                    operation = "GetInvoicePdf",
+                    reason = "INVALID_INVOICE_ID"
+                });
             throw new RpcException(new Status(
                 StatusCode.InvalidArgument,
                 "Die Rechnungs-ID muss eine gültige GUID sein."));
         }
 
-        var invoice = await applicationService.GetByIdAsync(
-            invoiceId,
-            context.CancellationToken);
+        Domain.InvoiceRecord? invoice;
+        try {
+            invoice = await applicationService.GetByIdAsync(
+                invoiceId,
+                context.CancellationToken);
+        }
+        catch (Exception exception)
+            when (!(context.CancellationToken.IsCancellationRequested &&
+                    exception is OperationCanceledException)) {
+            logger.Error(
+                "Invoice PDF query failed.",
+                new {
+                    operation = "GetInvoicePdf",
+                    invoiceId,
+                    exceptionType = exception.GetType().FullName,
+                    exceptionMessage = exception.Message
+                },
+                exception);
+            throw;
+        }
         if (invoice is null) {
             logger.Debug("Invoice PDF was not found yet.", new { invoiceId });
             return new GetInvoicePdfResponse { Found = false };

@@ -8,6 +8,7 @@
     <File Path="docs/diagrams/online-store-architecture.drawio" />
     <File Path="docs/diagrams/system-context.svg" />
     <File Path="docs/diagrams/component-diagram.svg" />
+    <File Path="docs/diagrams/payment-facade.svg" />
     <File Path="docs/diagrams/sequence-happy-path.svg" />
     <File Path="docs/diagrams/sequence-fail1.svg" />
     <File Path="docs/diagrams/sequence-fail2.svg" />

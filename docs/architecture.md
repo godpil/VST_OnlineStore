@@ -15,6 +15,7 @@
 3. [Architekturprinzipien und Qualitätsziele](#3-architekturprinzipien-und-qualitätsziele)
 4. [Systemkontext](#4-systemkontext)
 5. [Bausteinsicht](#5-bausteinsicht)
+   1. [Payment-Fassade und Provider-Erweiterung](#51-payment-fassade-und-provider-erweiterung)
 6. [Laufzeitsicht](#6-laufzeitsicht)
    1. [Happy Path](#61-happy-path)
    2. [Fehlerfall fail1: unzureichender Bestand](#62-fehlerfall-fail1-unzureichender-bestand)
@@ -122,6 +123,25 @@ AuditService. PostgreSQL wird ausschließlich vom AuditService verwendet.
 *Abbildung 2: Services, Adapter, Message Broker, Datenbank und technische
 Infrastruktur.*
 
+### 5.1 Payment-Fassade und Provider-Erweiterung
+
+Die Payment-Fassade trennt den ShopService von den konkreten
+Zahlungsanbieter-Adaptern. Der `BillingOperationsGrpcService` validiert den
+Request und delegiert die Auswahl sowie das einheitliche Timeout an den
+`PaymentProviderResolver`. Alle Adapter implementieren `IPaymentProvider` und
+liefern dasselbe `PaymentProviderResult` zurück.
+
+Die rechte Diagrammhälfte zeigt am Beispiel eines zusätzlichen
+`KlarnaPaymentProvider`, welche Erweiterungen notwendig wären. Fassade,
+gRPC-Vertrag, Resolver, ShopService und Rechnungsereignis bleiben dabei
+unverändert. Für eine reale Anbindung kommen insbesondere Credentials,
+Idempotency Keys, Webhook-Prüfung und anbieterbezogenes Fehlermapping hinzu.
+
+![Payment-Fassade und Erweiterung um einen Provider](diagrams/payment-facade.svg)
+
+*Abbildung 3: Zahlungsablauf sowie Erweiterungspunkte für einen zusätzlichen
+PaymentProvider.*
+
 ## 6. Laufzeitsicht
 
 ### 6.1 Happy Path
@@ -133,7 +153,7 @@ Rechnungsinformationen.
 
 ![Happy Path des Bestellprozesses](diagrams/sequence-happy-path.svg)
 
-*Abbildung 3: Erfolgreicher Bestell-, Zahlungs- und Rechnungsablauf.*
+*Abbildung 4: Erfolgreicher Bestell-, Zahlungs- und Rechnungsablauf.*
 
 ### 6.2 Fehlerfall fail1: unzureichender Bestand
 
@@ -143,7 +163,7 @@ mit einem Konflikt. Der BillingService wird nicht aufgerufen, es entsteht kein
 
 ![Fehlerfall unzureichender Bestand](diagrams/sequence-fail1.svg)
 
-*Abbildung 4: Abbruch vor der Zahlung bei unzureichendem Bestand.*
+*Abbildung 5: Abbruch vor der Zahlung bei unzureichendem Bestand.*
 
 ### 6.3 Fehlerfall fail2: Zahlungsablehnung
 
@@ -153,7 +173,7 @@ Rechnungsereignis veröffentlicht.
 
 ![Fehlerfall Zahlungsablehnung](diagrams/sequence-fail2.svg)
 
-*Abbildung 5: Zahlungsablehnung mit Freigabe des reservierten Bestands.*
+*Abbildung 6: Zahlungsablehnung mit Freigabe des reservierten Bestands.*
 
 ## 7. Schnittstellen und Infrastruktur
 
@@ -401,7 +421,7 @@ Gesamtstartskript prüft seine Erreichbarkeit, startet ihn aber nicht selbst.
 ## 10. Pflege der Dokumentation
 
 Die Datei `diagrams/online-store-architecture.drawio` ist die verbindliche
-Diagrammquelle und enthält alle fünf Diagrammseiten. Die SVG-Dateien sind
+Diagrammquelle und enthält alle sechs Diagrammseiten. Die SVG-Dateien sind
 optionale, abgeleitete Ansichten. Nach einer Änderung in diagrams.net müssen die
 betroffenen SVGs erneut exportiert und zusammen mit dieser Dokumentation
 aktualisiert werden.

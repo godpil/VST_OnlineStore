@@ -1,7 +1,7 @@
 # Architektur- und Ablaufdiagramme
 
 Die editierbare diagrams.net-Datei `online-store-architecture.drawio` enthält
-fünf Seiten:
+sechs Seiten:
 
 1. **Systemkontext** – Systemgrenze, Kunde, Entwicklung/Betrieb,
    Zahlungsanbieter-Stubs und externe Infrastruktur einschließlich der
@@ -11,6 +11,8 @@ fünf Seiten:
 3. **Happy Path** – erfolgreicher Bestell-, Zahlungs- und Rechnungsablauf.
 4. **fail1** – unzureichender Bestand; die Zahlung wird nicht gestartet.
 5. **fail2** – Zahlungsablehnung; die Bestandsreservierung wird kompensiert.
+6. **Payment-Fassade** – Provider-Auswahl, Zahlungsablauf und notwendige
+   Änderungen für einen zusätzlichen PaymentProvider.
 
 Die DrawIO-Datei ist die verbindliche und editierbare Quelle. Alle Seiten lassen
 sich gemeinsam mit diagrams.net öffnen, anzeigen und bearbeiten.
@@ -26,11 +28,12 @@ werden.
 - [Sequenzdiagramm: Happy Path](sequence-happy-path.svg)
 - [Sequenzdiagramm: fail1 – unzureichender Bestand](sequence-fail1.svg)
 - [Sequenzdiagramm: fail2 – Zahlungsablehnung](sequence-fail2.svg)
+- [Payment-Fassade und Provider-Erweiterung](payment-facade.svg)
 
 ## Quellen
 
 - `online-store-architecture.drawio`: aktueller Dokumentationssatz mit allen
-  fünf Diagrammseiten
+  sechs Diagrammseiten
 
 Die ältere Datei `HappyPath.drawio` bleibt als historischer Entwurf unverändert,
 ist aber nicht Bestandteil des aktuellen Dokumentationssatzes.

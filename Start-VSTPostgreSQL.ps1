@@ -154,6 +154,32 @@ function Wait-PostgreSqlPort {
     throw "PostgreSQL ist nicht innerhalb von $TimeoutSeconds Sekunden auf Port $postgresPort gestartet."
 }
 
+function Wait-PostgreSqlStopped {
+    param(
+        [Parameter(Mandatory = $true)]
+        [int]$ProcessId,
+        [int]$TimeoutSeconds = 35
+    )
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    while ([DateTime]::UtcNow -lt $deadline) {
+        $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+        $portIsOpen = Test-PostgreSqlTcpPort
+        if ($null -eq $process -and -not $portIsOpen) {
+            return
+        }
+
+        Start-Sleep -Milliseconds 250
+    }
+
+    $processStillRuns = $null -ne (
+        Get-Process -Id $ProcessId -ErrorAction SilentlyContinue)
+    $portStillOpen = Test-PostgreSqlTcpPort
+    throw (
+        "PostgreSQL wurde nicht vollstaendig beendet. " +
+        "Prozess aktiv: $processStillRuns; Port $postgresPort offen: $portStillOpen.")
+}
+
 function Install-PostgreSql {
     $requiredTools = @(
         $postgresExecutablePath,
@@ -275,8 +301,15 @@ function Stop-PostgreSqlServer {
 
     $process = Get-PostgreSqlProcess
     if ($null -eq $process) {
+        if (Test-PostgreSqlTcpPort) {
+            throw (
+                "Port $postgresPort ist offen, der projektlokale PostgreSQL-Prozess " +
+                "konnte jedoch nicht sicher ermittelt werden. Der fremde Prozess wird nicht beendet.")
+        }
         return
     }
+
+    $postgresProcessId = $process.Id
 
     New-Item -ItemType Directory -Path $postgresLogDirectory -Force | Out-Null
     $controlProcess = Start-Process `
@@ -294,8 +327,27 @@ function Stop-PostgreSqlServer {
         -PassThru
     Wait-Process -Id $controlProcess.Id -Timeout 35 -ErrorAction Stop
     $controlProcess.Refresh()
-    if ($controlProcess.ExitCode -ne 0) {
-        throw "PostgreSQL konnte nicht kontrolliert beendet werden."
+    $controlExitCode = $controlProcess.ExitCode
+
+    try {
+        # Der beobachtete Zustand ist massgeblich: pg_ctl kann unter Windows
+        # trotz vollstaendig beendetem Server einen von null abweichenden
+        # Exit-Code liefern.
+        Wait-PostgreSqlStopped `
+            -ProcessId $postgresProcessId `
+            -TimeoutSeconds 35
+    }
+    catch {
+        throw (
+            "PostgreSQL konnte nicht kontrolliert beendet werden " +
+            "(pg_ctl Exit-Code $controlExitCode). $($_.Exception.Message) " +
+            "Siehe $postgresControlErrorPath")
+    }
+
+    if ($controlExitCode -ne 0) {
+        Write-Warning (
+            "pg_ctl stop meldete Exit-Code $controlExitCode, PostgreSQL und " +
+            "Port $postgresPort wurden jedoch nachweislich beendet.")
     }
 }
 
@@ -337,8 +389,42 @@ function Start-PostgreSqlServer {
         -PassThru
     Wait-Process -Id $controlProcess.Id -Timeout 65 -ErrorAction Stop
     $controlProcess.Refresh()
-    if ($controlProcess.ExitCode -ne 0) {
-        throw "PostgreSQL konnte nicht gestartet werden. Siehe $postgresLogPath"
+    $controlExitCode = $controlProcess.ExitCode
+
+    # Auch beim Start entscheidet der tatsaechliche Serverzustand. Das
+    # verhindert einen falschen Abbruch, wenn pg_ctl unter Windows einen
+    # unzutreffenden Exit-Code liefert, der Postmaster aber bereit ist.
+    $process = Get-PostgreSqlProcess
+    if ($null -eq $process) {
+        throw (
+            "PostgreSQL konnte nicht gestartet werden " +
+            "(pg_ctl Exit-Code $controlExitCode; kein Postmaster-Prozess). " +
+            "Siehe $postgresLogPath und $postgresControlErrorPath")
+    }
+
+    try {
+        Wait-PostgreSqlPort -Process $process -TimeoutSeconds 30
+    }
+    catch {
+        $startFailure = $_.Exception.Message
+        try {
+            Stop-PostgreSqlServer
+        }
+        catch {
+            Write-Warning (
+                "Der teilweise gestartete PostgreSQL-Prozess konnte nach dem " +
+                "Startfehler nicht automatisch beendet werden: $($_.Exception.Message)")
+        }
+        throw (
+            "PostgreSQL konnte nicht gestartet werden " +
+            "(pg_ctl Exit-Code $controlExitCode). $startFailure " +
+            "Siehe $postgresLogPath und $postgresControlErrorPath")
+    }
+
+    if ($controlExitCode -ne 0) {
+        Write-Warning (
+            "pg_ctl start meldete Exit-Code $controlExitCode, PostgreSQL ist " +
+            "auf Port $postgresPort jedoch nachweislich betriebsbereit.")
     }
 
     try {
@@ -370,12 +456,6 @@ function Start-PostgreSqlServer {
             }
         }
 
-        $process = Get-PostgreSqlProcess
-        if ($null -eq $process) {
-            throw "Die PostgreSQL-Prozess-ID ist ungueltig."
-        }
-
-        Wait-PostgreSqlPort -Process $process -TimeoutSeconds 30
         Write-Host `
             "Bereit: PostgreSQL auf Port $postgresPort, Datenbank $postgresDatabaseName" `
             -ForegroundColor Green

@@ -385,16 +385,16 @@ function Show-ApplicationStatus {
         ProcessId = if ($collectorIsRunning) { $collectorEntry.ProcessId } else { "-" }
     }
 
-    $postgresEntry = $manifestEntries |
-        Where-Object { $_.Name -eq "PostgreSQL" } |
-        Select-Object -First 1
-    $postgresIsRunning = $null -ne $postgresEntry -and
-        (Test-ManifestProcess -Entry $postgresEntry)
+    # PostgreSQL verwaltet seine echte Hauptprozess-ID selbst in postmaster.pid.
+    # Dieser Zustand ist verlaesslicher als ein eventuell veralteter Eintrag im
+    # allgemeinen Starter-Manifest.
+    $postgresProcess = Get-PostgreSqlProcess
+    $postgresIsRunning = $null -ne $postgresProcess
     $postgresRow = [PSCustomObject]@{
         Component = "PostgreSQL"
         Port = $postgresPort
         PortStatus = if (Test-TcpPort -Port $postgresPort) { "offen" } else { "geschlossen" }
-        ProcessId = if ($postgresIsRunning) { $postgresEntry.ProcessId } else { "-" }
+        ProcessId = if ($postgresIsRunning) { $postgresProcess.Id } else { "-" }
     }
 
     $rabbitMqRow = [PSCustomObject]@{
@@ -444,12 +444,11 @@ function Stop-Application {
     Write-Step "Das Holzwerk beenden"
 
     $entries = @(Get-ManifestEntries)
-    if ($entries.Count -eq 0) {
-        Write-Host "Keine vom Startskript verwalteten Prozesse gefunden."
-    }
-    else {
-        [Array]::Reverse($entries)
-        foreach ($entry in $entries) {
+    $applicationEntries = @($entries | Where-Object { $_.Name -ne "PostgreSQL" })
+    $stoppedComponent = $false
+    if ($applicationEntries.Count -gt 0) {
+        [Array]::Reverse($applicationEntries)
+        foreach ($entry in $applicationEntries) {
             if (-not (Test-ManifestProcess -Entry $entry)) {
                 Write-Host "Uebersprungen: $($entry.Name) laeuft nicht mehr."
                 continue
@@ -457,7 +456,27 @@ function Stop-Application {
 
             Write-Host "Stoppe $($entry.Name) (PID $($entry.ProcessId)) ..."
             Stop-ManagedEntry -Entry $entry
+            $stoppedComponent = $true
         }
+    }
+
+    # PostgreSQL wird bewusst unabhaengig vom allgemeinen Prozessmanifest
+    # beendet. So funktioniert Stop auch bei einem fehlenden oder veralteten
+    # Manifesteintrag.
+    $postgresProcess = Get-PostgreSqlProcess
+    if ($null -ne $postgresProcess) {
+        Write-Host "Stoppe PostgreSQL (PID $($postgresProcess.Id)) ..."
+        Stop-PostgreSqlServer
+        $stoppedComponent = $true
+    }
+    elseif (Test-TcpPort -Port $postgresPort) {
+        throw (
+            "Port $postgresPort ist weiterhin offen, gehoert aber nicht zum " +
+            "projektlokalen PostgreSQL-Prozess. Der fremde Prozess wurde nicht beendet.")
+    }
+
+    if (-not $stoppedComponent) {
+        Write-Host "Keine vom Startskript verwalteten Prozesse gefunden."
     }
 
     Remove-Item -LiteralPath $processManifestPath -Force -ErrorAction SilentlyContinue
@@ -654,6 +673,30 @@ function Stop-SelectedComponent {
         Where-Object { $_.Name -ne $component.Name })
 
     Write-Step "$($component.Name) einzeln stoppen"
+
+    if ($component.IsPostgreSql) {
+        $postgresProcess = Get-PostgreSqlProcess
+        if ($null -eq $postgresProcess) {
+            Save-ManifestEntries -Entries $remainingEntries
+            if (Test-TcpPort -Port $postgresPort) {
+                Write-Host `
+                    "Port $postgresPort ist belegt; der fremde Prozess wird nicht beendet." `
+                    -ForegroundColor Yellow
+            }
+            else {
+                Write-Host "PostgreSQL laeuft nicht."
+            }
+            return
+        }
+
+        Write-Host "Stoppe PostgreSQL (PID $($postgresProcess.Id)) ..."
+        Stop-PostgreSqlServer
+        Save-ManifestEntries -Entries $remainingEntries
+        Write-Host `
+            "PostgreSQL wurde beendet. Abhaengige Komponenten bleiben unveraendert." `
+            -ForegroundColor Green
+        return
+    }
 
     if ($null -eq $manifestEntry) {
         Write-Host "$($component.Name) wird nicht durch das Skript verwaltet."

@@ -919,10 +919,6 @@ function Start-Application {
         throw "Der Collector-Port $collectorPort ist bereits belegt."
     }
 
-    if (Test-TcpPort -Port $postgresPort) {
-        throw "Der PostgreSQL-Port $postgresPort ist bereits belegt."
-    }
-
     New-Item -ItemType Directory -Path $runtimeDirectory -Force | Out-Null
 
     if (-not $SkipBuild) {

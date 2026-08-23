@@ -300,11 +300,9 @@ function Stop-PostgreSqlServer {
 }
 
 function Start-PostgreSqlServer {
-    if (Test-PostgreSqlTcpPort) {
-        $existingProcess = Get-PostgreSqlProcess
-        if ($null -eq $existingProcess) {
-            throw "Port $postgresPort ist durch einen fremden Prozess belegt."
-        }
+    $existingProcess = Get-PostgreSqlProcess
+    if ($null -ne $existingProcess) {
+        Wait-PostgreSqlPort -Process $existingProcess -TimeoutSeconds 30
 
         return [PSCustomObject]@{
             Name = "PostgreSQL"
@@ -312,6 +310,10 @@ function Start-PostgreSqlServer {
             StartTimeUtc = $existingProcess.StartTime.ToUniversalTime().ToString("O")
             Port = $postgresPort
         }
+    }
+
+    if (Test-PostgreSqlTcpPort) {
+        throw "Port $postgresPort ist durch einen fremden Prozess belegt."
     }
 
     Install-PostgreSql

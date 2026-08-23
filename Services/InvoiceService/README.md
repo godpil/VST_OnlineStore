@@ -20,8 +20,9 @@ E-Mail-Senke.
 
 Im Standardmodus `Pickup` entsteht pro Nachricht eine lokale MIME-Datei mit
 angehängter PDF-Rechnung; ein SMTP-Server ist dann nicht erforderlich. Für den
-Modus `Smtp` müssen unter `InvoiceEmail:Smtp` Host, Port und gegebenenfalls
-Zugangsdaten konfiguriert werden.
+Modus `Smtp` müssen unter `InvoiceEmail:Smtp` Host, Port und Zugangsdaten
+konfiguriert werden. MimeKit erstellt die Nachricht in beiden Modi;
+MailKit übernimmt im optionalen SMTP-Modus die verschlüsselte Übertragung.
 
 ## Voraussetzungen
 

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using ShopService.Checkout;
+using ShopService.Orchestration;
 using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
 using Xunit;
@@ -144,6 +145,92 @@ public sealed class CheckoutIntegrationTests {
                 audit.StatusCode == AuditStatusCode.FAILURE);
     }
 
+    [Fact]
+    public async Task NichtBetriebsbereiterShop_VerhindertSagaVorDerReservierung() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.ReadinessUnavailable);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/orders",
+            CreateRequest(scenario.ProductId));
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Equal("Der Shop ist derzeit nicht betriebsbereit.", problem.Title);
+        Assert.Contains("Bestellungen", problem.Detail, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, scenario.ReservationCalls);
+        Assert.Equal(0, scenario.PaymentCalls);
+        Assert.Contains(
+            scenario.Logs,
+            log => log.Level == StructuredLogLevel.ERROR &&
+                log.Message == "Order rejected because the shop is not operational.");
+    }
+
+    [Fact]
+    public async Task ReadinessTimeout_VerhindertSagaMitGatewayTimeout() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.ReadinessTimeout);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/orders",
+            CreateRequest(scenario.ProductId));
+
+        Assert.Equal(HttpStatusCode.GatewayTimeout, response.StatusCode);
+        Assert.Equal(0, scenario.ReservationCalls);
+        Assert.Equal(0, scenario.PaymentCalls);
+    }
+
+    [Fact]
+    public async Task ServiceStatusEndpunkt_LiefertBetroffeneServicesFuerDasFrontend() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.ReadinessUnavailable);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        var response = await client.GetAsync("/api/service-statuses");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        var statuses = Assert.IsType<JsonElement>(problem.Extensions["serviceStatuses"]);
+        Assert.Equal(JsonValueKind.Array, statuses.ValueKind);
+        Assert.Contains(
+            statuses.EnumerateArray(),
+            status => status.GetProperty("service").GetString() == "AuditService" &&
+                !status.GetProperty("available").GetBoolean() &&
+                status.GetProperty("failureKind").GetString() == "UNAVAILABLE");
+    }
+
+    [Fact]
+    public async Task BillingTimeout_NachReservierung_AktiviertSagaKompensation() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.BillingTimeout);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/orders",
+            CreateRequest(scenario.ProductId));
+
+        Assert.Equal(HttpStatusCode.GatewayTimeout, response.StatusCode);
+        Assert.Equal(1, scenario.ReservationCalls);
+        Assert.Equal(1, scenario.PaymentCalls);
+        Assert.Equal(1, scenario.ReleaseCalls);
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.PAYMENT &&
+                audit.StatusCode == AuditStatusCode.FAILURE);
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.STOCK_RELEASE &&
+                audit.StatusCode == AuditStatusCode.COMPENSATED);
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.ORDER_COMPLETED &&
+                audit.StatusCode == AuditStatusCode.FAILURE);
+    }
+
     private static CheckoutRequest CreateRequest(Guid productId) =>
         new(
             [new CheckoutItemRequest(productId.ToString("D"), 2)],
@@ -160,6 +247,7 @@ public sealed class CheckoutIntegrationTests {
                 services.RemoveAll<BillingContracts.BillingOperations.BillingOperationsClient>();
                 services.RemoveAll<IAuditEventPublisher>();
                 services.RemoveAll<IStructuredLogger>();
+                services.RemoveAll<IServiceReadinessService>();
 
                 services.AddSingleton(
                     new WarehouseContracts.WarehouseCatalog.WarehouseCatalogClient(
@@ -171,6 +259,8 @@ public sealed class CheckoutIntegrationTests {
                     new RecordingAuditEventPublisher(scenario));
                 services.AddSingleton<IStructuredLogger>(
                     new RecordingStructuredLogger(scenario));
+                services.AddSingleton<IServiceReadinessService>(
+                    new ScenarioReadinessService(scenario));
             });
         }
     }
@@ -180,7 +270,10 @@ public sealed class CheckoutIntegrationTests {
         StockUnavailable,
         PaymentDeclined,
         WarehouseUnavailable,
-        WarehouseTimeout
+        WarehouseTimeout,
+        BillingTimeout,
+        ReadinessUnavailable,
+        ReadinessTimeout
     }
 
     private sealed class CheckoutScenario(CheckoutScenarioMode mode) {
@@ -209,6 +302,12 @@ public sealed class CheckoutIntegrationTests {
             if (method.Name == "ReserveCart" &&
                 scenario.Mode == CheckoutScenarioMode.WarehouseTimeout) {
                 scenario.ReservationCalls++;
+                return Failed<TResponse>(StatusCode.DeadlineExceeded);
+            }
+
+            if (method.Name == "ProcessPayment" &&
+                scenario.Mode == CheckoutScenarioMode.BillingTimeout) {
+                scenario.PaymentCalls++;
                 return Failed<TResponse>(StatusCode.DeadlineExceeded);
             }
 
@@ -388,6 +487,34 @@ public sealed class CheckoutIntegrationTests {
                 message,
                 JsonSerializer.SerializeToElement(context, JsonOptions)));
         }
+    }
+
+    private sealed class ScenarioReadinessService(CheckoutScenario scenario)
+        : IServiceReadinessService {
+
+        public Task<IReadOnlyList<DownstreamServiceStatus>> GetStatusAsync(
+            CancellationToken cancellationToken) {
+
+            DownstreamServiceStatus[] statuses = [
+                Available("WarehouseService"),
+                scenario.Mode == CheckoutScenarioMode.ReadinessTimeout
+                    ? Unavailable("BillingService", "TIMEOUT")
+                    : Available("BillingService"),
+                Available("InvoiceService"),
+                scenario.Mode == CheckoutScenarioMode.ReadinessUnavailable
+                    ? Unavailable("AuditService", "UNAVAILABLE")
+                    : Available("AuditService")
+            ];
+            return Task.FromResult<IReadOnlyList<DownstreamServiceStatus>>(statuses);
+        }
+
+        private static DownstreamServiceStatus Available(string service) =>
+            new(service, true, "AVAILABLE", "Betriebsbereit.", 1);
+
+        private static DownstreamServiceStatus Unavailable(
+            string service,
+            string failureKind) =>
+            new(service, false, failureKind, "Nicht betriebsbereit.", 2);
     }
 
     private static bool HasStringProperty(

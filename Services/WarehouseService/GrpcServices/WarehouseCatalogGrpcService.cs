@@ -54,14 +54,24 @@ public sealed class WarehouseCatalogGrpcService(
         ServerCallContext context) =>
         await ChangeStockAsync(request, reserve: false, context.CancellationToken);
 
-    public override Task<WarehouseStatusResponse> GetStatus(
+    public override async Task<WarehouseStatusResponse> GetStatus(
         WarehouseStatusRequest request,
         ServerCallContext context) {
 
-        return Task.FromResult(new WarehouseStatusResponse {
-            Available = true,
-            Service = "WarehouseService"
-        });
+        try {
+            var backendStatus = await backend.GetStatusAsync(
+                new BackendStatusRequest(),
+                cancellationToken: context.CancellationToken);
+            return new WarehouseStatusResponse {
+                Available = backendStatus.Available,
+                Service = "WarehouseService"
+            };
+        }
+        catch (Exception exception)
+            when (!IsRequestCancellation(exception, context.CancellationToken)) {
+            LogBackendFailure(exception, "GetStatus", null);
+            throw;
+        }
     }
 
     private async Task<CartStockResponse> ChangeStockAsync(

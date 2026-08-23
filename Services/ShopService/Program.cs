@@ -1,4 +1,5 @@
 using Grpc.Core;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using ShopService.Api;
 using ShopService.Checkout;
@@ -28,6 +29,11 @@ public class Program {
             builder.Configuration,
             "ShopService");
         builder.Services.AddCorrelationIdPropagation();
+        builder.Services
+            .AddOptions<ShopServiceTimeoutOptions>()
+            .Bind(builder.Configuration.GetSection(ShopServiceTimeoutOptions.SectionName))
+            .Validate(options => options.IsValid(), "Alle Downstream-Timeouts müssen positiv sein.")
+            .ValidateOnStart();
         builder.Services.AddGrpcClient<WarehouseContracts.WarehouseCatalog.WarehouseCatalogClient>(options => {
             options.Address = GetServiceAddress(builder.Configuration, "WarehouseService");
         }).AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
@@ -40,7 +46,7 @@ public class Program {
         builder.Services.AddGrpcClient<AuditContracts.AuditOperations.AuditOperationsClient>(options => {
             options.Address = GetServiceAddress(builder.Configuration, "AuditService");
         }).AddHttpMessageHandler<CorrelationIdDelegatingHandler>();
-        builder.Services.AddScoped<ServiceStatusOrchestrator>();
+        builder.Services.AddScoped<IServiceReadinessService, ServiceStatusOrchestrator>();
         builder.Services.AddScoped<AuditSnapshotRecorder>();
         builder.Services.AddScoped<CheckoutOrchestrator>();
 
@@ -65,6 +71,7 @@ public class Program {
             async (
                 bool featured,
                 WarehouseContracts.WarehouseCatalog.WarehouseCatalogClient warehouse,
+                IOptions<ShopServiceTimeoutOptions> configuredTimeouts,
                 IStructuredLogger logger,
                 CancellationToken cancellationToken) => {
 
@@ -77,6 +84,7 @@ public class Program {
                 try {
                     var response = await warehouse.GetFeaturedProductsAsync(
                         new WarehouseContracts.FeaturedProductsRequest(),
+                        deadline: DateTime.UtcNow.Add(configuredTimeouts.Value.CatalogQuery),
                         cancellationToken: cancellationToken);
 
                     return Results.Ok(response.Products.Select(product =>
@@ -115,12 +123,14 @@ public class Program {
             "/api/payment-providers",
             async (
                 BillingContracts.BillingOperations.BillingOperationsClient billing,
+                IOptions<ShopServiceTimeoutOptions> configuredTimeouts,
                 IStructuredLogger logger,
                 CancellationToken cancellationToken) => {
 
                 try {
                     var response = await billing.ListPaymentProvidersAsync(
                         new BillingContracts.PaymentProvidersRequest(),
+                        deadline: DateTime.UtcNow.Add(configuredTimeouts.Value.CatalogQuery),
                         cancellationToken: cancellationToken);
 
                     return Results.Ok(response.Providers.Select(provider =>
@@ -154,12 +164,33 @@ public class Program {
             async (
                 CheckoutRequest request,
                 HttpContext httpContext,
+                IServiceReadinessService readiness,
                 CheckoutOrchestrator orchestrator,
+                IStructuredLogger logger,
                 CancellationToken cancellationToken) => {
 
                 if (!CorrelationId.TryGet(httpContext, out var orderId)) {
                     throw new InvalidOperationException(
                         "Für die Bestellung wurde keine Correlation-ID erzeugt.");
+                }
+
+                var serviceStatuses = await readiness.GetStatusAsync(cancellationToken);
+                if (!ServiceReadiness.IsOperational(serviceStatuses)) {
+                    logger.Error(
+                        "Order rejected because the shop is not operational.",
+                        new {
+                            orderId,
+                            unavailableServices = serviceStatuses
+                                .Where(status => !status.Available)
+                                .Select(status => new {
+                                    status.Service,
+                                    status.FailureKind,
+                                    status.Message,
+                                    status.DurationMs
+                                })
+                                .ToArray()
+                        });
+                    return ShopUnavailable(serviceStatuses, orderId);
                 }
 
                 var outcome = await orchestrator.CheckoutAsync(
@@ -203,17 +234,13 @@ public class Program {
         // gleichzeitig als Diagnose-Endpunkt für den Vertical Slice.
         app.MapGet(
             "/api/service-statuses",
-            async (ServiceStatusOrchestrator orchestrator, CancellationToken cancellationToken) => {
-                try {
-                    return Results.Ok(await orchestrator.GetStatusAsync(cancellationToken));
+            async (IServiceReadinessService readiness, CancellationToken cancellationToken) => {
+                var serviceStatuses = await readiness.GetStatusAsync(cancellationToken);
+                if (ServiceReadiness.IsOperational(serviceStatuses)) {
+                    return Results.Ok(serviceStatuses);
                 }
-                catch (RpcException exception)
-                    when (!IsRequestCancellation(exception, cancellationToken)) {
-                    var (statusCode, detail) = MapDownstreamFailure(
-                        "Mindestens ein Microservice",
-                        exception);
-                    return Results.Problem(detail: detail, statusCode: statusCode);
-                }
+
+                return ShopUnavailable(serviceStatuses);
             })
             .WithName("ListServiceStatuses")
             .WithTags("Service statuses")
@@ -272,6 +299,33 @@ public class Program {
 
         var (statusCode, detail) = MapDownstreamFailure(serviceName, exception);
         return Results.Problem(detail: detail, statusCode: statusCode);
+    }
+
+    private static IResult ShopUnavailable(
+        IReadOnlyList<DownstreamServiceStatus> serviceStatuses,
+        Guid? orderId = null) {
+
+        var statusCode = ServiceReadiness.GetHttpStatusCode(serviceStatuses);
+        var unavailableServices = serviceStatuses
+            .Where(status => !status.Available)
+            .ToArray();
+        var extensions = new Dictionary<string, object?> {
+            ["shopOperational"] = false,
+            ["serviceStatuses"] = serviceStatuses,
+            ["retryable"] = true
+        };
+        if (orderId.HasValue) {
+            extensions["orderId"] = orderId.Value.ToString("D");
+        }
+
+        var reason = unavailableServices.Any(status => status.FailureKind == "TIMEOUT")
+            ? "Mindestens ein erforderlicher Service hat nicht rechtzeitig geantwortet."
+            : "Mindestens ein erforderlicher Service ist derzeit nicht verfügbar.";
+        return Results.Problem(
+            title: "Der Shop ist derzeit nicht betriebsbereit.",
+            detail: $"{reason} Bestellungen sind vorübergehend deaktiviert.",
+            statusCode: statusCode,
+            extensions: extensions);
     }
 
     private static (int StatusCode, string Detail) MapDownstreamFailure(

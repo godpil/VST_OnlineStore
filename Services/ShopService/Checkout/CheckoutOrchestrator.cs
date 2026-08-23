@@ -1,5 +1,7 @@
 using System.Net.Mail;
 using Grpc.Core;
+using Microsoft.Extensions.Options;
+using ShopService.Orchestration;
 using VstOnlineStore.Observability;
 using AuditEventType = VstOnlineStore.Observability.Auditing.AuditEventType;
 using AuditStatusCode = VstOnlineStore.Observability.Auditing.AuditStatusCode;
@@ -17,7 +19,10 @@ public sealed class CheckoutOrchestrator(
     WarehouseContracts.WarehouseCatalog.WarehouseCatalogClient warehouse,
     BillingContracts.BillingOperations.BillingOperationsClient billing,
     AuditSnapshotRecorder audit,
+    IOptions<ShopServiceTimeoutOptions> configuredTimeouts,
     IStructuredLogger logger) {
+
+    private readonly ShopServiceTimeoutOptions _timeouts = configuredTimeouts.Value;
 
     public async Task<CheckoutOutcome> CheckoutAsync(
         CheckoutRequest request,
@@ -133,6 +138,7 @@ public sealed class CheckoutOrchestrator(
         try {
             var availableProviders = await billing.ListPaymentProvidersAsync(
                 new BillingContracts.PaymentProvidersRequest(),
+                deadline: DateTime.UtcNow.Add(_timeouts.CatalogQuery),
                 cancellationToken: cancellationToken);
             selectedPaymentProvider = availableProviders.Providers.FirstOrDefault(provider =>
                 provider.Key.Equals(
@@ -210,6 +216,7 @@ public sealed class CheckoutOrchestrator(
         try {
             catalog = await warehouse.GetFeaturedProductsAsync(
                 new WarehouseContracts.FeaturedProductsRequest(),
+                deadline: DateTime.UtcNow.Add(_timeouts.CatalogQuery),
                 cancellationToken: cancellationToken);
         }
         catch (RpcException exception)
@@ -278,6 +285,7 @@ public sealed class CheckoutOrchestrator(
         try {
             reservation = await warehouse.ReserveCartAsync(
                 stockRequest,
+                deadline: DateTime.UtcNow.Add(_timeouts.StockOperation),
                 cancellationToken: cancellationToken);
         }
         catch (RpcException exception)
@@ -363,6 +371,7 @@ public sealed class CheckoutOrchestrator(
 
             var payment = await billing.ProcessPaymentAsync(
                 paymentRequest,
+                deadline: DateTime.UtcNow.Add(_timeouts.PaymentOperation),
                 cancellationToken: cancellationToken);
 
             auditState.PaymentSucceeded = payment.Success;
@@ -488,6 +497,7 @@ public sealed class CheckoutOrchestrator(
         try {
             var response = await warehouse.ReleaseCartAsync(
                 request,
+                deadline: DateTime.UtcNow.Add(_timeouts.Compensation),
                 cancellationToken: CancellationToken.None);
 
             auditState.ReservationSucceeded = !response.Success;

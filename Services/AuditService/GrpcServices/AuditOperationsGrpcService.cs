@@ -1,6 +1,8 @@
 using AuditService.Application;
+using AuditService.Storage;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using Microsoft.EntityFrameworkCore;
 using VstOnlineStore.Observability;
 using AuditContracts = VstOnlineStore.Contracts.AuditService;
 using DomainEventType = AuditService.Domain.AuditEventType;
@@ -10,6 +12,7 @@ namespace AuditService.GrpcServices;
 
 public sealed class AuditOperationsGrpcService(
     AuditApplicationService applicationService,
+    IDbContextFactory<AuditDbContext> dbContextFactory,
     IStructuredLogger logger) : AuditContracts.AuditOperations.AuditOperationsBase {
 
     public override async Task<AuditContracts.GetOrderSnapshotsResponse> GetOrderSnapshots(
@@ -54,14 +57,37 @@ public sealed class AuditOperationsGrpcService(
         return response;
     }
 
-    public override Task<AuditContracts.AuditStatusResponse> GetStatus(
+    public override async Task<AuditContracts.AuditStatusResponse> GetStatus(
         AuditContracts.AuditStatusRequest request,
         ServerCallContext context) {
 
-        return Task.FromResult(new AuditContracts.AuditStatusResponse {
-            Available = true,
-            Service = "AuditService"
-        });
+        try {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync(
+                context.CancellationToken);
+            var available = await dbContext.Database.CanConnectAsync(
+                context.CancellationToken);
+            return new AuditContracts.AuditStatusResponse {
+                Available = available,
+                Service = "AuditService"
+            };
+        }
+        catch (Exception exception)
+            when (!(context.CancellationToken.IsCancellationRequested &&
+                    exception is OperationCanceledException)) {
+            logger.Error(
+                "Audit database health check failed.",
+                new {
+                    downstreamService = "PostgreSQL",
+                    operation = "CanConnect",
+                    exceptionType = exception.GetType().FullName,
+                    exceptionMessage = exception.Message
+                },
+                exception);
+            return new AuditContracts.AuditStatusResponse {
+                Available = false,
+                Service = "AuditService"
+            };
+        }
     }
 
     private static AuditContracts.AuditSnapshot ToContract(

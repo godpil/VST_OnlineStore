@@ -59,6 +59,14 @@ public sealed class WarehouseStorageGrpcService(
         ServerCallContext context) =>
         await ChangeStockAsync(request, reserve: false, context.CancellationToken);
 
+    public override Task<BackendStatusResponse> GetStatus(
+        BackendStatusRequest request,
+        ServerCallContext context) =>
+        Task.FromResult(new BackendStatusResponse {
+            Available = true,
+            Service = "StoreBackend"
+        });
+
     private async Task<BackendStockChangeResponse> ChangeStockAsync(
         BackendProductQuantitiesRequest request,
         bool reserve,

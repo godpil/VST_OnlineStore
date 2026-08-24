@@ -50,7 +50,7 @@ public sealed class CheckoutIntegrationTests {
         Assert.NotNull(checkout);
         Assert.True(checkout.Success);
         Assert.Equal(25.98m, checkout.Total);
-        Assert.Equal("Holzwerk DemoPay", checkout.PaymentProvider);
+        Assert.Equal("PayPal", checkout.PaymentProvider);
         Assert.Equal(scenario.InvoiceId.ToString("D"), checkout.InvoiceId);
         Assert.Equal($"/api/invoices/{scenario.InvoiceId:D}/pdf", checkout.InvoiceUrl);
         Assert.Equal(1, scenario.ReservationCalls);
@@ -58,6 +58,7 @@ public sealed class CheckoutIntegrationTests {
         Assert.Equal(1, scenario.InvoiceEventCalls);
         Assert.Equal(1, scenario.CommitCalls);
         Assert.Equal(0, scenario.ReleaseCalls);
+        Assert.Equal(["paypal"], scenario.RequestedProviderKeys);
         Assert.Equal(
             [
                 "ReserveCart",
@@ -82,6 +83,42 @@ public sealed class CheckoutIntegrationTests {
         Assert.True(
             FindAuditIndex(scenario, "STOCK_COMMITTED") <
             FindAuditIndex(scenario, "ORDER_COMPLETED"));
+    }
+
+    [Fact]
+    public async Task Providerwahl_Stripe_WirdBisZumBillingServicePropagiert() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.Success);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/orders",
+            CreateRequest(scenario.ProductId, "stripe"));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>();
+        Assert.NotNull(checkout);
+        Assert.Equal("Stripe", checkout.PaymentProvider);
+        Assert.Equal(["stripe"], scenario.RequestedProviderKeys);
+    }
+
+    [Fact]
+    public async Task DeaktivierterDemoProvider_WirdVorDerZahlungAbgelehnt() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.Success);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/orders",
+            CreateRequest(scenario.ProductId, "demo"));
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Contains("Zahlungsanbieter", problem.Detail, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(1, scenario.ReservationCalls);
+        Assert.Equal(0, scenario.PaymentCalls);
+        Assert.Equal(1, scenario.ReleaseCalls);
     }
 
     [Fact]
@@ -304,10 +341,13 @@ public sealed class CheckoutIntegrationTests {
                 HasStringProperty(audit.Payload, "phase", "PAYMENT_REFUNDED"));
     }
 
-    private static CheckoutRequest CreateRequest(Guid productId) =>
+    private static CheckoutRequest CreateRequest(
+        Guid productId,
+        string paymentProviderKey = "paypal") =>
         new(
             [new CheckoutItemRequest(productId.ToString("D"), 2)],
-            "kunde@example.com");
+            "kunde@example.com",
+            paymentProviderKey);
 
     private sealed class ShopApplicationFactory(CheckoutScenario scenario)
         : WebApplicationFactory<ShopService.Program> {
@@ -361,6 +401,7 @@ public sealed class CheckoutIntegrationTests {
         public int ReleaseCalls { get; set; }
         public List<string> GrpcCalls { get; } = [];
         public List<string> ReservationIds { get; } = [];
+        public List<string> RequestedProviderKeys { get; } = [];
         public List<RecordedLog> Logs { get; } = [];
         public List<RecordedAuditEvent> AuditEvents { get; } = [];
     }
@@ -375,6 +416,9 @@ public sealed class CheckoutIntegrationTests {
             scenario.GrpcCalls.Add(method.Name);
             if (request is WarehouseContracts.CartStockRequest stockRequest) {
                 scenario.ReservationIds.Add(stockRequest.ReservationId);
+            }
+            if (request is BillingContracts.PaymentRequest paymentRequest) {
+                scenario.RequestedProviderKeys.Add(paymentRequest.ProviderKey);
             }
 
             if (method.Name == "ReserveCart" &&
@@ -400,7 +444,7 @@ public sealed class CheckoutIntegrationTests {
                 "ReserveCart" => ReserveCart(),
                 "CommitCart" => CommitCart(),
                 "ReleaseCart" => ReleaseCart(),
-                "ProcessPayment" => ProcessPayment(),
+                "ProcessPayment" => ProcessPayment((BillingContracts.PaymentRequest)(object)request),
                 "RefundPayment" => RefundPayment(),
                 _ => throw new InvalidOperationException(
                     $"Unerwarteter gRPC-Aufruf im Integrationstest: {method.FullName}")
@@ -444,7 +488,22 @@ public sealed class CheckoutIntegrationTests {
                 Key = "demo",
                 Name = "Holzwerk DemoPay",
                 IsTestMode = true,
-                IsActive = true
+                IsActive = false,
+                IsEnabled = false
+            });
+            response.Providers.Add(new BillingContracts.PaymentProviderInfo {
+                Key = "paypal",
+                Name = "PayPal",
+                IsTestMode = true,
+                IsActive = true,
+                IsEnabled = true
+            });
+            response.Providers.Add(new BillingContracts.PaymentProviderInfo {
+                Key = "stripe",
+                Name = "Stripe",
+                IsTestMode = true,
+                IsActive = false,
+                IsEnabled = true
             });
             return response;
         }
@@ -500,12 +559,21 @@ public sealed class CheckoutIntegrationTests {
             return response;
         }
 
-        private BillingContracts.PaymentResponse ProcessPayment() {
+        private BillingContracts.PaymentResponse ProcessPayment(
+            BillingContracts.PaymentRequest request) {
             scenario.PaymentCalls++;
+            var providerName = request.ProviderKey.Equals(
+                "stripe",
+                StringComparison.OrdinalIgnoreCase)
+                ? "Stripe"
+                : "PayPal";
+            var transactionId = providerName == "Stripe"
+                ? "pi_test_INTEGRATION_TRANSACTION"
+                : "PAYPAL-TEST-INTEGRATION-TRANSACTION";
             if (scenario.Mode == CheckoutScenarioMode.PaymentDeclined) {
                 return new BillingContracts.PaymentResponse {
                     Success = false,
-                    Provider = "Holzwerk DemoPay",
+                    Provider = providerName,
                     Message = "Die Zahlung wurde gezielt abgelehnt."
                 };
             }
@@ -517,8 +585,8 @@ public sealed class CheckoutIntegrationTests {
 
             return new BillingContracts.PaymentResponse {
                 Success = true,
-                TransactionId = "DEMO-INTEGRATION-TRANSACTION",
-                Provider = "Holzwerk DemoPay",
+                TransactionId = transactionId,
+                Provider = providerName,
                 Message = "Die Zahlung wurde bestätigt.",
                 InvoiceId = invoiceQueued ? scenario.InvoiceId.ToString("D") : string.Empty,
                 InvoiceQueued = invoiceQueued
@@ -529,7 +597,7 @@ public sealed class CheckoutIntegrationTests {
             scenario.RefundCalls++;
             return new BillingContracts.RefundPaymentResponse {
                 Success = true,
-                TransactionId = "DEMO-INTEGRATION-TRANSACTION",
+                TransactionId = "PAYPAL-TEST-INTEGRATION-TRANSACTION",
                 RefundedAmountInCents = 2_598,
                 TotalRefundedAmountInCents = 2_598,
                 Status = BillingContracts.PaymentTransactionStatus.Refunded,

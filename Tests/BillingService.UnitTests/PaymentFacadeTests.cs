@@ -17,7 +17,7 @@ public sealed class PaymentFacadeTests {
         var result = await facade.ChargeAsync(orderId, 1_299, "EUR");
 
         Assert.True(result.Success);
-        Assert.StartsWith("DEMO-", result.TransactionId);
+        Assert.StartsWith("PAYPAL-TEST-", result.TransactionId);
         Assert.Equal(PaymentTransactionStatus.Succeeded, result.Status);
     }
 
@@ -47,7 +47,8 @@ public sealed class PaymentFacadeTests {
         var facade = CreateFacade(
             providers,
             providerKey,
-            timeoutMilliseconds: 25);
+            timeoutMilliseconds: 25,
+            enabledProviderKeys: [providerKey, providerKey + "-backup"]);
 
         var exception = await Assert.ThrowsAsync<TimeoutException>(() =>
             facade.ChargeAsync(Guid.NewGuid(), 1_299, "EUR"));
@@ -56,18 +57,45 @@ public sealed class PaymentFacadeTests {
     }
 
     [Fact]
-    public void Anbieterwechsel_VerwendetAusschliesslichKonfiguriertenAnbieter() {
-        var facade = CreateFacade(CreateProviders(), activeProviderKey: "paypal");
+    public void Konfiguration_DeaktiviertDemoUndAktiviertPayPalUndStripe() {
+        var facade = CreateFacade(CreateProviders());
 
         Assert.Equal("paypal", facade.ActiveProvider.Key);
         Assert.Single(facade.Providers, provider => provider.IsActive);
+        Assert.False(facade.Providers.Single(provider => provider.Key == "demo").IsEnabled);
+        Assert.True(facade.Providers.Single(provider => provider.Key == "paypal").IsEnabled);
+        Assert.True(facade.Providers.Single(provider => provider.Key == "stripe").IsEnabled);
+    }
+
+    [Fact]
+    public async Task Anbieterwahl_VerwendetDenGewaehltenAktiviertenAdapter() {
+        var facade = CreateFacade(CreateProviders());
+
+        var result = await facade.ChargeAsync(
+            "stripe",
+            Guid.NewGuid(),
+            2_000,
+            "EUR");
+
+        Assert.True(result.Success);
+        Assert.StartsWith("pi_test_", result.TransactionId);
+    }
+
+    [Fact]
+    public async Task DeaktivierterDemoAdapter_KannNichtFuerNeueZahlungVerwendetWerden() {
+        var facade = CreateFacade(CreateProviders());
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            facade.ChargeAsync("demo", Guid.NewGuid(), 2_000, "EUR"));
+
+        Assert.Contains("nicht verfügbar", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public async Task RefundUndStatus_LaufenAusschliesslichUeberDieFassade() {
         var facade = CreateFacade(CreateProviders(), activeProviderKey: "stripe");
         var orderId = Guid.NewGuid();
-        var charge = await facade.ChargeAsync(orderId, 2_000, "EUR");
+        var charge = await facade.ChargeAsync("stripe", orderId, 2_000, "EUR");
 
         var partialRefund = await facade.RefundAsync(charge.TransactionId, 500);
         var partialStatus = await facade.GetStatusAsync(charge.TransactionId);
@@ -109,12 +137,14 @@ public sealed class PaymentFacadeTests {
 
     private static IPaymentFacade CreateFacade(
         IEnumerable<IPaymentProvider> providers,
-        string activeProviderKey = "demo",
-        int timeoutMilliseconds = 5_000) =>
+        string activeProviderKey = "paypal",
+        int timeoutMilliseconds = 5_000,
+        IEnumerable<string>? enabledProviderKeys = null) =>
         new PaymentFacade(
             providers,
             Options.Create(new PaymentProviderOptions {
                 ActiveProviderKey = activeProviderKey,
+                EnabledProviderKeys = enabledProviderKeys?.ToArray() ?? ["paypal", "stripe"],
                 TimeoutMilliseconds = timeoutMilliseconds
             }));
 

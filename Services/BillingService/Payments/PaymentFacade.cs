@@ -43,8 +43,8 @@ public sealed class PaymentFacade : IPaymentFacade {
         ArgumentNullException.ThrowIfNull(providers);
         ArgumentNullException.ThrowIfNull(options);
 
-        var providerList = providers.ToArray();
-        _providers = providerList.ToDictionary(
+        var providerArr = providers.ToArray();
+        _providers = providers.ToDictionary(
             provider => provider.Key,
             StringComparer.OrdinalIgnoreCase);
 
@@ -64,7 +64,7 @@ public sealed class PaymentFacade : IPaymentFacade {
                 $"'{configuredOptions.ActiveProviderKey}' ist nicht registriert.");
         }
 
-        Providers = providerList
+        Providers = providerArr
             .Select(provider => ToDescriptor(
                 provider,
                 provider.Key.Equals(_activeProvider.Key, StringComparison.OrdinalIgnoreCase)))

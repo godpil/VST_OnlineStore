@@ -26,9 +26,20 @@ public class Program {
                 : Path.GetFullPath(Path.Combine(
                     builder.Environment.ContentRootPath,
                     configuredPath));
+            var configuredReservationPath = builder.Configuration["WarehouseData:ReservationFilePath"];
+            var reservationFilePath = string.IsNullOrWhiteSpace(configuredReservationPath)
+                ? Path.Combine(
+                    Path.GetDirectoryName(dataFilePath) ?? string.Empty,
+                    $"{Path.GetFileNameWithoutExtension(dataFilePath)}.reservations.json")
+                : Path.IsPathRooted(configuredReservationPath)
+                    ? configuredReservationPath
+                    : Path.GetFullPath(Path.Combine(
+                        builder.Environment.ContentRootPath,
+                        configuredReservationPath));
 
             return new JsonWarehouseRepository(
                 dataFilePath,
+                reservationFilePath,
                 services.GetRequiredService<IStructuredLogger>());
         });
         builder.Services.AddSingleton<IWarehouseRepository>(services =>

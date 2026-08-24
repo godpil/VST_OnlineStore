@@ -10,7 +10,10 @@ public interface IWarehouseRepository {
     Task<IReadOnlyList<WarehouseProduct>> GetProductsAsync(
         CancellationToken cancellationToken = default);
 
-    Task ReplaceProductsAsync(
-        IReadOnlyCollection<WarehouseProduct> products,
+    Task<WarehouseState> GetStateAsync(
+        CancellationToken cancellationToken = default);
+
+    Task ReplaceStateAsync(
+        WarehouseState state,
         CancellationToken cancellationToken = default);
 }

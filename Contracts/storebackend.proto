@@ -8,6 +8,7 @@ package storebackend;
 service WarehouseStorage {
   rpc GetProducts (BackendProductsRequest) returns (BackendProductsResponse);
   rpc ReserveProducts (BackendProductQuantitiesRequest) returns (BackendStockChangeResponse);
+  rpc CommitProducts (BackendProductQuantitiesRequest) returns (BackendStockChangeResponse);
   rpc ReleaseProducts (BackendProductQuantitiesRequest) returns (BackendStockChangeResponse);
   rpc GetStatus (BackendStatusRequest) returns (BackendStatusResponse);
 }
@@ -29,6 +30,7 @@ message StoredProduct {
 
 message BackendProductQuantitiesRequest {
   repeated BackendProductQuantity items = 1;
+  string reservation_id = 2;
 }
 
 message BackendProductQuantity {
@@ -53,4 +55,6 @@ message BackendProductStock {
   string product_id = 1;
   int32 available_quantity = 2;
   bool is_sold_out = 3;
+  string name = 4;
+  int64 price_in_cents = 5;
 }

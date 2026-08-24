@@ -50,6 +50,7 @@ public sealed class CheckoutOrchestrator(
             await CompensateUnexpectedReservationAsync(auditState);
 
             auditState.Phase = "ORDER_CANCELLED";
+            auditState.OrderStatus = "CANCELLED";
             auditState.FailureReason = "Der Bestellvorgang wurde abgebrochen.";
             auditState.Message = auditState.FailureReason;
             await RecordAuditAsync(
@@ -66,6 +67,7 @@ public sealed class CheckoutOrchestrator(
             await CompensateUnexpectedReservationAsync(auditState);
 
             auditState.Phase = "ORDER_UNEXPECTED_ERROR";
+            auditState.OrderStatus = "FAILED";
             auditState.FailureReason = "Der Bestellvorgang ist aufgrund eines unerwarteten Fehlers fehlgeschlagen.";
             auditState.Message = auditState.FailureReason;
             await RecordAuditAsync(
@@ -129,143 +131,10 @@ public sealed class CheckoutOrchestrator(
             auditState,
             cancellationToken);
 
-        BillingContracts.PaymentProviderInfo? selectedPaymentProvider;
-        try {
-            var availableProviders = await billing.ListPaymentProvidersAsync(
-                new BillingContracts.PaymentProvidersRequest(),
-                deadline: DateTime.UtcNow.Add(_timeouts.CatalogQuery),
-                cancellationToken: cancellationToken);
-            selectedPaymentProvider = availableProviders.Providers.SingleOrDefault(provider =>
-                provider.IsActive);
-
-            if (selectedPaymentProvider is null) {
-                auditState.Phase = "PAYMENT_PROVIDER_CONFIGURATION_INVALID";
-                auditState.FailureReason =
-                    "Der zentral konfigurierte Zahlungsanbieter ist nicht verfügbar.";
-                auditState.Message = auditState.FailureReason;
-                await RecordAuditAsync(
-                    AuditEventType.PAYMENT,
-                    "ShopService",
-                    "BillingService",
-                    AuditStatusCode.FAILURE,
-                    auditState,
-                    cancellationToken);
-                logger.Warn(
-                    "Checkout rejected an invalid active payment provider configuration.");
-                return await CompleteWithFailureAsync(
-                    auditState,
-                    StatusCodes.Status422UnprocessableEntity,
-                    auditState.FailureReason,
-                    cancellationToken);
-            }
-        }
-        catch (RpcException exception)
-            when (!IsRequestCancellation(exception, cancellationToken)) {
-            var failure = GetDownstreamFailure("BillingService", exception);
-            auditState.Phase = "PAYMENT_PROVIDER_LOOKUP_FAILED";
-            auditState.FailureReason = failure.Message;
-            auditState.Message = auditState.FailureReason;
-            await RecordAuditAsync(
-                AuditEventType.PAYMENT,
-                "ShopService",
-                "BillingService",
-                AuditStatusCode.FAILURE,
-                auditState,
-                cancellationToken);
-            TryLogDownstreamError(
-                exception,
-                "BillingService",
-                "ListPaymentProviders",
-                auditState);
-            return await CompleteWithFailureAsync(
-                auditState,
-                failure.StatusCode,
-                auditState.FailureReason,
-                cancellationToken);
-        }
-
-        auditState.PaymentProviderKey = selectedPaymentProvider.Key;
-        auditState.PaymentProvider = selectedPaymentProvider.Name;
-        auditState.Phase = "PAYMENT_PROVIDER_SELECTED";
-        auditState.Message = $"{selectedPaymentProvider.Name} wurde als Zahlungsanbieter ausgewählt.";
-        await RecordAuditAsync(
-            AuditEventType.PAYMENT,
-            "ShopService",
-            selectedPaymentProvider.Name,
-            AuditStatusCode.SUCCESS,
-            auditState,
-            cancellationToken);
-        logger.Info(
-            "Payment provider selected for checkout.",
-            new {
-                providerKey = selectedPaymentProvider.Key,
-                providerName = selectedPaymentProvider.Name,
-                selectedPaymentProvider.IsTestMode
-            });
-
-        WarehouseContracts.FeaturedProductsResponse catalog;
-        try {
-            catalog = await warehouse.GetFeaturedProductsAsync(
-                new WarehouseContracts.FeaturedProductsRequest(),
-                deadline: DateTime.UtcNow.Add(_timeouts.CatalogQuery),
-                cancellationToken: cancellationToken);
-        }
-        catch (RpcException exception)
-            when (!IsRequestCancellation(exception, cancellationToken)) {
-            var failure = GetDownstreamFailure("WarehouseService", exception);
-            auditState.Phase = "WAREHOUSE_CATALOG_FAILED";
-            auditState.FailureReason = failure.Message;
-            auditState.Message = failure.Message;
-            await RecordAuditAsync(
-                AuditEventType.STOCK_RESERVATION,
-                "ShopService",
-                "WarehouseService",
-                AuditStatusCode.FAILURE,
-                auditState,
-                cancellationToken);
-            TryLogDownstreamError(
-                exception,
-                "WarehouseService",
-                "GetFeaturedProducts",
-                auditState);
-            return await CompleteWithFailureAsync(
-                auditState,
-                failure.StatusCode,
-                failure.Message,
-                cancellationToken);
-        }
-
-        var products = catalog.Products
-            .Where(product => Guid.TryParse(product.Id, out _))
-            .ToDictionary(product => Guid.Parse(product.Id));
-
         long totalInCents = 0;
-        foreach (var (productId, quantity) in quantities) {
-            if (!products.TryGetValue(productId, out var product)) {
-                auditState.Phase = "ORDER_VALIDATION_FAILED";
-                auditState.FailureReason = "Mindestens ein Produkt ist nicht mehr verfügbar.";
-                auditState.Message = auditState.FailureReason;
-                await RecordAuditAsync(
-                    AuditEventType.ORDER_VALIDATED,
-                    "ShopService",
-                    "ShopService",
-                    AuditStatusCode.FAILURE,
-                    auditState,
-                    cancellationToken);
-
-                return await CompleteWithFailureAsync(
-                    auditState,
-                    StatusCodes.Status422UnprocessableEntity,
-                    auditState.FailureReason,
-                    cancellationToken);
-            }
-
-            totalInCents = checked(totalInCents + checked(product.PriceInCents * quantity));
-        }
-
-        auditState.TotalInCents = totalInCents;
-
-        var stockRequest = new WarehouseContracts.CartStockRequest();
+        var stockRequest = new WarehouseContracts.CartStockRequest {
+            ReservationId = auditState.OrderId.ToString("D")
+        };
         stockRequest.Items.AddRange(quantities.Select(item =>
             new WarehouseContracts.CartProductQuantity {
                 ProductId = item.Key.ToString(),
@@ -339,6 +208,134 @@ public sealed class CheckoutOrchestrator(
                 totalInCents);
         }
 
+        var products = new Dictionary<Guid, WarehouseContracts.CartProductStock>();
+        var reservationResponseIsValid = reservation.Products.Count == quantities.Count;
+        foreach (var product in reservation.Products) {
+            if (!Guid.TryParse(product.ProductId, out var productId) ||
+                !quantities.ContainsKey(productId) ||
+                string.IsNullOrWhiteSpace(product.Name) ||
+                product.PriceInCents < 0 ||
+                !products.TryAdd(productId, product)) {
+                reservationResponseIsValid = false;
+            }
+        }
+
+        if (!reservationResponseIsValid ||
+            quantities.Keys.Any(productId => !products.ContainsKey(productId))) {
+            auditState.Phase = "STOCK_RESERVATION_RESPONSE_INVALID";
+            auditState.FailureReason =
+                "Der WarehouseService hat unvollständige Produktdaten für die Reservierung geliefert.";
+            auditState.Message = auditState.FailureReason;
+            await RecordAuditAsync(
+                AuditEventType.STOCK_RESERVATION,
+                "ShopService",
+                "WarehouseService",
+                AuditStatusCode.FAILURE,
+                auditState,
+                cancellationToken);
+            await ReleaseReservationAsync(
+                stockRequest,
+                auditState,
+                cancellationToken);
+            TryLogError(null, auditState.FailureReason);
+            return await CompleteWithFailureAsync(
+                auditState,
+                StatusCodes.Status502BadGateway,
+                "Die reservierten Produktdaten konnten nicht verarbeitet werden. " +
+                "Die Reservierung wurde zurückgenommen.",
+                cancellationToken);
+        }
+
+        foreach (var (productId, quantity) in quantities) {
+            totalInCents = checked(
+                totalInCents + checked(products[productId].PriceInCents * quantity));
+        }
+        auditState.TotalInCents = totalInCents;
+
+        BillingContracts.PaymentProviderInfo? selectedPaymentProvider;
+        try {
+            var availableProviders = await billing.ListPaymentProvidersAsync(
+                new BillingContracts.PaymentProvidersRequest(),
+                deadline: DateTime.UtcNow.Add(_timeouts.CatalogQuery),
+                cancellationToken: cancellationToken);
+            selectedPaymentProvider = availableProviders.Providers.SingleOrDefault(provider =>
+                provider.IsActive);
+
+            if (selectedPaymentProvider is null) {
+                auditState.Phase = "PAYMENT_PROVIDER_CONFIGURATION_INVALID";
+                auditState.FailureReason =
+                    "Der zentral konfigurierte Zahlungsanbieter ist nicht verfügbar.";
+                auditState.Message = auditState.FailureReason;
+                await RecordAuditAsync(
+                    AuditEventType.PAYMENT,
+                    "ShopService",
+                    "BillingService",
+                    AuditStatusCode.FAILURE,
+                    auditState,
+                    cancellationToken);
+                await ReleaseReservationAsync(
+                    stockRequest,
+                    auditState,
+                    cancellationToken);
+                logger.Warn(
+                    "Checkout rejected an invalid active payment provider configuration.");
+                return await CompleteWithFailureAsync(
+                    auditState,
+                    StatusCodes.Status422UnprocessableEntity,
+                    auditState.FailureReason,
+                    cancellationToken,
+                    totalInCents);
+            }
+        }
+        catch (RpcException exception)
+            when (!IsRequestCancellation(exception, cancellationToken)) {
+            var failure = GetDownstreamFailure("BillingService", exception);
+            auditState.Phase = "PAYMENT_PROVIDER_LOOKUP_FAILED";
+            auditState.FailureReason = failure.Message;
+            auditState.Message = auditState.FailureReason;
+            await RecordAuditAsync(
+                AuditEventType.PAYMENT,
+                "ShopService",
+                "BillingService",
+                AuditStatusCode.FAILURE,
+                auditState,
+                cancellationToken);
+            await ReleaseReservationAsync(
+                stockRequest,
+                auditState,
+                cancellationToken);
+            TryLogDownstreamError(
+                exception,
+                "BillingService",
+                "ListPaymentProviders",
+                auditState);
+            return await CompleteWithFailureAsync(
+                auditState,
+                failure.StatusCode,
+                $"{auditState.FailureReason} Die Reservierung wurde zurückgenommen.",
+                cancellationToken,
+                totalInCents);
+        }
+
+        auditState.PaymentProviderKey = selectedPaymentProvider.Key;
+        auditState.PaymentProvider = selectedPaymentProvider.Name;
+        auditState.Phase = "PAYMENT_PROVIDER_SELECTED";
+        auditState.Message = $"{selectedPaymentProvider.Name} wurde als Zahlungsanbieter ausgewählt.";
+        await RecordAuditAsync(
+            AuditEventType.PAYMENT,
+            "ShopService",
+            selectedPaymentProvider.Name,
+            AuditStatusCode.SUCCESS,
+            auditState,
+            cancellationToken);
+        logger.Info(
+            "Payment provider selected for checkout.",
+            new {
+                providerKey = selectedPaymentProvider.Key,
+                providerName = selectedPaymentProvider.Name,
+                selectedPaymentProvider.IsTestMode
+            });
+
         var reference = $"HOLZWERK-{Guid.NewGuid():N}";
         auditState.Reference = reference;
         try {
@@ -400,6 +397,109 @@ public sealed class CheckoutOrchestrator(
                     totalInCents);
             }
 
+            if (!payment.InvoiceQueued || string.IsNullOrWhiteSpace(payment.InvoiceId)) {
+                auditState.Phase = "INVOICE_QUEUE_FAILED";
+                auditState.FailureReason =
+                    "Das PaymentSucceeded-Ereignis konnte nicht zur Rechnungserstellung veröffentlicht werden.";
+                auditState.Message = auditState.FailureReason;
+                await RecordAuditAsync(
+                    AuditEventType.INVOICE,
+                    "ShopService",
+                    "BillingService",
+                    AuditStatusCode.FAILURE,
+                    auditState,
+                    cancellationToken);
+
+                var compensated = await CompensatePaymentAsync(
+                    payment.TransactionId,
+                    totalInCents,
+                    stockRequest,
+                    auditState);
+                var message = compensated
+                    ? "Die Rechnung konnte nicht eingeplant werden. Zahlung und Reservierung wurden zurückgenommen."
+                    : "Die Rechnung konnte nicht eingeplant werden. Die automatische Kompensation ist fehlgeschlagen; " +
+                      "der Betreiber wurde informiert.";
+                return await CompleteWithFailureAsync(
+                    auditState,
+                    StatusCodes.Status503ServiceUnavailable,
+                    message,
+                    CancellationToken.None,
+                    totalInCents);
+            }
+
+            WarehouseContracts.CartStockResponse commit;
+            try {
+                commit = await CommitReservationWithRetryAsync(
+                    stockRequest,
+                    auditState,
+                    cancellationToken);
+            }
+            catch (RpcException exception)
+                when (!IsRequestCancellation(exception, cancellationToken)) {
+                var failure = GetDownstreamFailure("WarehouseService", exception);
+                auditState.StockCommitted = false;
+                auditState.Phase = "STOCK_COMMIT_FAILED";
+                auditState.FailureReason = failure.Message;
+                auditState.Message =
+                    "Die Zahlung war erfolgreich, die endgültige Lagerbuchung konnte aber nicht bestätigt werden.";
+                await RecordAuditAsync(
+                    AuditEventType.STOCK_RESERVATION,
+                    "ShopService",
+                    "WarehouseService",
+                    AuditStatusCode.FAILURE,
+                    auditState,
+                    CancellationToken.None);
+                TryLogDownstreamError(
+                    exception,
+                    "WarehouseService",
+                    "CommitCart",
+                    auditState);
+
+                return await CompleteWithFailureAsync(
+                    auditState,
+                    failure.StatusCode,
+                    $"{auditState.Message} Der Betreiber wurde über den Fehler informiert.",
+                    CancellationToken.None,
+                    totalInCents);
+            }
+
+            auditState.StockCommitted = commit.Success;
+            auditState.Stock = commit.Products
+                .Select(product => new ProductStockSnapshot(
+                    product.ProductId,
+                    product.AvailableQuantity,
+                    product.IsSoldOut))
+                .ToArray();
+            auditState.Phase = commit.Success
+                ? "STOCK_COMMITTED"
+                : "STOCK_COMMIT_FAILED";
+            auditState.Message = commit.Message;
+            if (!commit.Success) {
+                auditState.FailureReason = commit.Message;
+            }
+            await RecordAuditAsync(
+                AuditEventType.STOCK_RESERVATION,
+                "ShopService",
+                "WarehouseService",
+                commit.Success
+                    ? AuditStatusCode.SUCCESS
+                    : AuditStatusCode.FAILURE,
+                auditState,
+                cancellationToken);
+
+            if (!commit.Success) {
+                TryLogError(
+                    null,
+                    $"Lagerreservierung konnte nicht endgültig ausgebucht werden: {commit.Message}");
+                return await CompleteWithFailureAsync(
+                    auditState,
+                    StatusCodes.Status502BadGateway,
+                    "Die Zahlung war erfolgreich, die endgültige Lagerbuchung ist jedoch fehlgeschlagen. " +
+                    "Der Betreiber wurde über den Fehler informiert.",
+                    cancellationToken,
+                    totalInCents);
+            }
+
             logger.Info(
                 "Checkout completed.",
                 new {
@@ -408,12 +508,15 @@ public sealed class CheckoutOrchestrator(
                     transactionId = payment.TransactionId,
                     invoiceId = NullIfEmpty(payment.InvoiceId),
                     payment.InvoiceQueued,
+                    stockCommitted = commit.Success,
                     totalInCents,
                     currency = "EUR"
                 });
 
             auditState.Phase = "ORDER_COMPLETED";
-            auditState.Message = "Zahlung und Warenreservierung wurden erfolgreich abgeschlossen.";
+            auditState.OrderStatus = "COMPLETED";
+            auditState.Message =
+                "Zahlung, Rechnungsevent und endgültige Lagerbuchung wurden erfolgreich abgeschlossen.";
             await RecordAuditAsync(
                 AuditEventType.ORDER_COMPLETED,
                 "ShopService",
@@ -427,7 +530,7 @@ public sealed class CheckoutOrchestrator(
                 new CheckoutResponse(
                     true,
                     auditState.OrderId.ToString("D"),
-                    "Vielen Dank! Die Zahlung war erfolgreich und die Ware ist reserviert.",
+                    "Vielen Dank! Die Bestellung wurde erfolgreich abgeschlossen.",
                     totalInCents / 100m,
                     "EUR",
                     payment.TransactionId,
@@ -467,6 +570,127 @@ public sealed class CheckoutOrchestrator(
                 $"{failure.Message} Die Reservierung wurde zurückgenommen.",
                 cancellationToken,
                 totalInCents);
+        }
+    }
+
+    private async Task<bool> CompensatePaymentAsync(
+        string transactionId,
+        long amountInCents,
+        WarehouseContracts.CartStockRequest stockRequest,
+        OrderAuditState auditState) {
+
+        auditState.Phase = "PAYMENT_REFUND_REQUESTED";
+        auditState.Message =
+            "Die Zahlung wird wegen des fehlgeschlagenen Rechnungsevents zurückgenommen.";
+        await RecordAuditAsync(
+            AuditEventType.PAYMENT,
+            "ShopService",
+            "ShopService",
+            AuditStatusCode.COMPENSATING,
+            auditState,
+            CancellationToken.None);
+
+        try {
+            var refund = await billing.RefundPaymentAsync(
+                new BillingContracts.RefundPaymentRequest {
+                    TransactionId = transactionId,
+                    AmountInCents = amountInCents
+                },
+                deadline: DateTime.UtcNow.Add(_timeouts.Compensation),
+                cancellationToken: CancellationToken.None);
+
+            auditState.Phase = refund.Success
+                ? "PAYMENT_REFUNDED"
+                : "PAYMENT_REFUND_FAILED";
+            auditState.Message = refund.Message;
+            await RecordAuditAsync(
+                AuditEventType.PAYMENT,
+                "ShopService",
+                "BillingService",
+                refund.Success
+                    ? AuditStatusCode.COMPENSATED
+                    : AuditStatusCode.FAILURE,
+                auditState,
+                CancellationToken.None);
+
+            if (!refund.Success) {
+                TryLogError(
+                    null,
+                    $"Zahlung konnte nach fehlgeschlagenem Rechnungsevent nicht erstattet werden: {refund.Message}");
+                return false;
+            }
+
+            await ReleaseReservationAsync(
+                stockRequest,
+                auditState,
+                CancellationToken.None);
+            return auditState.ReservationSucceeded is false;
+        }
+        catch (RpcException exception) {
+            auditState.Phase = "PAYMENT_REFUND_FAILED";
+            auditState.Message =
+                "Die Zahlung konnte nach dem fehlgeschlagenen Rechnungsevent nicht erstattet werden.";
+            await RecordAuditAsync(
+                AuditEventType.PAYMENT,
+                "ShopService",
+                "BillingService",
+                AuditStatusCode.FAILURE,
+                auditState,
+                CancellationToken.None);
+            TryLogDownstreamError(
+                exception,
+                "BillingService",
+                "RefundPayment",
+                auditState);
+            return false;
+        }
+    }
+
+    private async Task<WarehouseContracts.CartStockResponse> CommitReservationWithRetryAsync(
+        WarehouseContracts.CartStockRequest request,
+        OrderAuditState auditState,
+        CancellationToken cancellationToken) {
+
+        try {
+            return await warehouse.CommitCartAsync(
+                request,
+                deadline: DateTime.UtcNow.Add(_timeouts.StockOperation),
+                cancellationToken: cancellationToken);
+        }
+        catch (RpcException exception)
+            when (!IsRequestCancellation(exception, cancellationToken) &&
+                  exception.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded) {
+            auditState.Phase = "STOCK_COMMIT_RETRY";
+            auditState.Message =
+                "Die Bestätigung der Lagerbuchung wird nach einem Kommunikationsfehler wiederholt.";
+            await RecordAuditAsync(
+                AuditEventType.STOCK_RESERVATION,
+                "ShopService",
+                "WarehouseService",
+                AuditStatusCode.FAILURE,
+                auditState,
+                CancellationToken.None);
+            try {
+                logger.Warn(
+                    "Warehouse stock commit will be retried.",
+                    new {
+                        operation = "CommitCart",
+                        reservationId = request.ReservationId,
+                        attempt = 2,
+                        grpcStatus = exception.StatusCode.ToString(),
+                        grpcDetail = exception.Status.Detail
+                    },
+                    exception);
+            }
+            catch (Exception) {
+                // Eine nicht verfügbare Log-Senke darf den idempotenten
+                // Wiederholungsversuch nicht verhindern.
+            }
+
+            return await warehouse.CommitCartAsync(
+                request,
+                deadline: DateTime.UtcNow.Add(_timeouts.StockOperation),
+                cancellationToken: CancellationToken.None);
         }
     }
 
@@ -545,7 +769,9 @@ public sealed class CheckoutOrchestrator(
             return;
         }
 
-        var request = new WarehouseContracts.CartStockRequest();
+        var request = new WarehouseContracts.CartStockRequest {
+            ReservationId = auditState.OrderId.ToString("D")
+        };
         request.Items.AddRange(auditState.Items.Select(item =>
             new WarehouseContracts.CartProductQuantity {
                 ProductId = item.ProductId,
@@ -566,6 +792,7 @@ public sealed class CheckoutOrchestrator(
         long totalInCents = 0) {
 
         auditState.Phase = "ORDER_FAILED";
+        auditState.OrderStatus = "FAILED";
         auditState.FailureReason ??= message;
         auditState.Message = message;
         await RecordAuditAsync(
@@ -776,6 +1003,7 @@ public sealed class CheckoutOrchestrator(
         string? customerEmailDomain) {
 
         public Guid OrderId { get; } = orderId;
+        public string OrderStatus { get; set; } = "IN_PROGRESS";
         public string Phase { get; set; } = "ORDER_STARTED";
         public IReadOnlyList<OrderItemSnapshot> Items { get; set; } = requestedItems
             .Select(item => new OrderItemSnapshot(item.ProductId, item.Quantity))
@@ -784,6 +1012,7 @@ public sealed class CheckoutOrchestrator(
         public string Currency { get; } = "EUR";
         public string? Reference { get; set; }
         public bool? ReservationSucceeded { get; set; }
+        public bool? StockCommitted { get; set; }
         public IReadOnlyList<ProductStockSnapshot> Stock { get; set; } = [];
         public bool? PaymentSucceeded { get; set; }
         public string? PaymentProviderKey { get; set; }

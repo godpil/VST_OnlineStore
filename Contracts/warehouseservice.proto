@@ -8,6 +8,7 @@ package warehouseservice;
 service WarehouseCatalog {
   rpc GetFeaturedProducts (FeaturedProductsRequest) returns (FeaturedProductsResponse);
   rpc ReserveCart (CartStockRequest) returns (CartStockResponse);
+  rpc CommitCart (CartStockRequest) returns (CartStockResponse);
   rpc ReleaseCart (CartStockRequest) returns (CartStockResponse);
   rpc GetStatus (WarehouseStatusRequest) returns (WarehouseStatusResponse);
 }
@@ -29,6 +30,7 @@ message WarehouseProduct {
 
 message CartStockRequest {
   repeated CartProductQuantity items = 1;
+  string reservation_id = 2;
 }
 
 message CartProductQuantity {
@@ -46,6 +48,8 @@ message CartProductStock {
   string product_id = 1;
   int32 available_quantity = 2;
   bool is_sold_out = 3;
+  string name = 4;
+  int64 price_in_cents = 5;
 }
 
 message WarehouseStatusRequest {}

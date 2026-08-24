@@ -49,15 +49,20 @@ public sealed class WarehouseStorageGrpcService(
         }
     }
 
-    public override async Task<BackendStockChangeResponse> ReserveProducts(
+    public override Task<BackendStockChangeResponse> ReserveProducts(
         BackendProductQuantitiesRequest request,
         ServerCallContext context) =>
-        await ChangeStockAsync(request, reserve: true, context.CancellationToken);
+        ChangeReservationAsync(request, StockOperation.Reserve, context.CancellationToken);
 
-    public override async Task<BackendStockChangeResponse> ReleaseProducts(
+    public override Task<BackendStockChangeResponse> CommitProducts(
         BackendProductQuantitiesRequest request,
         ServerCallContext context) =>
-        await ChangeStockAsync(request, reserve: false, context.CancellationToken);
+        ChangeReservationAsync(request, StockOperation.Commit, context.CancellationToken);
+
+    public override Task<BackendStockChangeResponse> ReleaseProducts(
+        BackendProductQuantitiesRequest request,
+        ServerCallContext context) =>
+        ChangeReservationAsync(request, StockOperation.Release, context.CancellationToken);
 
     public override Task<BackendStatusResponse> GetStatus(
         BackendStatusRequest request,
@@ -67,33 +72,30 @@ public sealed class WarehouseStorageGrpcService(
             Service = "StoreBackend"
         });
 
-    private async Task<BackendStockChangeResponse> ChangeStockAsync(
+    private async Task<BackendStockChangeResponse> ChangeReservationAsync(
         BackendProductQuantitiesRequest request,
-        bool reserve,
+        StockOperation operation,
         CancellationToken cancellationToken) {
+
+        if (!Guid.TryParse(request.ReservationId, out var reservationId) ||
+            reservationId == Guid.Empty) {
+            return await RejectInvalidInputAsync(
+                request,
+                operation,
+                "Die Reservierungs-ID ist ungültig.",
+                "INVALID_RESERVATION_ID",
+                cancellationToken);
+        }
 
         var items = new List<WarehouseOrderItem>();
         foreach (var item in request.Items) {
             if (!Guid.TryParse(item.ProductId, out var productId)) {
-                logger.Warn(
-                    "Warehouse stock change rejected invalid input.",
-                    new {
-                        operation = reserve ? "ReserveProducts" : "ReleaseProducts",
-                        reason = "INVALID_PRODUCT_ID",
-                        item.ProductId,
-                        item.Quantity
-                    });
-                await PublishFailureSnapshotAsync(
+                return await RejectInvalidInputAsync(
                     request,
-                    reserve,
+                    operation,
                     "Mindestens eine Produkt-ID ist ungültig.",
                     "INVALID_PRODUCT_ID",
-                    null,
                     cancellationToken);
-                return new BackendStockChangeResponse {
-                    Success = false,
-                    Message = "Mindestens eine Produkt-ID ist ungültig."
-                };
             }
 
             items.Add(new WarehouseOrderItem(productId, item.Quantity));
@@ -101,65 +103,63 @@ public sealed class WarehouseStorageGrpcService(
 
         StockChangeResult result;
         try {
-            result = reserve
-                ? await warehouse.ReserveProductsAsync(items, cancellationToken)
-                : await warehouse.ReleaseProductsAsync(items, cancellationToken);
+            result = operation switch {
+                StockOperation.Reserve => await warehouse.ReserveProductsAsync(
+                    reservationId,
+                    items,
+                    cancellationToken),
+                StockOperation.Commit => await warehouse.CommitProductsAsync(
+                    reservationId,
+                    items,
+                    cancellationToken),
+                StockOperation.Release => await warehouse.ReleaseProductsAsync(
+                    reservationId,
+                    items,
+                    cancellationToken),
+                _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null)
+            };
         }
         catch (Exception exception)
             when (!IsRequestCancellation(exception, cancellationToken)) {
             logger.Error(
                 "Warehouse persistence operation failed.",
                 new {
-                    operation = reserve ? "ReserveProducts" : "ReleaseProducts",
-                    reserve,
+                    operation = GetOperationName(operation),
+                    reservationId,
                     productCount = items.Count,
                     exceptionType = exception.GetType().FullName,
                     exceptionMessage = exception.Message
                 },
                 exception);
-            await PublishFailureSnapshotAsync(
+            await PublishSnapshotAsync(
                 request,
-                reserve,
+                operation,
+                success: false,
                 "Die Lageränderung konnte nicht gespeichert werden.",
-                reserve
-                    ? "STOCK_PERSISTENCE_FAILED"
-                    : "STOCK_RELEASE_PERSISTENCE_FAILED",
+                GetPersistenceFailurePhase(operation),
                 exception,
                 CancellationToken.None);
             throw;
         }
 
         logger.Info(
-            "Warehouse stock changed.",
+            "Warehouse reservation state changed.",
             new {
+                operation = GetOperationName(operation),
+                reservationId,
                 productCount = items.Count,
-                reserve,
                 success = result.Success
             });
 
-        await audit.PublishAsync(
-            reserve ? AuditEventType.STOCK_RESERVATION : AuditEventType.STOCK_RELEASE,
-            "StoreBackend",
-            new {
-                phase = reserve ? "STOCK_PERSISTED" : "STOCK_RELEASE_PERSISTED",
-                reserve,
-                success = result.Success,
-                result.Message,
-                items = items.Select(item => new {
-                    item.ProductId,
-                    item.Quantity
-                }),
-                products = result.Products.Select(product => new {
-                    product.ProductId,
-                    product.AvailableQuantity,
-                    product.IsSoldOut
-                })
-            },
-            "StoreBackend",
-            reserve
-                ? result.Success ? AuditStatusCode.SUCCESS : AuditStatusCode.FAILURE
-                : result.Success ? AuditStatusCode.COMPENSATED : AuditStatusCode.FAILURE,
-            cancellationToken: cancellationToken);
+        await PublishSnapshotAsync(
+            request,
+            operation,
+            result.Success,
+            result.Message,
+            GetPersistedPhase(operation),
+            null,
+            cancellationToken,
+            result.Products);
 
         var response = new BackendStockChangeResponse {
             Success = result.Success,
@@ -167,6 +167,8 @@ public sealed class WarehouseStorageGrpcService(
         };
         response.Products.AddRange(result.Products.Select(product => new BackendProductStock {
             ProductId = product.ProductId.ToString(),
+            Name = product.Name,
+            PriceInCents = decimal.ToInt64(product.Price * 100m),
             AvailableQuantity = product.AvailableQuantity,
             IsSoldOut = product.IsSoldOut
         }));
@@ -174,31 +176,102 @@ public sealed class WarehouseStorageGrpcService(
         return response;
     }
 
-    private Task PublishFailureSnapshotAsync(
+    private async Task<BackendStockChangeResponse> RejectInvalidInputAsync(
         BackendProductQuantitiesRequest request,
-        bool reserve,
+        StockOperation operation,
+        string message,
+        string phase,
+        CancellationToken cancellationToken) {
+
+        logger.Warn(
+            "Warehouse reservation change rejected invalid input.",
+            new {
+                operation = GetOperationName(operation),
+                reason = phase,
+                request.ReservationId
+            });
+        await PublishSnapshotAsync(
+            request,
+            operation,
+            success: false,
+            message,
+            phase,
+            null,
+            cancellationToken);
+        return new BackendStockChangeResponse {
+            Success = false,
+            Message = message
+        };
+    }
+
+    private Task PublishSnapshotAsync(
+        BackendProductQuantitiesRequest request,
+        StockOperation operation,
+        bool success,
         string message,
         string phase,
         Exception? exception,
-        CancellationToken cancellationToken) =>
+        CancellationToken cancellationToken,
+        IReadOnlyList<ProductStock>? products = null) =>
         audit.PublishAsync(
-            reserve ? AuditEventType.STOCK_RESERVATION : AuditEventType.STOCK_RELEASE,
+            operation == StockOperation.Release
+                ? AuditEventType.STOCK_RELEASE
+                : AuditEventType.STOCK_RESERVATION,
             "StoreBackend",
             new {
                 phase,
-                reserve,
-                success = false,
+                operation = operation.ToString().ToUpperInvariant(),
+                reservationId = request.ReservationId,
+                success,
                 message,
                 exceptionType = exception?.GetType().FullName,
                 exceptionMessage = exception?.Message,
                 items = request.Items.Select(item => new {
                     item.ProductId,
                     item.Quantity
+                }),
+                products = products?.Select(product => new {
+                    product.ProductId,
+                    product.AvailableQuantity,
+                    product.IsSoldOut
                 })
             },
             "StoreBackend",
-            AuditStatusCode.FAILURE,
+            GetAuditStatus(operation, success),
             cancellationToken: cancellationToken);
+
+    private static AuditStatusCode GetAuditStatus(
+        StockOperation operation,
+        bool success) =>
+        !success
+            ? AuditStatusCode.FAILURE
+            : operation == StockOperation.Release
+                ? AuditStatusCode.COMPENSATED
+                : AuditStatusCode.SUCCESS;
+
+    private static string GetOperationName(StockOperation operation) =>
+        operation switch {
+            StockOperation.Reserve => "ReserveProducts",
+            StockOperation.Commit => "CommitProducts",
+            StockOperation.Release => "ReleaseProducts",
+            _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null)
+        };
+
+    private static string GetPersistedPhase(StockOperation operation) =>
+        operation switch {
+            StockOperation.Reserve => "STOCK_RESERVATION_PERSISTED",
+            StockOperation.Commit => "STOCK_COMMIT_PERSISTED",
+            StockOperation.Release => "STOCK_RELEASE_PERSISTED",
+            _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null)
+        };
+
+    private static string GetPersistenceFailurePhase(StockOperation operation) =>
+        operation switch {
+            StockOperation.Reserve => "STOCK_RESERVATION_PERSISTENCE_FAILED",
+            StockOperation.Commit => "STOCK_COMMIT_PERSISTENCE_FAILED",
+            StockOperation.Release => "STOCK_RELEASE_PERSISTENCE_FAILED",
+            _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null)
+        };
 
     private static bool IsRequestCancellation(
         Exception exception,
@@ -206,4 +279,10 @@ public sealed class WarehouseStorageGrpcService(
         cancellationToken.IsCancellationRequested &&
         (exception is OperationCanceledException ||
          exception is RpcException { StatusCode: StatusCode.Cancelled });
+
+    private enum StockOperation {
+        Reserve,
+        Commit,
+        Release
+    }
 }

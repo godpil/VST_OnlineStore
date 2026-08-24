@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using StoreBackend.Application.Ports;
 using StoreBackend.Domain;
 using VstOnlineStore.Observability;
@@ -6,53 +7,99 @@ using VstOnlineStore.Observability;
 namespace StoreBackend.Storage;
 
 /// <summary>
-/// Vorläufiger Datenbankadapter. Der gesamte Lagerbestand wird als JSON-Datei
-/// gelesen und nach jeder erfolgreichen Änderung wieder geschrieben.
+/// Vorläufiger Datenbankadapter. Lagerbestand und Reservierungs-Ledger werden
+/// als getrennte JSON-Dateien gelesen und nach jeder Änderung geschrieben.
 /// </summary>
-public sealed class JsonWarehouseRepository(
-    string dataFilePath,
-    IStructuredLogger logger) : IWarehouseRepository {
+public sealed class JsonWarehouseRepository : IWarehouseRepository {
 
     private static readonly JsonSerializerOptions JsonOptions = new() {
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
-        IgnoreReadOnlyProperties = true
+        IgnoreReadOnlyProperties = true,
+        Converters = { new JsonStringEnumConverter() }
     };
 
+    private readonly string _dataFilePath;
+    private readonly string _reservationFilePath;
+    private readonly IStructuredLogger _logger;
     private readonly SemaphoreSlim _accessLock = new(1, 1);
     private readonly Dictionary<Guid, WarehouseProduct> _products = new();
+    private readonly Dictionary<Guid, WarehouseReservation> _reservations = new();
+
+    public JsonWarehouseRepository(
+        string dataFilePath,
+        IStructuredLogger logger)
+        : this(
+            dataFilePath,
+            Path.Combine(
+                Path.GetDirectoryName(dataFilePath) ?? string.Empty,
+                $"{Path.GetFileNameWithoutExtension(dataFilePath)}.reservations.json"),
+            logger) {
+    }
+
+    public JsonWarehouseRepository(
+        string dataFilePath,
+        string reservationFilePath,
+        IStructuredLogger logger) {
+
+        _dataFilePath = dataFilePath;
+        _reservationFilePath = reservationFilePath;
+        _logger = logger;
+    }
 
     /// <summary>
-    /// Liest alle Produktdatensätze von der Festplatte. Fehlt die Datei,
-    /// wird sie mit einem kleinen Startbestand angelegt.
+    /// Liest Lagerbestand und Reservierungen von der Festplatte. Fehlt die
+    /// Produktdatei, wird sie mit einem kleinen Startbestand angelegt.
     /// </summary>
     public async Task ReadFromDiskAsync(CancellationToken cancellationToken = default) {
         await _accessLock.WaitAsync(cancellationToken);
         try {
-            if (!File.Exists(dataFilePath)) {
+            if (!File.Exists(_dataFilePath)) {
                 SetProducts(CreateInitialProducts());
-                await WriteToDiskCoreAsync(_products.Values, cancellationToken);
-                logger.Info(
-                    "Warehouse data file initialized.",
-                    new { dataFilePath });
+                SetReservations([]);
+                await WriteStateToDiskCoreAsync(
+                    _products.Values,
+                    _reservations.Values,
+                    cancellationToken);
+                _logger.Info(
+                    "Warehouse data files initialized.",
+                    new {
+                        dataFilePath = _dataFilePath,
+                        reservationFilePath = _reservationFilePath
+                    });
                 return;
             }
 
-            await using var stream = File.OpenRead(dataFilePath);
-            var products = await JsonSerializer.DeserializeAsync<List<WarehouseProduct>>(
-                stream,
-                JsonOptions,
-                cancellationToken) ?? [];
+            await using (var stream = File.OpenRead(_dataFilePath)) {
+                var products = await JsonSerializer.DeserializeAsync<List<WarehouseProduct>>(
+                    stream,
+                    JsonOptions,
+                    cancellationToken) ?? [];
+                ValidateProducts(products);
+                SetProducts(products);
+            }
 
-            ValidateProducts(products);
-            SetProducts(products);
+            if (File.Exists(_reservationFilePath)) {
+                await using var stream = File.OpenRead(_reservationFilePath);
+                var reservations = await JsonSerializer.DeserializeAsync<List<WarehouseReservation>>(
+                    stream,
+                    JsonOptions,
+                    cancellationToken) ?? [];
+                ValidateReservations(reservations, _products);
+                SetReservations(reservations);
+            }
+            else {
+                SetReservations([]);
+            }
 
-            logger.Info(
+            _logger.Info(
                 "Warehouse data loaded.",
                 new {
                     productCount = _products.Count,
-                    dataFilePath
+                    reservationCount = _reservations.Count,
+                    dataFilePath = _dataFilePath,
+                    reservationFilePath = _reservationFilePath
                 });
         }
         finally {
@@ -60,13 +107,13 @@ public sealed class JsonWarehouseRepository(
         }
     }
 
-    /// <summary>
-    /// Schreibt den aktuellen Lagerbestand auf die Festplatte.
-    /// </summary>
     public async Task WriteToDiskAsync(CancellationToken cancellationToken = default) {
         await _accessLock.WaitAsync(cancellationToken);
         try {
-            await WriteToDiskCoreAsync(_products.Values, cancellationToken);
+            await WriteStateToDiskCoreAsync(
+                _products.Values,
+                _reservations.Values,
+                cancellationToken);
         }
         finally {
             _accessLock.Release();
@@ -87,59 +134,134 @@ public sealed class JsonWarehouseRepository(
         }
     }
 
-    public async Task ReplaceProductsAsync(
-        IReadOnlyCollection<WarehouseProduct> products,
+    public async Task<WarehouseState> GetStateAsync(
         CancellationToken cancellationToken = default) {
-
-        ValidateProducts(products);
 
         await _accessLock.WaitAsync(cancellationToken);
         try {
-            // Erst nach erfolgreicher Persistenz wird der sichtbare
-            // In-Memory-Bestand übernommen.
-            await WriteToDiskCoreAsync(products, cancellationToken);
-            SetProducts(products);
+            return new WarehouseState(
+                _products.Values.ToArray(),
+                _reservations.Values.ToArray());
         }
         finally {
             _accessLock.Release();
         }
     }
 
-    private async Task WriteToDiskCoreAsync(
+    public async Task ReplaceStateAsync(
+        WarehouseState state,
+        CancellationToken cancellationToken = default) {
+
+        ArgumentNullException.ThrowIfNull(state);
+        ValidateProducts(state.Products);
+        var productsById = state.Products.ToDictionary(product => product.Id);
+        ValidateReservations(state.Reservations, productsById);
+
+        await _accessLock.WaitAsync(cancellationToken);
+        try {
+            // Erst nach erfolgreicher Persistenz wird der sichtbare In-Memory-
+            // Zustand übernommen.
+            await WriteStateToDiskCoreAsync(
+                state.Products,
+                state.Reservations,
+                cancellationToken);
+            SetProducts(state.Products);
+            SetReservations(state.Reservations);
+        }
+        finally {
+            _accessLock.Release();
+        }
+    }
+
+    private async Task WriteStateToDiskCoreAsync(
         IEnumerable<WarehouseProduct> products,
+        IEnumerable<WarehouseReservation> reservations,
         CancellationToken cancellationToken) {
 
         var productSnapshot = products
             .OrderBy(product => product.Name)
             .ToArray();
-        var directory = Path.GetDirectoryName(dataFilePath);
-        if (!string.IsNullOrWhiteSpace(directory)) {
-            Directory.CreateDirectory(directory);
-        }
+        var reservationSnapshot = reservations
+            .OrderBy(reservation => reservation.CreatedAtUtc)
+            .ThenBy(reservation => reservation.ReservationId)
+            .ToArray();
 
-        var temporaryFilePath = $"{dataFilePath}.tmp";
-        await using (var stream = File.Create(temporaryFilePath)) {
-            await JsonSerializer.SerializeAsync(
-                stream,
+        EnsureDirectory(_dataFilePath);
+        EnsureDirectory(_reservationFilePath);
+
+        var productTemporaryPath = $"{_dataFilePath}.tmp";
+        var reservationTemporaryPath = $"{_reservationFilePath}.tmp";
+        try {
+            await WriteJsonAsync(
+                productTemporaryPath,
                 productSnapshot,
-                JsonOptions,
                 cancellationToken);
+            await WriteJsonAsync(
+                reservationTemporaryPath,
+                reservationSnapshot,
+                cancellationToken);
+
+            File.Move(productTemporaryPath, _dataFilePath, overwrite: true);
+            File.Move(reservationTemporaryPath, _reservationFilePath, overwrite: true);
+        }
+        finally {
+            TryDeleteTemporaryFile(productTemporaryPath);
+            TryDeleteTemporaryFile(reservationTemporaryPath);
         }
 
-        File.Move(temporaryFilePath, dataFilePath, overwrite: true);
-
-        logger.Info(
+        _logger.Info(
             "Warehouse data written.",
             new {
                 productCount = productSnapshot.Length,
-                dataFilePath
+                reservationCount = reservationSnapshot.Length,
+                dataFilePath = _dataFilePath,
+                reservationFilePath = _reservationFilePath
             });
+    }
+
+    private static async Task WriteJsonAsync<T>(
+        string path,
+        T value,
+        CancellationToken cancellationToken) {
+
+        await using var stream = File.Create(path);
+        await JsonSerializer.SerializeAsync(
+            stream,
+            value,
+            JsonOptions,
+            cancellationToken);
+    }
+
+    private static void EnsureDirectory(string path) {
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrWhiteSpace(directory)) {
+            Directory.CreateDirectory(directory);
+        }
+    }
+
+    private static void TryDeleteTemporaryFile(string path) {
+        try {
+            if (File.Exists(path)) {
+                File.Delete(path);
+            }
+        }
+        catch (IOException) {
+            // Eine übrig gebliebene temporäre Datei wird beim nächsten
+            // Schreibvorgang überschrieben.
+        }
     }
 
     private void SetProducts(IEnumerable<WarehouseProduct> products) {
         _products.Clear();
         foreach (var product in products) {
             _products.Add(product.Id, product);
+        }
+    }
+
+    private void SetReservations(IEnumerable<WarehouseReservation> reservations) {
+        _reservations.Clear();
+        foreach (var reservation in reservations) {
+            _reservations.Add(reservation.ReservationId, reservation);
         }
     }
 
@@ -162,6 +284,43 @@ public sealed class JsonWarehouseRepository(
 
         if (products.Select(product => product.Id).Distinct().Count() != products.Count) {
             throw new InvalidDataException("Produkt-IDs müssen eindeutig sein.");
+        }
+    }
+
+    private static void ValidateReservations(
+        IReadOnlyCollection<WarehouseReservation> reservations,
+        IReadOnlyDictionary<Guid, WarehouseProduct> products) {
+
+        if (reservations.Any(reservation => reservation.ReservationId == Guid.Empty)) {
+            throw new InvalidDataException("Eine Reservierungs-ID darf nicht leer sein.");
+        }
+
+        if (reservations.Select(reservation => reservation.ReservationId).Distinct().Count()
+            != reservations.Count) {
+            throw new InvalidDataException("Reservierungs-IDs müssen eindeutig sein.");
+        }
+
+        foreach (var reservation in reservations) {
+            if (reservation.CreatedAtUtc == default || reservation.Items.Count == 0) {
+                throw new InvalidDataException("Eine Reservierung ist unvollständig.");
+            }
+
+            if (!Enum.IsDefined(reservation.Status)) {
+                throw new InvalidDataException("Der Reservierungsstatus ist ungültig.");
+            }
+
+            if (reservation.Items.Any(item =>
+                    item.ProductId == Guid.Empty ||
+                    item.Quantity <= 0 ||
+                    !products.ContainsKey(item.ProductId))) {
+                throw new InvalidDataException("Eine Reservierungsposition ist ungültig.");
+            }
+
+            if (reservation.Items.Select(item => item.ProductId).Distinct().Count()
+                != reservation.Items.Count) {
+                throw new InvalidDataException(
+                    "Produkt-IDs müssen innerhalb einer Reservierung eindeutig sein.");
+            }
         }
     }
 

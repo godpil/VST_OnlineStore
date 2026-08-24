@@ -250,7 +250,6 @@ public sealed class CheckoutIntegrationTests {
     private static CheckoutRequest CreateRequest(Guid productId) =>
         new(
             [new CheckoutItemRequest(productId.ToString("D"), 2)],
-            "demo",
             "kunde@example.com");
 
     private sealed class ShopApplicationFactory(CheckoutScenario scenario)
@@ -374,7 +373,8 @@ public sealed class CheckoutIntegrationTests {
             response.Providers.Add(new BillingContracts.PaymentProviderInfo {
                 Key = "demo",
                 Name = "Holzwerk DemoPay",
-                IsTestMode = true
+                IsTestMode = true,
+                IsActive = true
             });
             return response;
         }

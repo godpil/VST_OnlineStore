@@ -12,7 +12,8 @@ Rechnungserstellung.
 
 - Adresse: `http://localhost:6684` über HTTP/2
 - gRPC-Vertrag: `Contracts/billingservice.proto`
-- Operationen: `ProcessPayment`, `ListPaymentProviders` und `GetStatus`
+- fachliche Operationen: `ProcessPayment`, `RefundPayment` und `GetPaymentStatus`
+- Verwaltungsoperationen: `ListPaymentProviders` und `GetStatus` (Health-Check)
 - Aufrufer: ShopService
 - RabbitMQ-Exchange für Rechnungen: `vst.billing.events`
 - Routing Key einer erfolgreichen Zahlung: `payment.succeeded`
@@ -23,10 +24,31 @@ nur eine einfache Prozessdiagnose.
 
 ## Payment-Konfiguration
 
-Unter `PaymentProviders` bestimmen `DefaultProviderKey` und
-`TimeoutMilliseconds`, welcher Adapter bei fehlender Auswahl verwendet wird
-und wie lange die Provider-Fassade auf eine Antwort wartet. Standardmäßig wird
-`demo` mit einem Timeout von 5000 Millisekunden verwendet.
+Unter `PaymentProviders` bestimmen `ActiveProviderKey` und
+`TimeoutMilliseconds`, welcher Adapter für sämtliche Zahlungen verwendet wird
+und wie lange die Provider-Fassade auf Provideroperationen wartet. Eine
+Providerwahl durch ShopService oder Client findet nicht statt. Standardmäßig
+wird `demo` mit einem Timeout von 5000 Millisekunden verwendet.
+
+Die .NET-Konfiguration kann wie gewohnt über eine Umgebungsvariable
+überschrieben werden:
+
+```powershell
+$env:PaymentProviders__ActiveProviderKey = "stripe"
+```
+
+Alle konkreten Implementierungen von `IPaymentProvider` werden beim Start
+automatisch aus dem BillingService-Assembly registriert. Ein zusätzlicher
+Adapter benötigt daher keine Änderung an `Program.cs`, der Fassade oder den
+bestehenden Adaptern.
+
+Die Fassade kapselt `ChargeAsync(orderId, amount, currency)`,
+`RefundAsync(transactionId, amount)` und `GetStatusAsync(transactionId)`.
+Transaktionsstatus und Providerzuordnung werden im aktuellen lokalen
+Testbetrieb im Speicher des BillingService gehalten und gehen bei dessen
+Neustart verloren. Eine dauerhafte operative Transaktionspersistenz ist nicht
+Teil der derzeitigen Testadapter; die unveränderlichen fachlichen
+Audit-Snapshots werden davon unabhängig weiterhin in PostgreSQL gespeichert.
 
 ## Voraussetzungen
 
@@ -68,5 +90,6 @@ werden; die Kopplung erfolgt über den Broker.
 dotnet test .\Tests\BillingService.UnitTests\BillingService.UnitTests.csproj
 ```
 
-Die Tests prüfen Erfolg, Ablehnung, einen Timeout für jeden der drei Anbieter
-und den konfigurationsgesteuerten Anbieterwechsel.
+Die Tests prüfen Erfolg, Ablehnung, einen Timeout für jeden der drei Anbieter,
+den konfigurationsgesteuerten Anbieterwechsel, automatische Adaptererkennung,
+Erstattungen und transaktionsbezogene Statusabfragen.

@@ -285,13 +285,13 @@ Zahlungsanbieter
 ----------------
 
 Der BillingService stellt die drei Adapter `demo`, `paypal` und `stripe`
-hinter einer gemeinsamen `IPaymentProvider`-Schnittstelle bereit. Die Fassade
-`PaymentProviderResolver` wählt den Adapter anhand des Checkout-Requests aus.
-Der Shop lädt die registrierten Adapter dynamisch über
-`GET /api/payment-providers`; dadurch muss die Oberfläche bei einem weiteren
-registrierten Adapter nicht um eine fest codierte Auswahlliste ergänzt werden.
+hinter einer gemeinsamen `IPaymentProvider`-Schnittstelle bereit. Die
+`PaymentFacade` ist der einzige Zugriffspunkt auf diese Adapter und wählt den
+aktiven Anbieter ausschließlich über `PaymentProviders:ActiveProviderKey`.
+Der Shop lädt die registrierten Adapter über `GET /api/payment-providers`; die
+Antwort kennzeichnet den zentral aktiven Adapter mit `isActive`.
 
-Der Checkout erwartet neben den Positionen den Provider-Schlüssel:
+Der Checkout enthält deshalb keinen vom Client gewählten Provider-Schlüssel:
 
 ```json
 {
@@ -301,9 +301,14 @@ Der Checkout erwartet neben den Positionen den Provider-Schlüssel:
       "quantity": 1
     }
   ],
-  "paymentProvider": "stripe"
+  "customerEmail": "kunde@beispiel.de"
 }
 ```
+
+Die Fassade bietet einheitlich `ChargeAsync`, `RefundAsync` und
+`GetStatusAsync`. Neue `IPaymentProvider`-Implementierungen werden automatisch
+entdeckt; eine Änderung der Fassade oder von `Program.cs` ist dafür nicht
+erforderlich.
 
 Alle drei Adapter laufen aktuell ausdrücklich im Testbetrieb und bewegen kein
 echtes Geld. Eine produktive PayPal- oder Stripe-Anbindung benötigt zusätzlich
@@ -311,7 +316,7 @@ Sandbox-/Produktionszugangsdaten, die jeweilige Freigabe im Browser und eine
 Webhook-basierte Abschlussverarbeitung. Diese Details bleiben innerhalb des
 jeweiligen Adapters und verändern den Shop-Checkout nicht.
 
-Provider-Auswahl, Zahlungsbeginn und Ergebnis werden als strukturierte Logs im
+Provider-Auswahl, Zahlungsbeginn, Erstattungen und Ergebnisse werden als strukturierte Logs im
 BillingService geschrieben. Fachlich entstehen zusätzlich Audit-Snapshots für
 `PAYMENT_PROVIDER_SELECTED`, `PAYMENT_COMPLETED`, Ablehnungen und technische
 Provider-Fehler. Zugangsdaten oder Zahlungsinstrumente werden weder in den Logs

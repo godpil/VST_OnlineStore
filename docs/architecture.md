@@ -127,14 +127,15 @@ Infrastruktur.*
 
 Die Payment-Fassade trennt den ShopService von den konkreten
 Zahlungsanbieter-Adaptern. Der `BillingOperationsGrpcService` validiert den
-Request und delegiert die Auswahl sowie das einheitliche Timeout an den
-`PaymentProviderResolver`. Alle Adapter implementieren `IPaymentProvider` und
-liefern dasselbe `PaymentProviderResult` zurück.
+Request und delegiert `Charge`, `Refund` und transaktionsbezogene Statusabfragen
+ausschließlich an die `PaymentFacade`. Diese wählt den über
+`PaymentProviders:ActiveProviderKey` konfigurierten Adapter und behandelt
+Timeouts einheitlich. Alle Adapter implementieren `IPaymentProvider`.
 
 Die rechte Diagrammhälfte zeigt am Beispiel eines zusätzlichen
 `KlarnaPaymentProvider`, welche Erweiterungen notwendig wären. Fassade,
-gRPC-Vertrag, Resolver, ShopService und Rechnungsereignis bleiben dabei
-unverändert. Für eine reale Anbindung kommen insbesondere Credentials,
+gRPC-Vertrag, ShopService und Rechnungsereignis bleiben dabei unverändert. Der
+Adapter wird beim Start automatisch entdeckt. Für eine reale Anbindung kommen insbesondere Credentials,
 Idempotency Keys, Webhook-Prüfung und anbieterbezogenes Fehlermapping hinzu.
 
 ![Payment-Fassade und Erweiterung um einen Provider](diagrams/payment-facade.svg)

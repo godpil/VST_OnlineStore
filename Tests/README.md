@@ -4,7 +4,8 @@ Die Tests sind bewusst vom operativen Code getrennt:
 
 - `BillingService.UnitTests` prüft die Payment-Fassade einschließlich Erfolg,
   Ablehnung, Timeout für DemoPay, PayPal und Stripe sowie Anbieterwechsel über
-  die Konfiguration.
+  die Konfiguration. Zusätzlich werden automatische Adaptererkennung,
+  Erstattung und transaktionsbezogene Statusabfrage geprüft.
 - `ShopService.IntegrationTests` ruft die öffentliche Bestellressource auf und
   prüft den Happy Path sowie zwei erwartete Fehlerszenarien (`fail1` und
   `fail2`). Die Fehlerszenarien erwarten fachliche Fehlerantworten; die

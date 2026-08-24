@@ -55,7 +55,33 @@ public sealed class CheckoutIntegrationTests {
         Assert.Equal($"/api/invoices/{scenario.InvoiceId:D}/pdf", checkout.InvoiceUrl);
         Assert.Equal(1, scenario.ReservationCalls);
         Assert.Equal(1, scenario.PaymentCalls);
+        Assert.Equal(1, scenario.InvoiceEventCalls);
+        Assert.Equal(1, scenario.CommitCalls);
         Assert.Equal(0, scenario.ReleaseCalls);
+        Assert.Equal(
+            [
+                "ReserveCart",
+                "ListPaymentProviders",
+                "ProcessPayment",
+                "CommitCart"
+            ],
+            scenario.GrpcCalls);
+        Assert.All(
+            scenario.ReservationIds,
+            reservationId => Assert.Equal(checkout.OrderId, reservationId));
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.STOCK_RESERVATION &&
+                audit.StatusCode == AuditStatusCode.SUCCESS &&
+                HasStringProperty(audit.Payload, "phase", "STOCK_COMMITTED"));
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.ORDER_COMPLETED &&
+                audit.StatusCode == AuditStatusCode.SUCCESS &&
+                HasStringProperty(audit.Payload, "orderStatus", "COMPLETED"));
+        Assert.True(
+            FindAuditIndex(scenario, "STOCK_COMMITTED") <
+            FindAuditIndex(scenario, "ORDER_COMPLETED"));
     }
 
     [Fact]
@@ -74,6 +100,7 @@ public sealed class CheckoutIntegrationTests {
         Assert.Contains("Bestand", problem.Detail, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(1, scenario.ReservationCalls);
         Assert.Equal(0, scenario.PaymentCalls);
+        Assert.Equal(0, scenario.CommitCalls);
         Assert.Equal(0, scenario.ReleaseCalls);
     }
 
@@ -93,6 +120,7 @@ public sealed class CheckoutIntegrationTests {
         Assert.Contains("abgelehnt", problem.Detail, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(1, scenario.ReservationCalls);
         Assert.Equal(1, scenario.PaymentCalls);
+        Assert.Equal(0, scenario.CommitCalls);
         Assert.Equal(1, scenario.ReleaseCalls);
     }
 
@@ -107,19 +135,19 @@ public sealed class CheckoutIntegrationTests {
             CreateRequest(scenario.ProductId));
 
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
-        Assert.Equal(0, scenario.ReservationCalls);
+        Assert.Equal(1, scenario.ReservationCalls);
         Assert.Contains(
             scenario.Logs,
             log => log.Level == StructuredLogLevel.ERROR &&
                 log.Message == "Downstream service call failed." &&
                 HasStringProperty(log.Context, "downstreamService", "WarehouseService") &&
-                HasStringProperty(log.Context, "operation", "GetFeaturedProducts") &&
+                HasStringProperty(log.Context, "operation", "ReserveCart") &&
                 HasStringProperty(log.Context, "grpcStatus", "Unavailable"));
         Assert.Contains(
             scenario.AuditEvents,
             audit => audit.EventType == AuditEventType.STOCK_RESERVATION &&
                 audit.StatusCode == AuditStatusCode.FAILURE &&
-                HasStringProperty(audit.Payload, "phase", "WAREHOUSE_CATALOG_FAILED"));
+                HasStringProperty(audit.Payload, "phase", "STOCK_RESERVATION_FAILED"));
         Assert.Contains(
             scenario.AuditEvents,
             audit => audit.EventType == AuditEventType.ORDER_COMPLETED &&
@@ -247,6 +275,35 @@ public sealed class CheckoutIntegrationTests {
                 audit.StatusCode == AuditStatusCode.FAILURE);
     }
 
+    [Fact]
+    public async Task RechnungseventFehlt_KompensiertZahlungUndReservierung() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.InvoiceQueueUnavailable);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/orders",
+            CreateRequest(scenario.ProductId));
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal(1, scenario.ReservationCalls);
+        Assert.Equal(1, scenario.PaymentCalls);
+        Assert.Equal(0, scenario.InvoiceEventCalls);
+        Assert.Equal(1, scenario.RefundCalls);
+        Assert.Equal(1, scenario.ReleaseCalls);
+        Assert.Equal(0, scenario.CommitCalls);
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.INVOICE &&
+                audit.StatusCode == AuditStatusCode.FAILURE &&
+                HasStringProperty(audit.Payload, "phase", "INVOICE_QUEUE_FAILED"));
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.PAYMENT &&
+                audit.StatusCode == AuditStatusCode.COMPENSATED &&
+                HasStringProperty(audit.Payload, "phase", "PAYMENT_REFUNDED"));
+    }
+
     private static CheckoutRequest CreateRequest(Guid productId) =>
         new(
             [new CheckoutItemRequest(productId.ToString("D"), 2)],
@@ -287,6 +344,7 @@ public sealed class CheckoutIntegrationTests {
         WarehouseUnavailable,
         WarehouseTimeout,
         BillingTimeout,
+        InvoiceQueueUnavailable,
         ReadinessUnavailable,
         ReadinessTimeout
     }
@@ -297,7 +355,12 @@ public sealed class CheckoutIntegrationTests {
         public Guid InvoiceId { get; } = Guid.Parse("cb971c41-4236-4827-95f7-d1009ed82717");
         public int ReservationCalls { get; set; }
         public int PaymentCalls { get; set; }
+        public int InvoiceEventCalls { get; set; }
+        public int RefundCalls { get; set; }
+        public int CommitCalls { get; set; }
         public int ReleaseCalls { get; set; }
+        public List<string> GrpcCalls { get; } = [];
+        public List<string> ReservationIds { get; } = [];
         public List<RecordedLog> Logs { get; } = [];
         public List<RecordedAuditEvent> AuditEvents { get; } = [];
     }
@@ -309,8 +372,14 @@ public sealed class CheckoutIntegrationTests {
             CallOptions options,
             TRequest request) {
 
-            if (method.Name == "GetFeaturedProducts" &&
+            scenario.GrpcCalls.Add(method.Name);
+            if (request is WarehouseContracts.CartStockRequest stockRequest) {
+                scenario.ReservationIds.Add(stockRequest.ReservationId);
+            }
+
+            if (method.Name == "ReserveCart" &&
                 scenario.Mode == CheckoutScenarioMode.WarehouseUnavailable) {
+                scenario.ReservationCalls++;
                 return Failed<TResponse>(StatusCode.Unavailable);
             }
 
@@ -328,10 +397,11 @@ public sealed class CheckoutIntegrationTests {
 
             object response = method.Name switch {
                 "ListPaymentProviders" => CreatePaymentProviders(),
-                "GetFeaturedProducts" => CreateCatalog(),
                 "ReserveCart" => ReserveCart(),
+                "CommitCart" => CommitCart(),
                 "ReleaseCart" => ReleaseCart(),
                 "ProcessPayment" => ProcessPayment(),
+                "RefundPayment" => RefundPayment(),
                 _ => throw new InvalidOperationException(
                     $"Unerwarteter gRPC-Aufruf im Integrationstest: {method.FullName}")
             };
@@ -379,18 +449,6 @@ public sealed class CheckoutIntegrationTests {
             return response;
         }
 
-        private WarehouseContracts.FeaturedProductsResponse CreateCatalog() {
-            var response = new WarehouseContracts.FeaturedProductsResponse();
-            response.Products.Add(new WarehouseContracts.WarehouseProduct {
-                Id = scenario.ProductId.ToString("D"),
-                Name = "Testprodukt",
-                PriceInCents = 1_299,
-                AvailableQuantity = 10,
-                IsSoldOut = false
-            });
-            return response;
-        }
-
         private WarehouseContracts.CartStockResponse ReserveCart() {
             scenario.ReservationCalls++;
             var success = scenario.Mode != CheckoutScenarioMode.StockUnavailable;
@@ -402,6 +460,8 @@ public sealed class CheckoutIntegrationTests {
             };
             response.Products.Add(new WarehouseContracts.CartProductStock {
                 ProductId = scenario.ProductId.ToString("D"),
+                Name = "Testprodukt",
+                PriceInCents = 1_299,
                 AvailableQuantity = success ? 8 : 1,
                 IsSoldOut = false
             });
@@ -416,7 +476,25 @@ public sealed class CheckoutIntegrationTests {
             };
             response.Products.Add(new WarehouseContracts.CartProductStock {
                 ProductId = scenario.ProductId.ToString("D"),
+                Name = "Testprodukt",
+                PriceInCents = 1_299,
                 AvailableQuantity = 10,
+                IsSoldOut = false
+            });
+            return response;
+        }
+
+        private WarehouseContracts.CartStockResponse CommitCart() {
+            scenario.CommitCalls++;
+            var response = new WarehouseContracts.CartStockResponse {
+                Success = true,
+                Message = "Reservierung wurde endgültig ausgebucht."
+            };
+            response.Products.Add(new WarehouseContracts.CartProductStock {
+                ProductId = scenario.ProductId.ToString("D"),
+                Name = "Testprodukt",
+                PriceInCents = 1_299,
+                AvailableQuantity = 8,
                 IsSoldOut = false
             });
             return response;
@@ -432,13 +510,30 @@ public sealed class CheckoutIntegrationTests {
                 };
             }
 
+            var invoiceQueued = scenario.Mode != CheckoutScenarioMode.InvoiceQueueUnavailable;
+            if (invoiceQueued) {
+                scenario.InvoiceEventCalls++;
+            }
+
             return new BillingContracts.PaymentResponse {
                 Success = true,
                 TransactionId = "DEMO-INTEGRATION-TRANSACTION",
                 Provider = "Holzwerk DemoPay",
                 Message = "Die Zahlung wurde bestätigt.",
-                InvoiceId = scenario.InvoiceId.ToString("D"),
-                InvoiceQueued = true
+                InvoiceId = invoiceQueued ? scenario.InvoiceId.ToString("D") : string.Empty,
+                InvoiceQueued = invoiceQueued
+            };
+        }
+
+        private BillingContracts.RefundPaymentResponse RefundPayment() {
+            scenario.RefundCalls++;
+            return new BillingContracts.RefundPaymentResponse {
+                Success = true,
+                TransactionId = "DEMO-INTEGRATION-TRANSACTION",
+                RefundedAmountInCents = 2_598,
+                TotalRefundedAmountInCents = 2_598,
+                Status = BillingContracts.PaymentTransactionStatus.Refunded,
+                Message = "Die Zahlung wurde vollständig erstattet."
             };
         }
 
@@ -550,6 +645,12 @@ public sealed class CheckoutIntegrationTests {
         context.TryGetProperty(propertyName, out var property) &&
         property.TryGetInt32(out var actual) &&
         actual == expected;
+
+    private static int FindAuditIndex(
+        CheckoutScenario scenario,
+        string phase) =>
+        scenario.AuditEvents.FindIndex(audit =>
+            HasStringProperty(audit.Payload, "phase", phase));
 
     private sealed record RecordedLog(
         StructuredLogLevel Level,

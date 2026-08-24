@@ -3,8 +3,8 @@
 Die Tests sind bewusst vom operativen Code getrennt:
 
 - `BillingService.UnitTests` prüft die Payment-Fassade einschließlich Erfolg,
-  Ablehnung, Timeout für DemoPay, PayPal und Stripe sowie Anbieterwechsel über
-  die Konfiguration. Zusätzlich werden automatische Adaptererkennung,
+  Ablehnung und Timeout für DemoPay, PayPal und Stripe. Zusätzlich werden
+  automatische Adaptererkennung,
   konfigurationsgesteuerte Deaktivierung, bestellungsbezogene Auswahl,
   Erstattung und transaktionsbezogene Statusabfrage geprüft.
 - `ShopService.IntegrationTests` ruft die öffentliche Bestellressource auf und

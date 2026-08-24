@@ -108,5 +108,6 @@ dotnet test .\Tests\BillingService.UnitTests\BillingService.UnitTests.csproj
 ```
 
 Die Tests prüfen Erfolg, Ablehnung, einen Timeout für jeden der drei Anbieter,
-den konfigurationsgesteuerten Anbieterwechsel, automatische Adaptererkennung,
-Erstattungen und transaktionsbezogene Statusabfragen.
+die konfigurationsgesteuerte Providerfreigabe, die bestellungsbezogene Auswahl,
+automatische Adaptererkennung, Erstattungen und transaktionsbezogene
+Statusabfragen.

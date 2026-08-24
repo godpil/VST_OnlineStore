@@ -197,9 +197,9 @@ als serverseitiger Fallback für interne oder ältere gRPC-Aufrufer bestehen und
 erzeugt keine Browser-Vorauswahl. Nach Beginn des Checkouts wird die Auswahl
 gesperrt.
 
-![Providerwechsel im Warenkorb](diagrams/cart-provider-switch.svg)
+![Providerauswahl im Warenkorb](diagrams/cart-provider-switch.svg)
 
-*Abbildung 7: Konsequenzen eines bestellungsbezogenen Providerwechsels in der
+*Abbildung 7: Konsequenzen einer bestellungsbezogenen Providerauswahl in der
 Warenkorbansicht.*
 
 ### 6.5 SAGA-Kompensation bei Zahlungsfehler

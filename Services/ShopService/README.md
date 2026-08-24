@@ -26,6 +26,34 @@ angesprochen.
 Öffentliche Fehlerantworten verwenden RFC-9457-Problem-Details. Der öffentliche
 Zugriff erfolgt über dieselben Pfade am StoreProxy auf Port `6680`.
 
+`POST /api/orders` übernimmt die kanonische Correlation-ID als `orderId`.
+Erfolgreiche Bestellungen liefern öffentlich `201 Created`; die im Ergebnis
+enthaltene Rechnungs-URL kann unmittelbar verwendet werden, obwohl die PDF-Datei
+asynchron noch erzeugt werden kann.
+
+## Bestellablauf und Fehlerbehandlung
+
+Vor dem Checkout prüft der ShopService WarehouseService, BillingService,
+InvoiceService und AuditService über deren Statusoperationen. Ist mindestens ein
+Service nicht verfügbar oder läuft in ein Timeout, beginnt die SAGA nicht und
+der Client erhält eine passende RFC-9457-Antwort.
+
+Im Happy Path reserviert der ShopService zuerst den Warenkorb über `ReserveCart`,
+prüft anschließend den im Request enthaltenen `paymentProviderKey` gegen die
+konfigurationsgesteuert verfügbaren Adapter und startet `ProcessPayment`. Nach
+erfolgreicher Zahlung und bestätigter Veröffentlichung von `payment.succeeded`
+wird die Reservierung mit `CommitCart` endgültig ausgebucht. Erst danach
+entsteht `ORDER_COMPLETED`. Die Rechnung verarbeitet der InvoiceService parallel
+über RabbitMQ; `GetFeaturedProducts` ist kein Teil des Bestellablaufs.
+
+Bei einer abgelehnten oder fehlgeschlagenen Zahlung wird `ReleaseCart`
+aufgerufen. Konnte das Rechnungsevent nach einer erfolgreichen Zahlung nicht
+veröffentlicht werden, versucht die SAGA `RefundPayment` und anschließend
+`ReleaseCart`. Für einen vorübergehend nicht erreichbaren Lager-Commit erfolgt
+genau ein idempotenter Wiederholungsversuch. Bleiben Kompensation oder Commit
+erfolglos, werden strukturierte Logs und Audit-Snapshots geschrieben und der
+Client erhält je nach Fehlerart HTTP 422, 502, 503 oder 504.
+
 ## Voraussetzungen
 
 - .NET 10 SDK

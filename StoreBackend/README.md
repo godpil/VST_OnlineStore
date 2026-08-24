@@ -4,15 +4,17 @@
 
 Der StoreBackend ist der interne Persistenzadapter des WarehouseService. Er lädt
 den Produktbestand aus einer JSON-Datei, liefert Produkte aus und führt
-Reservierungen sowie Freigaben atomar aus. Er ist nicht für Browser oder andere
-öffentliche Clients bestimmt.
+Reservierungen, finale Ausbuchungen sowie Freigaben aus. Der persistente
+Reservierungsstatus macht wiederholte Reserve-, Commit- und Release-Aufrufe
+idempotent. Er ist nicht für Browser oder andere öffentliche Clients bestimmt.
 
 ## Schnittstellen und Daten
 
 - Adresse: `http://localhost:6681` über HTTP/2
 - gRPC-Vertrag: `Contracts/storebackend.proto`
-- Operationen: `GetProducts`, `ReserveProducts` und `ReleaseProducts`
-- Persistenz: `StoreBackend/Data/warehouse-products.json`
+- Operationen: `GetProducts`, `ReserveProducts`, `CommitProducts` und `ReleaseProducts`
+- Produktbestand: `StoreBackend/Data/warehouse-products.json`
+- Reservierungs-Ledger: `StoreBackend/Data/warehouse-products.reservations.json`
 - Aufrufer: ausschließlich der WarehouseService
 - Ausgehende Kommunikation: Audit-Ereignisse über RabbitMQ
 

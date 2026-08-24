@@ -31,6 +31,14 @@ Der Service veröffentlicht keine fachliche REST-API. Die öffentliche Abfrage
 läuft über StoreProxy und ShopService. Der Text-Endpunkt `/` ist nur eine
 einfache Prozessdiagnose.
 
+Da fachliche Ereignisse über RabbitMQ eintreffen, kann die öffentliche
+Snapshot-Kette unmittelbar nach einer Operation kurzzeitig noch unvollständig
+sein. Erfolgreiche Abläufe enden mit `ORDER_COMPLETED/SUCCESS`; fehlgeschlagene
+Bestellungen verwenden dieselbe Abschluss-Ereigniskategorie mit dem Zustand
+`ORDER_FAILED` und Status `FAILURE`. SAGA-Gegenmaßnahmen werden zusätzlich mit
+`COMPENSATING` und `COMPENSATED` sichtbar gemacht, während Folgefehler als
+`FAILURE` erhalten bleiben.
+
 ## Voraussetzungen
 
 - .NET 10 SDK

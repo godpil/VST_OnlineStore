@@ -26,6 +26,14 @@ Dadurch sendet die Swagger-UI auch ihre interaktiven `Try it out`-Aufrufe
 immer über den öffentlichen StoreProxy und nicht direkt an den internen
 ShopService-Port.
 
+Die Website liest alle Zahlungsanbieter samt `isEnabled` über
+`GET /api/payment-providers`. Deaktivierte Adapter werden ausgegraut; für PayPal
+und Stripe entstehen auswählbare Optionen. Beim Öffnen des Warenkorbs ist kein
+Anbieter vorausgewählt. Erst nach einer bewussten Auswahl wird
+`paymentProviderKey` mit `POST /api/orders` übertragen. Ein erfolgreicher
+Checkout wird unverändert als `201 Created` samt Rechnungs-URL an den Browser
+zurückgegeben.
+
 Die freigegebenen Routen, Timeouts, Rate-Limit-Policies und Health Checks stehen
 in `StoreProxy/appsettings.json`.
 

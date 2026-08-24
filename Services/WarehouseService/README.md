@@ -4,20 +4,29 @@
 
 Der WarehouseService bildet die interne fachliche Servicegrenze für Katalog und
 Lagerbestand. Er stellt dem ShopService Produkte bereit, reserviert komplette
-Warenkörbe und gibt Reservierungen bei einer Kompensation wieder frei. Die
-Persistenz bleibt hinter dem StoreBackend verborgen.
+Warenkörbe, bestätigt sie nach erfolgreicher Zahlung als endgültige Ausbuchung
+und gibt Reservierungen bei einer Kompensation wieder frei. Die Persistenz
+bleibt hinter dem StoreBackend verborgen.
 
 ## Schnittstellen und Abhängigkeiten
 
 - Adresse: `http://localhost:6683` über HTTP/2
 - gRPC-Vertrag: `Contracts/warehouseservice.proto`
-- Operationen: `GetFeaturedProducts`, `ReserveCart`, `ReleaseCart` und `GetStatus`
+- Operationen: `GetFeaturedProducts`, `ReserveCart`, `CommitCart`, `ReleaseCart`
+  und `GetStatus`
 - Aufrufer: ShopService
 - Abhängigkeit: StoreBackend unter `http://localhost:6681`
 - Ausgehende Kommunikation: Audit-Ereignisse über RabbitMQ
 
 Der Service veröffentlicht keine fachliche REST-API. Der Text-Endpunkt `/` ist
 nur eine einfache Prozessdiagnose.
+
+`GetFeaturedProducts` dient ausschließlich der Kataloganzeige. Im Checkout wird
+zuerst `ReserveCart` aufgerufen. Nach Zahlung und erfolgreicher Veröffentlichung
+des Rechnungsevents folgt `CommitCart`; bei vorherigen Fehlern kompensiert der
+ShopService stattdessen mit `ReleaseCart`. Der StoreBackend persistiert diese
+Operationen so, dass Wiederholungen mit derselben Reservierungs-ID idempotent
+bleiben.
 
 ## Voraussetzungen
 

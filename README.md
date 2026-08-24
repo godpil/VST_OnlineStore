@@ -101,11 +101,19 @@ und Startanleitung:
 | InvoiceService | asynchrone Rechnungs- und PDF-Erstellung | [README](Services/InvoiceService/README.md) |
 | AuditService | persistente fachliche Ereigniskette | [README](Services/AuditService/README.md) |
 
+Die aktuellen Systemkontext-, Komponenten-, Sequenz- und Kompensationsdiagramme
+sind unter [docs/diagrams](docs/diagrams/README.md) beschrieben. Die editierbare
+Quelle ist `docs/diagrams/online-store-architecture.drawio`; die acht SVG-Dateien
+sind daraus abgeleitete, inhaltlich gleichwertige Ansichten.
+
 Der öffentliche synchrone Aufrufpfad lautet immer
 `Browser -> StoreProxy -> ShopService`. Der StoreProxy ist ausschließlich
 YARP-Gateway und kennt keine gRPC-Verträge oder Adressen fachlicher
-Downstream-Services. Der ShopService orchestriert die synchronen Aufrufe an
-WarehouseService, BillingService, InvoiceService und AuditService.
+Downstream-Services. Vor jeder Bestellung prüft der ShopService synchron die
+Betriebsbereitschaft von WarehouseService, BillingService, InvoiceService und
+AuditService. Den eigentlichen Checkout orchestriert er über WarehouseService
+und BillingService; Invoice- und Audit-Ressourcen fragt er über deren interne
+gRPC-Schnittstellen ab.
 
 Der BillingService übermittelt erfolgreiche Zahlungen ausschließlich
 asynchron über RabbitMQ an den InvoiceService. Fachliche Audit-Ereignisse
@@ -118,6 +126,41 @@ Der StoreBackend ist kein eigenständiger fachlicher Orchestrierungsschritt,
 sondern der interne Persistenzadapter des WarehouseService. Deshalb ist die
 synchrone gRPC-Verbindung `WarehouseService -> StoreBackend` innerhalb dieser
 Servicegrenze zulässig.
+
+Bestellablauf
+-------------
+
+Der erfolgreiche Checkout folgt dem aktuellen SAGA-Pfad:
+
+1. Der StoreProxy leitet `POST /api/orders` weiter. Der ShopService übernimmt die
+   Correlation-ID als `orderId`, prüft die Betriebsbereitschaft und validiert den
+   Warenkorb.
+2. `WarehouseService.ReserveCart` reserviert den Bestand; der StoreBackend
+   persistiert Produkte und Reservierungs-Ledger.
+3. Der ShopService validiert den im Checkout gewählten, laut Konfiguration
+   verfügbaren Zahlungsanbieter und ruft `BillingService.ProcessPayment` auf.
+   Nur die Payment-Fassade greift auf den konkreten Adapter zu.
+4. Nach erfolgreicher Zahlung veröffentlicht der BillingService
+   `payment.succeeded`. Erst eine erfolgreiche Veröffentlichung bestätigt, dass
+   die Rechnung zur asynchronen Verarbeitung eingeplant ist.
+5. Der InvoiceService konsumiert das Ereignis unabhängig vom HTTP-Aufruf,
+   erzeugt und persistiert die PDF-Rechnung und schreibt die E-Mail in die
+   konfigurierte Senke.
+6. Parallel zur Rechnungsverarbeitung bestätigt der ShopService die persistente
+   Reservierung über `WarehouseService.CommitCart`. Bei einem Transportfehler
+   erfolgt genau ein idempotenter Wiederholungsversuch.
+7. Nach erfolgreichem Commit schreibt der ShopService `ORDER_COMPLETED` und der
+   öffentliche Endpunkt antwortet mit `201 Created` und der Rechnungs-URL. Auf
+   die fertige PDF-Datei wartet der Checkout nicht.
+
+`GetFeaturedProducts` gehört ausschließlich zur Kataloganzeige und wird im
+Bestellablauf nicht aufgerufen. Bei Zahlungsablehnung oder Zahlungsfehler wird
+die Reservierung über `ReleaseCart` kompensiert. Scheitert nach erfolgreicher
+Zahlung die Veröffentlichung des Rechnungsevents, versucht die SAGA zuerst die
+Zahlung zu erstatten und anschließend die Reservierung freizugeben. Nicht
+verfügbare oder zu langsame Services führen zu strukturierten Logs,
+Audit-Snapshots und einer RFC-9457-Fehlerantwort; ein nicht auflösbarer
+Kompensations- oder Commitfehler bleibt als Betriebsstörung sichtbar.
 
 PostgreSQL
 ----------
@@ -286,12 +329,18 @@ Zahlungsanbieter
 
 Der BillingService stellt die drei Adapter `demo`, `paypal` und `stripe`
 hinter einer gemeinsamen `IPaymentProvider`-Schnittstelle bereit. Die
-`PaymentFacade` ist der einzige Zugriffspunkt auf diese Adapter und wählt den
-aktiven Anbieter ausschließlich über `PaymentProviders:ActiveProviderKey`.
-Der Shop lädt die registrierten Adapter über `GET /api/payment-providers`; die
-Antwort kennzeichnet den zentral aktiven Adapter mit `isActive`.
+`PaymentFacade` ist der einzige Zugriffspunkt auf diese Adapter. Über
+`PaymentProviders:EnabledProviderKeys` legt die Konfiguration fest, welche
+Adapter für neue Bestellungen verwendet werden dürfen. Standardmäßig bleiben
+PayPal und Stripe aktiviert; DemoPay ist registriert, aber deaktiviert.
 
-Der Checkout enthält deshalb keinen vom Client gewählten Provider-Schlüssel:
+`GET /api/payment-providers` liefert alle registrierten Adapter und kennzeichnet
+ihre Verfügbarkeit mit `isEnabled`. Die Website zeigt deaktivierte Adapter
+ausgegraut an und trifft beim Laden keine Vorauswahl. Erst der Kunde wählt im
+Warenkorb PayPal oder Stripe; der Schlüssel wird für genau diese Bestellung
+übertragen und serverseitig erneut gegen die Konfiguration validiert.
+
+Der Checkout enthält deshalb den ausgewählten Provider-Schlüssel:
 
 ```json
 {
@@ -301,14 +350,17 @@ Der Checkout enthält deshalb keinen vom Client gewählten Provider-Schlüssel:
       "quantity": 1
     }
   ],
-  "customerEmail": "kunde@beispiel.de"
+  "customerEmail": "kunde@beispiel.de",
+  "paymentProviderKey": "paypal"
 }
 ```
 
-Die Fassade bietet einheitlich `ChargeAsync`, `RefundAsync` und
-`GetStatusAsync`. Neue `IPaymentProvider`-Implementierungen werden automatisch
-entdeckt; eine Änderung der Fassade oder von `Program.cs` ist dafür nicht
-erforderlich.
+Die Fassade bietet einheitlich `ChargeAsync(providerKey, orderId, amount,
+currency)`, `RefundAsync` und `GetStatusAsync`. `ActiveProviderKey` bleibt als
+serverseitiger Standard für interne oder ältere gRPC-Aufrufer erhalten, führt im
+Browser aber zu keiner Vorauswahl. Neue `IPaymentProvider`-Implementierungen
+werden automatisch entdeckt; eine Änderung der Fassade oder von `Program.cs`
+ist dafür nicht erforderlich.
 
 Alle drei Adapter laufen aktuell ausdrücklich im Testbetrieb und bewegen kein
 echtes Geld. Eine produktive PayPal- oder Stripe-Anbindung benötigt zusätzlich

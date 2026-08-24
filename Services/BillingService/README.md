@@ -24,26 +24,43 @@ nur eine einfache Prozessdiagnose.
 
 ## Payment-Konfiguration
 
-Unter `PaymentProviders` bestimmen `ActiveProviderKey` und
-`TimeoutMilliseconds`, welcher Adapter für sämtliche Zahlungen verwendet wird
-und wie lange die Provider-Fassade auf Provideroperationen wartet. Eine
-Providerwahl durch ShopService oder Client findet nicht statt. Standardmäßig
-wird `demo` mit einem Timeout von 5000 Millisekunden verwendet.
+Unter `PaymentProviders` bestimmt `EnabledProviderKeys`, welche registrierten
+Adapter für neue Zahlungen verwendet werden dürfen. `ActiveProviderKey` ist nur
+der serverseitige Standard für interne oder ältere gRPC-Aufrufer ohne Schlüssel;
+`TimeoutMilliseconds` begrenzt jede Provideroperation. Standardmäßig sind
+`paypal` und `stripe` aktiviert, während `demo` deaktiviert bleibt. Der Timeout
+beträgt 5000 Millisekunden.
 
 Die .NET-Konfiguration kann wie gewohnt über eine Umgebungsvariable
 überschrieben werden:
 
 ```powershell
-$env:PaymentProviders__ActiveProviderKey = "stripe"
+$env:PaymentProviders__ActiveProviderKey = "paypal"
+$env:PaymentProviders__EnabledProviderKeys__0 = "paypal"
+$env:PaymentProviders__EnabledProviderKeys__1 = "stripe"
 ```
+
+Die Änderung wird beim Start eingelesen und erfordert daher einen Neustart des
+BillingService. `GET /api/payment-providers` zeigt über ShopService und
+StoreProxy alle registrierten Adapter einschließlich ihres `isEnabled`-Status.
+Der Warenkorb trifft keine Vorauswahl; `POST /api/orders` überträgt die bewusste
+Auswahl des Kunden als `paymentProviderKey`.
 
 Alle konkreten Implementierungen von `IPaymentProvider` werden beim Start
 automatisch aus dem BillingService-Assembly registriert. Ein zusätzlicher
 Adapter benötigt daher keine Änderung an `Program.cs`, der Fassade oder den
 bestehenden Adaptern.
 
-Die Fassade kapselt `ChargeAsync(orderId, amount, currency)`,
-`RefundAsync(transactionId, amount)` und `GetStatusAsync(transactionId)`.
+Die Fassade kapselt `ChargeAsync(providerKey, orderId, amount, currency)`,
+`RefundAsync(transactionId, amount)` und `GetStatusAsync(transactionId)`. Sie
+weist eine Belastung zurück, wenn der angeforderte Adapter nicht in
+`EnabledProviderKeys` enthalten ist. Erstattung und Statusabfrage werden über
+die gespeicherte Transaktionszuordnung weiterhin zum ursprünglichen Adapter
+geroutet.
+Nach einer erfolgreichen Belastung veröffentlicht der BillingService das
+Ereignis `payment.succeeded`. Kann es nicht bestätigt an RabbitMQ übergeben
+werden, meldet die Antwort `InvoiceQueued=false`; der ShopService stößt dann die
+Erstattung und Freigabe der Reservierung als SAGA-Kompensation an.
 Transaktionsstatus und Providerzuordnung werden im aktuellen lokalen
 Testbetrieb im Speicher des BillingService gehalten und gehen bei dessen
 Neustart verloren. Eine dauerhafte operative Transaktionspersistenz ist nicht

@@ -24,6 +24,13 @@ Modus `Smtp` müssen unter `InvoiceEmail:Smtp` Host, Port und Zugangsdaten
 konfiguriert werden. MimeKit erstellt die Nachricht in beiden Modi;
 MailKit übernimmt im optionalen SMTP-Modus die verschlüsselte Übertragung.
 
+Der erfolgreiche Checkout wartet nur darauf, dass der BillingService das
+Ereignis `payment.succeeded` bestätigt veröffentlicht. PDF-Erzeugung,
+Persistierung und E-Mail-Ausgabe erfolgen danach asynchron. Ein früher Abruf der
+Rechnungs-URL kann deshalb noch `404 Not Found` liefern; derselbe Abruf ist nach
+abgeschlossener Verarbeitung erfolgreich. Wiederholte Zustellungen desselben
+Events werden über die Event- und Invoice-ID idempotent behandelt.
+
 ## Voraussetzungen
 
 - .NET 10 SDK

@@ -23,6 +23,7 @@ message PaymentRequest {
   string customer_email = 6;
   repeated PaymentLineItem invoice_items = 7;
   string order_id = 8;
+  string provider_key = 9;
 }
 
 message PaymentResponse {
@@ -52,6 +53,7 @@ message PaymentProviderInfo {
   string name = 2;
   bool is_test_mode = 3;
   bool is_active = 4;
+  bool is_enabled = 5;
 }
 
 message RefundPaymentRequest {

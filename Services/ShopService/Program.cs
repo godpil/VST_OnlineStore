@@ -145,7 +145,8 @@ public class Program {
                         new PaymentProviderResponse(
                             provider.Key,
                             provider.Name,
-                            provider.IsTestMode)).ToArray());
+                            provider.IsTestMode,
+                            provider.IsActive)).ToArray());
                 }
                 catch (RpcException exception)
                     when (!IsRequestCancellation(exception, cancellationToken)) {
@@ -159,7 +160,9 @@ public class Program {
             .WithName("ListPaymentProviders")
             .WithTags("Payment providers")
             .WithSummary("Zahlungsanbieter abrufen")
-            .WithDescription("Liefert die für eine Bestellung auswählbaren Zahlungsanbieter.")
+            .WithDescription(
+                "Liefert die registrierten Zahlungsanbieter und kennzeichnet den " +
+                "zentral konfigurierten aktiven Anbieter.")
             .Produces<PaymentProviderResponse[]>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status500InternalServerError)

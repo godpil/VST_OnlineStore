@@ -7,42 +7,17 @@ namespace BillingService.Payments;
 /// Schnittstelle bleibt identisch zu einer späteren PayPal-Sandbox-Anbindung.
 /// </summary>
 public sealed class PayPalPaymentProvider(
-    IStructuredLogger logger) : IPaymentProvider {
+    IStructuredLogger logger) : TestPaymentProviderBase(logger) {
 
-    public string Key => "paypal";
+    public override string Key => "paypal";
 
-    public string Name => "PayPal";
+    public override string Name => "PayPal";
 
-    public bool IsTestMode => true;
+    protected override string TransactionPrefix => "PAYPAL-TEST-";
 
-    public Task<PaymentProviderResult> ChargeAsync(
-        long amountInCents,
-        string currency,
-        string paymentMethod,
-        string reference,
-        CancellationToken cancellationToken = default) {
+    protected override string AcceptedMessage =>
+        "Die Zahlung wurde vom PayPal-Testadapter bestätigt.";
 
-        cancellationToken.ThrowIfCancellationRequested();
-        logger.Debug(
-            "PayPal test payment started.",
-            PaymentLogContext.Create(
-                Key,
-                Name,
-                reference,
-                amountInCents,
-                currency,
-                paymentMethod));
-
-        var success = amountInCents > 0
-            && currency.Equals("EUR", StringComparison.OrdinalIgnoreCase);
-        var result = new PaymentProviderResult(
-            success,
-            success ? $"PAYPAL-TEST-{Guid.NewGuid():N}" : string.Empty,
-            success
-                ? "Die Zahlung wurde vom PayPal-Testadapter bestätigt."
-                : "Der PayPal-Testadapter hat die Zahlung abgelehnt.");
-
-        PaymentLogContext.LogResult(logger, this, reference, amountInCents, currency, result);
-        return Task.FromResult(result);
-    }
+    protected override string DeclinedMessage =>
+        "Der PayPal-Testadapter hat die Zahlung abgelehnt.";
 }

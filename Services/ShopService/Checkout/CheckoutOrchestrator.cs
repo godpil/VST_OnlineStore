@@ -31,18 +31,15 @@ public sealed class CheckoutOrchestrator(
 
         ArgumentOutOfRangeException.ThrowIfEqual(orderId, Guid.Empty);
 
-        var requestedPaymentProvider = request.PaymentProvider?.Trim();
         var customerEmail = request.CustomerEmail?.Trim();
         var auditState = new OrderAuditState(
             orderId,
             request.Items ?? [],
-            requestedPaymentProvider,
             GetRecipientDomain(customerEmail));
 
         try {
             return await CheckoutCoreAsync(
                 request,
-                requestedPaymentProvider,
                 customerEmail,
                 auditState,
                 cancellationToken);
@@ -84,7 +81,6 @@ public sealed class CheckoutOrchestrator(
 
     private async Task<CheckoutOutcome> CheckoutCoreAsync(
         CheckoutRequest request,
-        string? requestedPaymentProvider,
         string? customerEmail,
         OrderAuditState auditState,
         CancellationToken cancellationToken) {
@@ -99,7 +95,6 @@ public sealed class CheckoutOrchestrator(
 
         var validation = ValidateAndGroup(
             request.Items,
-            requestedPaymentProvider,
             customerEmail);
         if (!validation.Success) {
             auditState.Phase = "ORDER_VALIDATION_FAILED";
@@ -140,14 +135,13 @@ public sealed class CheckoutOrchestrator(
                 new BillingContracts.PaymentProvidersRequest(),
                 deadline: DateTime.UtcNow.Add(_timeouts.CatalogQuery),
                 cancellationToken: cancellationToken);
-            selectedPaymentProvider = availableProviders.Providers.FirstOrDefault(provider =>
-                provider.Key.Equals(
-                    requestedPaymentProvider,
-                    StringComparison.OrdinalIgnoreCase));
+            selectedPaymentProvider = availableProviders.Providers.SingleOrDefault(provider =>
+                provider.IsActive);
 
             if (selectedPaymentProvider is null) {
-                auditState.Phase = "PAYMENT_PROVIDER_REJECTED";
-                auditState.FailureReason = "Der ausgewählte Zahlungsanbieter ist nicht verfügbar.";
+                auditState.Phase = "PAYMENT_PROVIDER_CONFIGURATION_INVALID";
+                auditState.FailureReason =
+                    "Der zentral konfigurierte Zahlungsanbieter ist nicht verfügbar.";
                 auditState.Message = auditState.FailureReason;
                 await RecordAuditAsync(
                     AuditEventType.PAYMENT,
@@ -157,10 +151,7 @@ public sealed class CheckoutOrchestrator(
                     auditState,
                     cancellationToken);
                 logger.Warn(
-                    "Checkout rejected an unknown payment provider.",
-                    new {
-                        requestedPaymentProvider
-                    });
+                    "Checkout rejected an invalid active payment provider configuration.");
                 return await CompleteWithFailureAsync(
                     auditState,
                     StatusCodes.Status422UnprocessableEntity,
@@ -352,11 +343,11 @@ public sealed class CheckoutOrchestrator(
         auditState.Reference = reference;
         try {
             var paymentRequest = new BillingContracts.PaymentRequest {
+                OrderId = auditState.OrderId.ToString("D"),
                 AmountInCents = totalInCents,
                 Currency = "EUR",
                 PaymentMethod = "test",
                 Reference = reference,
-                PaymentProvider = selectedPaymentProvider.Key,
                 CustomerEmail = customerEmail
             };
             paymentRequest.InvoiceItems.AddRange(quantities.Select(item => {
@@ -692,18 +683,10 @@ public sealed class CheckoutOrchestrator(
 
     private static ValidationResult ValidateAndGroup(
         IReadOnlyList<CheckoutItemRequest>? items,
-        string? paymentProvider,
         string? customerEmail) {
 
         if (items is null || items.Count == 0) {
             return new ValidationResult(false, "Der Warenkorb ist leer.", null);
-        }
-
-        if (string.IsNullOrWhiteSpace(paymentProvider)) {
-            return new ValidationResult(
-                false,
-                "Bitte wählen Sie einen Zahlungsanbieter aus.",
-                null);
         }
 
         if (!MailAddress.TryCreate(customerEmail, out _)) {
@@ -790,7 +773,6 @@ public sealed class CheckoutOrchestrator(
     private sealed class OrderAuditState(
         Guid orderId,
         IReadOnlyList<CheckoutItemRequest> requestedItems,
-        string? requestedPaymentProvider,
         string? customerEmailDomain) {
 
         public Guid OrderId { get; } = orderId;
@@ -804,7 +786,7 @@ public sealed class CheckoutOrchestrator(
         public bool? ReservationSucceeded { get; set; }
         public IReadOnlyList<ProductStockSnapshot> Stock { get; set; } = [];
         public bool? PaymentSucceeded { get; set; }
-        public string? PaymentProviderKey { get; set; } = requestedPaymentProvider;
+        public string? PaymentProviderKey { get; set; }
         public string? PaymentProvider { get; set; }
         public string? TransactionId { get; set; }
         public string? InvoiceId { get; set; }

@@ -7,44 +7,17 @@ namespace BillingService.Payments;
 /// Er bestätigt gültige Demo-Zahlungen ohne ein externes System aufzurufen.
 /// </summary>
 public sealed class SimulatedPaymentProvider(
-    IStructuredLogger logger) : IPaymentProvider {
+    IStructuredLogger logger) : TestPaymentProviderBase(logger) {
 
-    public string Key => "demo";
+    public override string Key => "demo";
 
-    public string Name => "Holzwerk DemoPay";
+    public override string Name => "Holzwerk DemoPay";
 
-    public bool IsTestMode => true;
+    protected override string TransactionPrefix => "DEMO-";
 
-    public Task<PaymentProviderResult> ChargeAsync(
-        long amountInCents,
-        string currency,
-        string paymentMethod,
-        string reference,
-        CancellationToken cancellationToken = default) {
+    protected override string AcceptedMessage =>
+        "Die Zahlung wurde vom Demo-Finanzdienstleister bestätigt.";
 
-        cancellationToken.ThrowIfCancellationRequested();
-
-        logger.Debug(
-            "DemoPay payment started.",
-            PaymentLogContext.Create(
-                Key,
-                Name,
-                reference,
-                amountInCents,
-                currency,
-                paymentMethod));
-
-        var success = amountInCents > 0
-            && currency.Equals("EUR", StringComparison.OrdinalIgnoreCase);
-
-        var result = new PaymentProviderResult(
-            success,
-            success ? $"DEMO-{Guid.NewGuid():N}" : string.Empty,
-            success
-                ? "Die Zahlung wurde vom Demo-Finanzdienstleister bestätigt."
-                : "Der Demo-Finanzdienstleister hat die Zahlung abgelehnt.");
-
-        PaymentLogContext.LogResult(logger, this, reference, amountInCents, currency, result);
-        return Task.FromResult(result);
-    }
+    protected override string DeclinedMessage =>
+        "Der Demo-Finanzdienstleister hat die Zahlung abgelehnt.";
 }

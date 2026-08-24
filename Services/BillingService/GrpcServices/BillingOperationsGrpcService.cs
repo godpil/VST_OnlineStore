@@ -6,11 +6,13 @@ using VstOnlineStore.Contracts.BillingService;
 using VstOnlineStore.Messaging;
 using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
+using ContractPaymentStatus = VstOnlineStore.Contracts.BillingService.PaymentTransactionStatus;
+using DomainPaymentStatus = BillingService.Payments.PaymentTransactionStatus;
 
 namespace BillingService.GrpcServices;
 
 public sealed class BillingOperationsGrpcService(
-    PaymentProviderResolver paymentProviders,
+    IPaymentFacade paymentFacade,
     IPaymentSucceededEventPublisher invoiceEvents,
     IAuditEventPublisher audit,
     IStructuredLogger logger) : BillingOperations.BillingOperationsBase {
@@ -19,57 +21,28 @@ public sealed class BillingOperationsGrpcService(
         PaymentRequest request,
         ServerCallContext context) {
 
-        var requestedProviderKey = request.PaymentProvider.Trim();
-
-        if (!paymentProviders.TryResolve(requestedProviderKey, out var paymentProvider)) {
-            const string message = "Der ausgewählte Zahlungsanbieter ist nicht verfügbar.";
-            logger.Warn(
-                "Unknown payment provider requested.",
-                new {
-                    requestedProviderKey,
-                    request.Reference,
-                    request.AmountInCents,
-                    request.Currency
-                });
-            await audit.PublishAsync(
-                AuditEventType.PAYMENT,
-                "BillingService",
-                CreateAuditPayload(
-                    request,
-                    requestedProviderKey,
-                    null,
-                    false,
-                    null,
-                    message,
-                    "PAYMENT_PROVIDER_REJECTED"),
-                "BillingService",
-                AuditStatusCode.FAILURE,
-                cancellationToken: context.CancellationToken);
-            return new PaymentResponse {
-                Success = false,
-                Provider = requestedProviderKey,
-                Message = message
-            };
-        }
-
+        var paymentProvider = paymentFacade.ActiveProvider;
         logger.Info(
-            "Payment provider selected.",
+            "Configured payment provider selected.",
             new {
                 providerKey = paymentProvider.Key,
                 providerName = paymentProvider.Name,
                 paymentProvider.IsTestMode,
+                request.OrderId,
                 request.Reference,
                 request.AmountInCents,
                 request.Currency
             });
 
-        if (!IsPaymentRequestValid(request)) {
-            const string message = "Betrag, Währung, E-Mail-Adresse und Rechnungspositionen müssen gültig sein.";
+        if (!IsPaymentRequestValid(request, out var orderId)) {
+            const string message =
+                "Bestell-ID, Betrag, Währung, E-Mail-Adresse und Rechnungspositionen müssen gültig sein.";
             logger.Warn(
                 "Payment request validation failed.",
                 new {
                     providerKey = paymentProvider.Key,
                     providerName = paymentProvider.Name,
+                    request.OrderId,
                     request.Reference,
                     request.AmountInCents,
                     request.Currency
@@ -79,7 +52,6 @@ public sealed class BillingOperationsGrpcService(
                 "BillingService",
                 CreateAuditPayload(
                     request,
-                    paymentProvider.Key,
                     paymentProvider,
                     false,
                     null,
@@ -94,24 +66,23 @@ public sealed class BillingOperationsGrpcService(
             };
         }
 
-        PaymentProviderResult result;
+        PaymentChargeResult result;
         try {
-            result = await paymentProviders.ChargeAsync(
-                paymentProvider,
+            result = await paymentFacade.ChargeAsync(
+                orderId,
                 request.AmountInCents,
                 request.Currency,
-                request.PaymentMethod,
-                request.Reference,
                 context.CancellationToken);
         }
         catch (OperationCanceledException exception)
             when (context.CancellationToken.IsCancellationRequested) {
             const string message = "Der Zahlungsvorgang wurde abgebrochen.";
             logger.Warn(
-                "Payment provider call was cancelled by the client.",
+                "Payment facade call was cancelled by the client.",
                 new {
                     providerKey = paymentProvider.Key,
                     providerName = paymentProvider.Name,
+                    request.OrderId,
                     request.Reference,
                     request.AmountInCents,
                     request.Currency,
@@ -124,7 +95,6 @@ public sealed class BillingOperationsGrpcService(
                 "BillingService",
                 CreateAuditPayload(
                     request,
-                    paymentProvider.Key,
                     paymentProvider,
                     false,
                     null,
@@ -138,10 +108,11 @@ public sealed class BillingOperationsGrpcService(
         catch (Exception exception) {
             const string message = "Der Zahlungsanbieter konnte die Zahlung nicht verarbeiten.";
             logger.Error(
-                "Payment provider call failed.",
+                "Payment facade call failed.",
                 new {
                     providerKey = paymentProvider.Key,
                     providerName = paymentProvider.Name,
+                    request.OrderId,
                     request.Reference,
                     request.AmountInCents,
                     request.Currency,
@@ -154,7 +125,6 @@ public sealed class BillingOperationsGrpcService(
                 "BillingService",
                 CreateAuditPayload(
                     request,
-                    paymentProvider.Key,
                     paymentProvider,
                     false,
                     null,
@@ -175,7 +145,6 @@ public sealed class BillingOperationsGrpcService(
             "BillingService",
             CreateAuditPayload(
                 request,
-                paymentProvider.Key,
                 paymentProvider,
                 result.Success,
                 result.TransactionId,
@@ -207,8 +176,6 @@ public sealed class BillingOperationsGrpcService(
                     item.UnitPriceInCents)).ToArray());
             invoiceQueued = await invoiceEvents.PublishAsync(
                 paymentEvent,
-                // Nach erfolgreicher Belastung muss die Rechnung auch dann
-                // eingeplant werden, wenn der ursprüngliche Client abbricht.
                 CancellationToken.None);
 
             await audit.PublishAsync(
@@ -217,6 +184,7 @@ public sealed class BillingOperationsGrpcService(
                 new {
                     phase = invoiceQueued ? "INVOICE_QUEUED" : "INVOICE_QUEUE_FAILED",
                     invoiceId,
+                    request.OrderId,
                     request.Reference,
                     paymentProvider = paymentProvider.Name,
                     result.TransactionId,
@@ -242,22 +210,101 @@ public sealed class BillingOperationsGrpcService(
         };
     }
 
+    public override async Task<RefundPaymentResponse> RefundPayment(
+        RefundPaymentRequest request,
+        ServerCallContext context) {
+
+        if (string.IsNullOrWhiteSpace(request.TransactionId)
+            || request.AmountInCents <= 0) {
+            throw new RpcException(new Status(
+                StatusCode.InvalidArgument,
+                "Transaktions-ID und Erstattungsbetrag müssen gültig sein."));
+        }
+
+        var result = await paymentFacade.RefundAsync(
+            request.TransactionId,
+            request.AmountInCents,
+            context.CancellationToken);
+        logger.Info(
+            "Payment refund processed by facade.",
+            new {
+                request.TransactionId,
+                request.AmountInCents,
+                result.Success,
+                result.TotalRefundedAmountInCents,
+                status = result.Status.ToString()
+            });
+
+        await audit.PublishAsync(
+            AuditEventType.PAYMENT,
+            "BillingService",
+            new {
+                phase = result.Success ? "PAYMENT_REFUNDED" : "PAYMENT_REFUND_FAILED",
+                request.TransactionId,
+                request.AmountInCents,
+                result.TotalRefundedAmountInCents,
+                status = result.Status.ToString(),
+                result.Message
+            },
+            "BillingService",
+            result.Success ? AuditStatusCode.COMPENSATED : AuditStatusCode.FAILURE,
+            cancellationToken: context.CancellationToken);
+
+        return new RefundPaymentResponse {
+            Success = result.Success,
+            TransactionId = result.TransactionId,
+            RefundedAmountInCents = result.RefundedAmountInCents,
+            TotalRefundedAmountInCents = result.TotalRefundedAmountInCents,
+            Status = ToContractStatus(result.Status),
+            Message = result.Message
+        };
+    }
+
+    public override async Task<PaymentStatusResponse> GetPaymentStatus(
+        PaymentStatusRequest request,
+        ServerCallContext context) {
+
+        if (string.IsNullOrWhiteSpace(request.TransactionId)) {
+            throw new RpcException(new Status(
+                StatusCode.InvalidArgument,
+                "Die Transaktions-ID muss angegeben werden."));
+        }
+
+        var result = await paymentFacade.GetStatusAsync(
+            request.TransactionId,
+            context.CancellationToken);
+        return new PaymentStatusResponse {
+            Found = result.Found,
+            TransactionId = result.TransactionId,
+            OrderId = result.OrderId == Guid.Empty
+                ? string.Empty
+                : result.OrderId.ToString("D"),
+            AmountInCents = result.AmountInCents,
+            RefundedAmountInCents = result.RefundedAmountInCents,
+            Currency = result.Currency,
+            Status = ToContractStatus(result.Status),
+            Message = result.Message
+        };
+    }
+
     public override Task<PaymentProvidersResponse> ListPaymentProviders(
         PaymentProvidersRequest request,
         ServerCallContext context) {
 
         var response = new PaymentProvidersResponse();
-        response.Providers.AddRange(paymentProviders.Providers.Select(provider =>
+        response.Providers.AddRange(paymentFacade.Providers.Select(provider =>
             new PaymentProviderInfo {
                 Key = provider.Key,
                 Name = provider.Name,
-                IsTestMode = provider.IsTestMode
+                IsTestMode = provider.IsTestMode,
+                IsActive = provider.IsActive
             }));
 
         logger.Debug(
             "Payment provider list requested.",
             new {
                 providerCount = response.Providers.Count,
+                activeProvider = paymentFacade.ActiveProvider.Key,
                 providers = response.Providers.Select(provider => provider.Key).ToArray()
             });
         return Task.FromResult(response);
@@ -265,30 +312,28 @@ public sealed class BillingOperationsGrpcService(
 
     public override Task<BillingStatusResponse> GetStatus(
         BillingStatusRequest request,
-        ServerCallContext context) {
-
-        return Task.FromResult(new BillingStatusResponse {
+        ServerCallContext context) =>
+        Task.FromResult(new BillingStatusResponse {
             Available = true,
             Service = "BillingService"
         });
-    }
 
     private static object CreateAuditPayload(
         PaymentRequest request,
-        string providerKey,
-        IPaymentProvider? provider,
+        PaymentProviderDescriptor provider,
         bool success,
         string? transactionId,
         string message,
         string? phase = null) => new {
             phase = phase ?? (success ? "PAYMENT_COMPLETED" : "PAYMENT_FAILED"),
+            request.OrderId,
             request.AmountInCents,
             request.Currency,
             paymentMethodSupplied = !string.IsNullOrWhiteSpace(request.PaymentMethod),
             request.Reference,
-            providerKey,
-            provider = provider?.Name,
-            isTestMode = provider?.IsTestMode,
+            providerKey = provider.Key,
+            provider = provider.Name,
+            provider.IsTestMode,
             customerEmailSupplied = !string.IsNullOrWhiteSpace(request.CustomerEmail),
             recipientDomain = GetRecipientDomain(request.CustomerEmail),
             invoiceItemCount = request.InvoiceItems.Count,
@@ -297,8 +342,13 @@ public sealed class BillingOperationsGrpcService(
             message
         };
 
-    private static bool IsPaymentRequestValid(PaymentRequest request) {
-        if (request.AmountInCents <= 0
+    private static bool IsPaymentRequestValid(
+        PaymentRequest request,
+        out Guid orderId) {
+
+        if (!Guid.TryParse(request.OrderId, out orderId)
+            || orderId == Guid.Empty
+            || request.AmountInCents <= 0
             || string.IsNullOrWhiteSpace(request.Currency)
             || !MailAddress.TryCreate(request.CustomerEmail, out _)
             || request.InvoiceItems.Count == 0
@@ -319,6 +369,17 @@ public sealed class BillingOperationsGrpcService(
             return false;
         }
     }
+
+    private static ContractPaymentStatus ToContractStatus(
+        DomainPaymentStatus status) =>
+        status switch {
+            DomainPaymentStatus.Pending => ContractPaymentStatus.Pending,
+            DomainPaymentStatus.Succeeded => ContractPaymentStatus.Succeeded,
+            DomainPaymentStatus.Failed => ContractPaymentStatus.Failed,
+            DomainPaymentStatus.PartiallyRefunded => ContractPaymentStatus.PartiallyRefunded,
+            DomainPaymentStatus.Refunded => ContractPaymentStatus.Refunded,
+            _ => ContractPaymentStatus.Unspecified
+        };
 
     private static Guid GetCorrelationId(ServerCallContext context) {
         var httpContext = context.GetHttpContext();

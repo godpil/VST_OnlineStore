@@ -3,38 +3,37 @@ using VstOnlineStore.Observability;
 namespace BillingService.Payments;
 
 internal static class PaymentLogContext {
-    public static object Create(
+    public static object CreateCharge(
         string providerKey,
         string providerName,
-        string reference,
+        Guid orderId,
         long amountInCents,
-        string currency,
-        string paymentMethod) => new {
+        string currency) => new {
             providerKey,
             providerName,
-            reference,
+            orderId,
             amountInCents,
             currency,
-            paymentMethodSupplied = !string.IsNullOrWhiteSpace(paymentMethod),
             testMode = true
         };
 
-    public static void LogResult(
+    public static void LogChargeResult(
         IStructuredLogger logger,
         IPaymentProvider provider,
-        string reference,
+        Guid orderId,
         long amountInCents,
         string currency,
-        PaymentProviderResult result) {
+        PaymentChargeResult result) {
 
         var context = new {
             providerKey = provider.Key,
             providerName = provider.Name,
-            reference,
+            orderId,
             amountInCents,
             currency,
             result.Success,
             transactionId = EmptyAsNull(result.TransactionId),
+            status = result.Status.ToString(),
             provider.IsTestMode
         };
 
@@ -43,6 +42,30 @@ internal static class PaymentLogContext {
         }
         else {
             logger.Warn("Payment provider rejected the payment.", context);
+        }
+    }
+
+    public static void LogRefundResult(
+        IStructuredLogger logger,
+        IPaymentProvider provider,
+        PaymentRefundResult result) {
+
+        var context = new {
+            providerKey = provider.Key,
+            providerName = provider.Name,
+            result.TransactionId,
+            result.Success,
+            result.RefundedAmountInCents,
+            result.TotalRefundedAmountInCents,
+            status = result.Status.ToString(),
+            provider.IsTestMode
+        };
+
+        if (result.Success) {
+            logger.Info("Payment provider refunded the payment.", context);
+        }
+        else {
+            logger.Warn("Payment provider rejected the refund.", context);
         }
     }
 

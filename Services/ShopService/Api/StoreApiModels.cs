@@ -14,7 +14,8 @@ public sealed record ProductResponse(
 public sealed record PaymentProviderResponse(
     string Key,
     string Name,
-    bool IsTestMode);
+    bool IsTestMode,
+    bool IsActive);
 
 public sealed record OrderAuditSnapshotResponse(
     [property: JsonPropertyName("eventID")] Guid EventId,

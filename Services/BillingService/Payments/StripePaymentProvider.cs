@@ -7,42 +7,17 @@ namespace BillingService.Payments;
 /// Schnittstelle bleibt identisch zu einer späteren Stripe-Sandbox-Anbindung.
 /// </summary>
 public sealed class StripePaymentProvider(
-    IStructuredLogger logger) : IPaymentProvider {
+    IStructuredLogger logger) : TestPaymentProviderBase(logger) {
 
-    public string Key => "stripe";
+    public override string Key => "stripe";
 
-    public string Name => "Stripe";
+    public override string Name => "Stripe";
 
-    public bool IsTestMode => true;
+    protected override string TransactionPrefix => "pi_test_";
 
-    public Task<PaymentProviderResult> ChargeAsync(
-        long amountInCents,
-        string currency,
-        string paymentMethod,
-        string reference,
-        CancellationToken cancellationToken = default) {
+    protected override string AcceptedMessage =>
+        "Die Zahlung wurde vom Stripe-Testadapter bestätigt.";
 
-        cancellationToken.ThrowIfCancellationRequested();
-        logger.Debug(
-            "Stripe test payment started.",
-            PaymentLogContext.Create(
-                Key,
-                Name,
-                reference,
-                amountInCents,
-                currency,
-                paymentMethod));
-
-        var success = amountInCents > 0
-            && currency.Equals("EUR", StringComparison.OrdinalIgnoreCase);
-        var result = new PaymentProviderResult(
-            success,
-            success ? $"pi_test_{Guid.NewGuid():N}" : string.Empty,
-            success
-                ? "Die Zahlung wurde vom Stripe-Testadapter bestätigt."
-                : "Der Stripe-Testadapter hat die Zahlung abgelehnt.");
-
-        PaymentLogContext.LogResult(logger, this, reference, amountInCents, currency, result);
-        return Task.FromResult(result);
-    }
+    protected override string DeclinedMessage =>
+        "Der Stripe-Testadapter hat die Zahlung abgelehnt.";
 }

@@ -8,12 +8,12 @@ using VstOnlineStore.Observability.Auditing;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddGrpc();
-builder.Services.AddSingleton<IPaymentProvider, SimulatedPaymentProvider>();
-builder.Services.AddSingleton<IPaymentProvider, PayPalPaymentProvider>();
-builder.Services.AddSingleton<IPaymentProvider, StripePaymentProvider>();
-builder.Services.Configure<PaymentProviderOptions>(
-    builder.Configuration.GetSection(PaymentProviderOptions.SectionName));
-builder.Services.AddSingleton<PaymentProviderResolver>();
+builder.Services.AddPaymentFacade();
+builder.Services
+    .AddOptions<PaymentProviderOptions>()
+    .Bind(builder.Configuration.GetSection(PaymentProviderOptions.SectionName))
+    .Validate(options => options.IsValid(), "Die Payment-Provider-Konfiguration ist ungültig.")
+    .ValidateOnStart();
 builder.Services.Configure<RabbitMqInvoiceOptions>(
     builder.Configuration.GetSection(RabbitMqInvoiceOptions.SectionName));
 builder.Services.AddSingleton<IPaymentSucceededEventPublisher,

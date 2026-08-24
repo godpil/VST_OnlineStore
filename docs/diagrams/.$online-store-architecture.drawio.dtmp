@@ -763,48 +763,144 @@
     </mxGraphModel>
   </diagram>
   <diagram id="payment-facade" name="06 Payment-Fassade">
-    <mxGraphModel dx="1900" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="3775" dy="1097" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="pf-e1" edge="1" parent="1" source="pf-shop" target="pf-facade" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e2" edge="1" parent="1" source="pf-facade" target="pf-validation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e3" edge="1" parent="1" source="pf-validation" target="pf-resolver" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e4" edge="1" parent="1" source="pf-resolver" target="pf-provider" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e5" edge="1" parent="1" source="pf-provider" target="pf-result" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e6" edge="1" parent="1" source="pf-result" target="pf-post" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e7" edge="1" parent="1" source="pf-post" target="pf-audit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.15;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="379" y="810" /><mxPoint x="185" y="810" /></Array></mxGeometry></mxCell>
-        <mxCell id="pf-e8" edge="1" parent="1" source="pf-post" target="pf-invoice-event" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e9" edge="1" parent="1" source="pf-post" target="pf-response" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.85;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="561" y="810" /><mxPoint x="770" y="810" /></Array></mxGeometry></mxCell>
-        <mxCell id="pf-x-e1" edge="1" parent="1" source="pf-ext1" target="pf-ext2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-x-e2" edge="1" parent="1" source="pf-ext2" target="pf-ext3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-x-e3" edge="1" parent="1" source="pf-ext3" target="pf-ext4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-x-e4" edge="1" parent="1" source="pf-ext4" target="pf-ext5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-x-e5" edge="1" parent="1" source="pf-ext3" target="pf-unchanged" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" value=""><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1410" y="520" /><mxPoint x="1410" y="330" /></Array></mxGeometry></mxCell>
-        <mxCell id="pf-x-e6" edge="1" parent="1" source="pf-ext4" target="pf-additional" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" value=""><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1410" y="685" /><mxPoint x="1410" y="715" /></Array></mxGeometry></mxCell>
-        <mxCell id="pf-title" value="Payment-Fassade – Ablauf und Erweiterung um einen Provider" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=24;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="40" as="geometry" /></mxCell>
-        <mxCell id="pf-runtime-boundary" value="&lt;b&gt;A · Laufzeit: Zahlungsabwicklung&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;strokeWidth=2;fillColor=none;verticalAlign=top;align=left;fontSize=16;spacingTop=12;spacingLeft=15;" vertex="1" parent="1"><mxGeometry x="40" y="80" width="900" height="950" as="geometry" /></mxCell>
-        <mxCell id="pf-extension-boundary" value="&lt;b&gt;B · Erweiterung um einen PaymentProvider&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;strokeWidth=2;fillColor=none;verticalAlign=top;align=left;fontSize=16;spacingTop=12;spacingLeft=15;" vertex="1" parent="1"><mxGeometry x="980" y="80" width="880" height="950" as="geometry" /></mxCell>
-        <mxCell id="pf-shop" value="&lt;b&gt;ShopService&lt;/b&gt;&lt;br&gt;Bestell-Orchestrator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;" vertex="1" parent="1"><mxGeometry x="60" y="150" width="170" height="80" as="geometry" /></mxCell>
-        <mxCell id="pf-facade" value="&lt;b&gt;BillingOperationsGrpcService&lt;/b&gt;&lt;br&gt;gRPC-Adapter&lt;br&gt;Process · Refund · Status" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" vertex="1" parent="1"><mxGeometry x="340" y="130" width="260" height="120" as="geometry" /></mxCell>
-        <mxCell id="pf-validation" value="&lt;b&gt;Request validieren&lt;/b&gt;&lt;br&gt;orderId · Betrag · Währung&lt;br&gt;transactionId · Refund-Betrag" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" vertex="1" parent="1"><mxGeometry x="340" y="300" width="260" height="90" as="geometry" /></mxCell>
-        <mxCell id="pf-resolver" value="&lt;b&gt;PaymentFacade&lt;/b&gt;&lt;br&gt;ActiveProviderKey aus Konfiguration&lt;br&gt;einheitliches Timeout&lt;br&gt;Transaktion → Provider" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" vertex="1" parent="1"><mxGeometry x="340" y="450" width="260" height="120" as="geometry" /></mxCell>
-        <mxCell id="pf-provider" value="&lt;b&gt;aktiver IPaymentProvider&lt;/b&gt;&lt;br&gt;DemoPay · PayPal · Stripe&lt;br&gt;ChargeAsync · RefundAsync&lt;br&gt;GetStatusAsync" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" vertex="1" parent="1"><mxGeometry x="680" y="440" width="220" height="140" as="geometry" /></mxCell>
-        <mxCell id="pf-result" value="&lt;b&gt;Payment-Ergebnisse&lt;/b&gt;&lt;br&gt;Charge · Refund · Status&lt;br&gt;TransactionId · Message" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;" vertex="1" parent="1"><mxGeometry x="680" y="650" width="220" height="90" as="geometry" /></mxCell>
-        <mxCell id="pf-post" value="&lt;b&gt;BillingOperationsGrpcService&lt;/b&gt;&lt;br&gt;Ergebnis in gRPC abbilden&lt;br&gt;Audit veröffentlichen&lt;br&gt;bei Charge ggf. Rechnung" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" vertex="1" parent="1"><mxGeometry x="340" y="640" width="260" height="120" as="geometry" /></mxCell>
-        <mxCell id="pf-audit" value="&lt;b&gt;Audit-Ereignisse&lt;/b&gt;&lt;br&gt;PAYMENT / INVOICE&lt;br&gt;vst.audit.events" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;" vertex="1" parent="1"><mxGeometry x="80" y="860" width="210" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-invoice-event" value="&lt;b&gt;payment.succeeded&lt;/b&gt;&lt;br&gt;vst.billing.events&lt;br&gt;nur bei Success=true" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;" vertex="1" parent="1"><mxGeometry x="365" y="860" width="220" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-response" value="&lt;b&gt;gRPC-Antwort&lt;/b&gt;&lt;br&gt;Payment · Refund · Status&lt;br&gt;Provider · TransactionId&lt;br&gt;InvoiceQueued" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" vertex="1" parent="1"><mxGeometry x="660" y="860" width="220" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-l1" value="gRPC-Operation" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" vertex="1" parent="1"><mxGeometry x="220" y="100" width="120" height="30" as="geometry" /></mxCell>
-        <mxCell id="pf-l4" value="Charge · Refund · Status" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" vertex="1" parent="1"><mxGeometry x="590" y="395" width="130" height="30" as="geometry" /></mxCell>
-        <mxCell id="pf-l5" value="einheitliches Ergebnis" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=11;" vertex="1" parent="1"><mxGeometry x="800" y="605" width="100" height="28" as="geometry" /></mxCell>
-        <mxCell id="pf-ext1" value="&lt;b&gt;1 · Adapter implementieren&lt;/b&gt;&lt;br&gt;KlarnaPaymentProvider : IPaymentProvider&lt;br&gt;Charge · Refund · GetStatus" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1040" y="150" width="330" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-ext2" value="&lt;b&gt;2 · Automatisch registrieren&lt;/b&gt;&lt;br&gt;Assembly-Scan findet den Adapter&lt;br&gt;keine bestehende Registrierung ändern" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1040" y="310" width="330" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-ext3" value="&lt;b&gt;3 · Automatisch verfügbar&lt;/b&gt;&lt;br&gt;ListPaymentProviders&lt;br&gt;zunächst als inaktiver Adapter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1040" y="470" width="330" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-ext4" value="&lt;b&gt;4 · Aktivieren&lt;/b&gt;&lt;br&gt;ActiveProviderKey = klarna&lt;br&gt;per Konfigurationsdatei oder Umgebung" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1040" y="630" width="330" height="110" as="geometry" /></mxCell>
-        <mxCell id="pf-ext5" value="&lt;b&gt;5 · Testen&lt;/b&gt;&lt;br&gt;Charge · Refund · GetStatus&lt;br&gt;Timeout · Konfigurationswechsel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1040" y="790" width="330" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-unchanged" value="&lt;b&gt;Keine Änderung an bestehendem Code&lt;/b&gt;&lt;br&gt;&lt;br&gt;• Billing-gRPC-Vertrag&lt;br&gt;• PaymentFacade&lt;br&gt;• PaymentProviderRegistration&lt;br&gt;• ShopService-Bestellablauf&lt;br&gt;• PaymentSucceededEvent&lt;br&gt;• InvoiceService&lt;br&gt;&lt;br&gt;Nur neue Adapterklasse und Konfiguration." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;align=left;spacing=12;" vertex="1" parent="1"><mxGeometry x="1450" y="180" width="350" height="300" as="geometry" /></mxCell>
-        <mxCell id="pf-additional" value="&lt;b&gt;Für einen realen Provider zusätzlich&lt;/b&gt;&lt;br&gt;&lt;br&gt;• HTTP-Client oder Anbieter-SDK&lt;br&gt;• Secret- und Credential-Verwaltung&lt;br&gt;• externe Idempotency Keys&lt;br&gt;• Webhook-Signatur und Abgleich&lt;br&gt;• Mapping der Fehlercodes&lt;br&gt;• Datenschutz- und PCI-Prüfung" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;align=left;spacing=12;" vertex="1" parent="1"><mxGeometry x="1450" y="570" width="350" height="290" as="geometry" /></mxCell>
+        <mxCell id="pf-e1" edge="1" parent="1" source="pf-shop" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="pf-facade" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-e2" edge="1" parent="1" source="pf-facade" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="pf-validation" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-e3" edge="1" parent="1" source="pf-validation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="pf-resolver" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-e4" edge="1" parent="1" source="pf-resolver" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="pf-provider" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-e5" edge="1" parent="1" source="pf-provider" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="pf-result" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-e6" edge="1" parent="1" source="pf-result" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" target="pf-post" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-e7" edge="1" parent="1" source="pf-post" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.15;exitY=1;entryX=0.5;entryY=0;" target="pf-audit" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="379" y="810" />
+              <mxPoint x="185" y="810" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pf-e8" edge="1" parent="1" source="pf-post" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="pf-invoice-event" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-e9" edge="1" parent="1" source="pf-post" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.85;exitY=1;entryX=0.5;entryY=0;" target="pf-response" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="561" y="810" />
+              <mxPoint x="770" y="810" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pf-x-e1" edge="1" parent="1" source="pf-ext1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="pf-ext2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-x-e2" edge="1" parent="1" source="pf-ext2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="pf-ext3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-x-e3" edge="1" parent="1" source="pf-ext3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="pf-ext4" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-x-e4" edge="1" parent="1" source="pf-ext4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="pf-ext5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-x-e5" edge="1" parent="1" source="pf-ext3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="pf-unchanged" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1410" y="520" />
+              <mxPoint x="1410" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pf-x-e6" edge="1" parent="1" source="pf-ext4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="pf-additional" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1410" y="685" />
+              <mxPoint x="1410" y="715" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pf-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=24;fontStyle=1;" value="Payment-Fassade – Ablauf und Erweiterung um einen Provider" vertex="1">
+          <mxGeometry height="40" width="1000" x="40" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-runtime-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;strokeWidth=2;fillColor=none;verticalAlign=top;align=left;fontSize=16;spacingTop=12;spacingLeft=15;" value="&lt;b&gt;A · Laufzeit: Zahlungsabwicklung&lt;/b&gt;" vertex="1">
+          <mxGeometry height="950" width="1060" x="-120" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-extension-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;strokeWidth=2;fillColor=none;verticalAlign=top;align=left;fontSize=16;spacingTop=12;spacingLeft=15;" value="&lt;b&gt;B · Erweiterung um einen PaymentProvider&lt;/b&gt;" vertex="1">
+          <mxGeometry height="950" width="880" x="980" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-shop" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;" value="&lt;b&gt;ShopService&lt;/b&gt;&lt;br&gt;Bestell-Orchestrator" vertex="1">
+          <mxGeometry height="80" width="170" x="60" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-facade" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" value="&lt;b&gt;BillingOperationsGrpcService&lt;/b&gt;&lt;br&gt;gRPC-Adapter&lt;br&gt;Process · Refund · Status" vertex="1">
+          <mxGeometry height="120" width="260" x="340" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-validation" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" value="&lt;b&gt;Request validieren&lt;/b&gt;&lt;br&gt;orderId · Betrag · Währung&lt;br&gt;transactionId · Refund-Betrag" vertex="1">
+          <mxGeometry height="90" width="260" x="340" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-resolver" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" value="&lt;b&gt;PaymentFacade&lt;/b&gt;&lt;br&gt;ActiveProviderKey aus Konfiguration&lt;br&gt;einheitliches Timeout&lt;br&gt;Transaktion → Provider" vertex="1">
+          <mxGeometry height="120" width="260" x="340" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-provider" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" value="&lt;b&gt;aktiver IPaymentProvider&lt;/b&gt;&lt;br&gt;DemoPay · PayPal · Stripe&lt;br&gt;ChargeAsync · RefundAsync&lt;br&gt;GetStatusAsync" vertex="1">
+          <mxGeometry height="140" width="220" x="680" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-result" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;" value="&lt;b&gt;Payment-Ergebnisse&lt;/b&gt;&lt;br&gt;Charge · Refund · Status&lt;br&gt;TransactionId · Message" vertex="1">
+          <mxGeometry height="90" width="220" x="680" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-post" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" value="&lt;b&gt;BillingOperationsGrpcService&lt;/b&gt;&lt;br&gt;Ergebnis in gRPC abbilden&lt;br&gt;Audit veröffentlichen&lt;br&gt;bei Charge ggf. Rechnung" vertex="1">
+          <mxGeometry height="120" width="260" x="340" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-audit" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;" value="&lt;b&gt;Audit-Ereignisse&lt;/b&gt;&lt;br&gt;PAYMENT / INVOICE&lt;br&gt;vst.audit.events" vertex="1">
+          <mxGeometry height="100" width="210" x="80" y="860" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-invoice-event" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;" value="&lt;b&gt;payment.succeeded&lt;/b&gt;&lt;br&gt;vst.billing.events&lt;br&gt;nur bei Success=true" vertex="1">
+          <mxGeometry height="100" width="220" x="365" y="860" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-response" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" value="&lt;b&gt;gRPC-Antwort&lt;/b&gt;&lt;br&gt;Payment · Refund · Status&lt;br&gt;Provider · TransactionId&lt;br&gt;InvoiceQueued" vertex="1">
+          <mxGeometry height="100" width="220" x="660" y="860" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-l1" parent="1" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="gRPC-Operation" vertex="1">
+          <mxGeometry height="30" width="120" x="220" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-l4" parent="1" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="Charge · Refund · Status" vertex="1">
+          <mxGeometry height="30" width="130" x="590" y="395" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-l5" parent="1" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=11;" value="einheitliches Ergebnis" vertex="1">
+          <mxGeometry height="28" width="100" x="800" y="605" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-ext1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" value="&lt;b&gt;1 · Adapter implementieren&lt;/b&gt;&lt;br&gt;KlarnaPaymentProvider : IPaymentProvider&lt;br&gt;Charge · Refund · GetStatus" vertex="1">
+          <mxGeometry height="100" width="330" x="1040" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-ext2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" value="&lt;b&gt;2 · Automatisch registrieren&lt;/b&gt;&lt;br&gt;Assembly-Scan findet den Adapter&lt;br&gt;keine bestehende Registrierung ändern" vertex="1">
+          <mxGeometry height="100" width="330" x="1040" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-ext3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" value="&lt;b&gt;3 · Automatisch verfügbar&lt;/b&gt;&lt;br&gt;ListPaymentProviders&lt;br&gt;zunächst als inaktiver Adapter" vertex="1">
+          <mxGeometry height="100" width="330" x="1040" y="470" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-ext4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" value="&lt;b&gt;4 · Aktivieren&lt;/b&gt;&lt;br&gt;ActiveProviderKey = klarna&lt;br&gt;per Konfigurationsdatei oder Umgebung" vertex="1">
+          <mxGeometry height="110" width="330" x="1040" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-ext5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" value="&lt;b&gt;5 · Testen&lt;/b&gt;&lt;br&gt;Charge · Refund · GetStatus&lt;br&gt;Timeout · Konfigurationswechsel" vertex="1">
+          <mxGeometry height="100" width="330" x="1040" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-unchanged" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;align=left;spacing=12;" value="&lt;b&gt;Keine Änderung an bestehendem Code&lt;/b&gt;&lt;br&gt;&lt;br&gt;• Billing-gRPC-Vertrag&lt;br&gt;• PaymentFacade&lt;br&gt;• PaymentProviderRegistration&lt;br&gt;• ShopService-Bestellablauf&lt;br&gt;• PaymentSucceededEvent&lt;br&gt;• InvoiceService&lt;br&gt;&lt;br&gt;Nur neue Adapterklasse und Konfiguration." vertex="1">
+          <mxGeometry height="300" width="350" x="1450" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="pf-additional" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;align=left;spacing=12;" value="&lt;b&gt;Für einen realen Provider zusätzlich&lt;/b&gt;&lt;br&gt;&lt;br&gt;• HTTP-Client oder Anbieter-SDK&lt;br&gt;• Secret- und Credential-Verwaltung&lt;br&gt;• externe Idempotency Keys&lt;br&gt;• Webhook-Signatur und Abgleich&lt;br&gt;• Mapping der Fehlercodes&lt;br&gt;• Datenschutz- und PCI-Prüfung" vertex="1">
+          <mxGeometry height="290" width="350" x="1450" y="570" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>

@@ -35,5 +35,6 @@ werden.
 - `online-store-architecture.drawio`: aktueller Dokumentationssatz mit allen
   sechs Diagrammseiten
 
-Die ältere Datei `HappyPath.drawio` bleibt als historischer Entwurf unverändert,
-ist aber nicht Bestandteil des aktuellen Dokumentationssatzes.
+Die ältere Datei `ProjectHistory and HappyPath.drawio` bleibt als historischer
+Entwurf unverändert, ist aber nicht Bestandteil des aktuellen
+Dokumentationssatzes.

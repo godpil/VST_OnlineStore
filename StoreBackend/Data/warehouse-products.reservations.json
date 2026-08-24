@@ -1,0 +1,26 @@
+[
+  {
+    "reservationId": "2bc87db2-990c-4308-ab8d-a3b2728cf185",
+    "items": [
+      {
+        "productId": "a1f8c2c0-a2a8-4de0-8ed0-35fcaf7260a1",
+        "quantity": 1
+      }
+    ],
+    "status": "COMMITTED",
+    "createdAtUtc": "2026-08-24T20:47:50.6399128Z",
+    "completedAtUtc": "2026-08-24T20:47:51.2066796Z"
+  },
+  {
+    "reservationId": "5e7f9d91-dcd4-4962-9656-450f1ad62bdb",
+    "items": [
+      {
+        "productId": "a1f8c2c0-a2a8-4de0-8ed0-35fcaf7260a1",
+        "quantity": 1
+      }
+    ],
+    "status": "COMMITTED",
+    "createdAtUtc": "2026-08-24T21:02:17.0154155Z",
+    "completedAtUtc": "2026-08-24T21:02:18.0814243Z"
+  }
+]

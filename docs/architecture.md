@@ -20,6 +20,8 @@
    1. [Happy Path](#61-happy-path)
    2. [Fehlerfall fail1: unzureichender Bestand](#62-fehlerfall-fail1-unzureichender-bestand)
    3. [Fehlerfall fail2: Zahlungsablehnung](#63-fehlerfall-fail2-zahlungsablehnung)
+   4. [Providerauswahl im Warenkorb](#64-providerauswahl-im-warenkorb)
+   5. [SAGA-Kompensation bei Zahlungsfehler](#65-saga-kompensation-bei-zahlungsfehler)
 7. [Schnittstellen und Infrastruktur](#7-schnittstellen-und-infrastruktur)
 8. [Architekturentscheidungen](#8-architekturentscheidungen)
    1. [ADR-001: RabbitMQ als Message Broker](#adr-001-rabbitmq-als-message-broker)
@@ -128,9 +130,11 @@ Infrastruktur.*
 Die Payment-Fassade trennt den ShopService von den konkreten
 Zahlungsanbieter-Adaptern. Der `BillingOperationsGrpcService` validiert den
 Request und delegiert `Charge`, `Refund` und transaktionsbezogene Statusabfragen
-ausschließlich an die `PaymentFacade`. Diese wählt den über
-`PaymentProviders:ActiveProviderKey` konfigurierten Adapter und behandelt
-Timeouts einheitlich. Alle Adapter implementieren `IPaymentProvider`.
+ausschließlich an die `PaymentFacade`. `EnabledProviderKeys` legt fest, welche
+Adapter für neue Bestellungen verfügbar sind; der Request benennt einen dieser
+Adapter über `paymentProviderKey`. Die Fassade validiert die Auswahl, behandelt
+Timeouts einheitlich und merkt sich für Refund und Status den ursprünglichen
+Provider. Alle Adapter implementieren `IPaymentProvider`.
 
 Die rechte Diagrammhälfte zeigt am Beispiel eines zusätzlichen
 `KlarnaPaymentProvider`, welche Erweiterungen notwendig wären. Fassade,
@@ -175,6 +179,49 @@ Rechnungsereignis veröffentlicht.
 ![Fehlerfall Zahlungsablehnung](diagrams/sequence-fail2.svg)
 
 *Abbildung 6: Zahlungsablehnung mit Freigabe des reservierten Bestands.*
+
+### 6.4 Providerauswahl im Warenkorb
+
+Der Kunde kann den Zahlungsanbieter in der Warenkorbansicht für die aktuelle
+Bestellung auswählen. DemoPay bleibt als registrierter Testadapter sichtbar,
+ist gemäß Konfiguration jedoch deaktiviert und wird ausgegraut. PayPal und
+Stripe sind aktiviert; beim Öffnen des Warenkorbs ist zunächst keiner von beiden
+ausgewählt. Bis zum Klick auf „Bezahlen“ bleibt die Auswahl lokaler
+Browserzustand und löst weder Reservierung noch Zahlung aus. Beim
+Checkout wird der `paymentProviderKey` mit der Bestellung übertragen,
+serverseitig validiert, auditiert und ausschließlich über die Payment-Fassade
+an den ausgewählten Adapter weitergereicht.
+
+`EnabledProviderKeys` steuert die Verfügbarkeit; `ActiveProviderKey` bleibt nur
+als serverseitiger Fallback für interne oder ältere gRPC-Aufrufer bestehen und
+erzeugt keine Browser-Vorauswahl. Nach Beginn des Checkouts wird die Auswahl
+gesperrt.
+
+![Providerwechsel im Warenkorb](diagrams/cart-provider-switch.svg)
+
+*Abbildung 7: Konsequenzen eines bestellungsbezogenen Providerwechsels in der
+Warenkorbansicht.*
+
+### 6.5 SAGA-Kompensation bei Zahlungsfehler
+
+Ist der Bestand bereits reserviert und die Zahlung wird abgelehnt, läuft in ein
+Timeout oder erreicht den BillingService beziehungsweise Provider nicht, startet
+der ShopService die Kompensation. Zuerst wird der Zustand
+`STOCK_RELEASE_REQUESTED` mit `COMPENSATING` auditiert. Anschließend ruft der
+ShopService `ReleaseCart` beim WarehouseService auf, welcher die Mengen mit
+`ReleaseProducts` im StoreBackend zurückgibt.
+
+Bei Erfolg entsteht ein `STOCK_RELEASE`-Snapshot mit `COMPENSATED`. Schlägt auch
+die Kompensation fehl, werden `STOCK_RELEASE_FAILED`, strukturiertes
+Error-Logging und ein Audit-Snapshot mit `FAILURE` erzeugt; die möglicherweise
+offene Reservierung muss dann betrieblich über die Correlation-ID geprüft
+werden. Da keine erfolgreiche Zahlung existiert, wird kein Refund ausgelöst,
+kein `payment.succeeded`-Ereignis veröffentlicht und keine Rechnung erzeugt.
+
+![SAGA-Kompensation nach Zahlungsfehler](diagrams/saga-compensation.svg)
+
+*Abbildung 8: SAGA-Zustände, Bestandskompensation und Fehlerzweig bei nicht
+erfolgreicher Freigabe.*
 
 ## 7. Schnittstellen und Infrastruktur
 
@@ -422,7 +469,7 @@ Gesamtstartskript prüft seine Erreichbarkeit, startet ihn aber nicht selbst.
 ## 10. Pflege der Dokumentation
 
 Die Datei `diagrams/online-store-architecture.drawio` ist die verbindliche
-Diagrammquelle und enthält alle sechs Diagrammseiten. Die SVG-Dateien sind
+Diagrammquelle und enthält alle acht Diagrammseiten. Die SVG-Dateien sind
 optionale, abgeleitete Ansichten. Nach einer Änderung in diagrams.net müssen die
 betroffenen SVGs erneut exportiert und zusammen mit dieser Dokumentation
 aktualisiert werden.

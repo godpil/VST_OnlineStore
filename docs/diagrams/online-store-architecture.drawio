@@ -1,810 +1,375 @@
-<mxfile host="Electron" agent="Codex" pages="6">
-  <diagram id="system-context" name="01 Systemkontext">
-    <mxGraphModel dx="1781" dy="1042" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+<mxfile host="Electron" agent="Codex" version="28.2.8" pages="8">
+  <diagram id="system-context-v2" name="01 Systemkontext">
+    <mxGraphModel dx="1365" dy="768" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="ctx-e-customer" edge="1" parent="1" source="ctx-customer" target="ctx-system" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.289;" value="">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="ctx-e-customer" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#1a73e8;labelBackgroundColor=#ffffff;fontSize=13;" value="HTTP(S) / REST">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="220" y="285" as="sourcePoint" /><mxPoint x="390" y="285" as="targetPoint" /></mxGeometry>
         </mxCell>
-        <mxCell id="ctx-e-operator" edge="1" parent="1" source="ctx-operator" target="ctx-system" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.822;" value="">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="ctx-e-operator" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#666666;labelBackgroundColor=#ffffff;fontSize=13;" value="PowerShell / OpenAPI">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="220" y="725" as="sourcePoint" /><mxPoint x="390" y="725" as="targetPoint" /></mxGeometry>
         </mxCell>
-        <mxCell id="ctx-e-demo" edge="1" parent="1" source="ctx-system" target="ctx-demo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.244;entryX=0;entryY=0.5;" value="">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="ctx-e-provider" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;labelBackgroundColor=#ffffff;fontSize=13;" value="Provider-Aufruf">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1160" y="270" as="sourcePoint" /><mxPoint x="1360" y="270" as="targetPoint" /></mxGeometry>
         </mxCell>
-        <mxCell id="ctx-e-paypal" edge="1" parent="1" source="ctx-system" target="ctx-paypal" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.533;entryX=0;entryY=0.5;" value="">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="ctx-e-rabbit" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#9673a6;labelBackgroundColor=#ffffff;fontSize=13;" value="AMQP / Events">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1160" y="470" as="sourcePoint" /><mxPoint x="1360" y="470" as="targetPoint" /></mxGeometry>
         </mxCell>
-        <mxCell id="ctx-e-stripe" edge="1" parent="1" source="ctx-system" target="ctx-stripe" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.822;entryX=0;entryY=0.5;" value="">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="ctx-e-postgres" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d6b656;labelBackgroundColor=#ffffff;fontSize=13;" value="Npgsql · TCP 6688">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1160" y="655" as="sourcePoint" /><mxPoint x="1360" y="655" as="targetPoint" /></mxGeometry>
         </mxCell>
-        <mxCell id="ctx-e-rabbit" edge="1" parent="1" source="ctx-system" target="ctx-rabbit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.144;exitY=1;entryX=0.5;entryY=0;" value="">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="ctx-e-otel" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=13;" value="OTLP/HTTP · Port 6687">
+          <mxGeometry relative="1" as="geometry"><mxPoint x="1160" y="840" as="sourcePoint" /><mxPoint x="1360" y="840" as="targetPoint" /></mxGeometry>
         </mxCell>
-        <mxCell id="ctx-e-postgres" edge="1" parent="1" source="ctx-system" target="ctx-postgres" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-e-otel" edge="1" parent="1" source="ctx-system" target="ctx-otel" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;exitX=0.886;exitY=1;entryX=0.5;entryY=0;" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;" value="Systemkontext – Das Holzwerk OnlineStore" vertex="1">
-          <mxGeometry height="40" width="700" x="40" y="20" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-customer" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=16;" value="Kunde" vertex="1">
-          <mxGeometry height="130" width="80" x="80" y="225" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-operator" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=16;" value="Entwicklung / Betrieb" vertex="1">
-          <mxGeometry height="130" width="80" x="80" y="465" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-system" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=3;fontSize=18;align=center;verticalAlign=middle;spacing=20;" value="&lt;b&gt;Das Holzwerk OnlineStore&lt;/b&gt;&lt;br&gt;&lt;br&gt;Stellt Produktkatalog, Warenkorb, Bestellung, Zahlung, Rechnung und Auditnachweise bereit.&lt;br&gt;&lt;br&gt;&lt;i&gt;Systemgrenze: StoreProxy, ShopService, fachliche Services, Backend und lokale Adapter&lt;/i&gt;" vertex="1">
-          <mxGeometry height="450" width="660" x="390" y="160" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-provider-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;strokeWidth=2;fillColor=none;verticalAlign=top;align=center;fontSize=16;spacingTop=10;" value="Zahlungsanbieter-Stubs&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;simulierte externe Systeme; lokal als Adapter realisiert&lt;/font&gt;" vertex="1">
-          <mxGeometry height="500" width="340" x="1200" y="130" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-demo" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=16;" value="DemoPay Stub" vertex="1">
-          <mxGeometry height="70" width="220" x="1250" y="235" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-paypal" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=16;" value="PayPal Stub" vertex="1">
-          <mxGeometry height="70" width="220" x="1250" y="365" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-stripe" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=16;" value="Stripe Stub" vertex="1">
-          <mxGeometry height="70" width="220" x="1250" y="495" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-rabbit" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=15;" value="RabbitMQ&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;Event Broker&lt;/font&gt;" vertex="1">
-          <mxGeometry height="80" width="190" x="390" y="730" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-postgres" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=15;" value="PostgreSQL&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;Audit-Snapshots&lt;/font&gt;" vertex="1">
-          <mxGeometry height="110" width="190" x="625" y="710" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-otel" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=15;" value="OpenTelemetry Collector&lt;br&gt;&lt;font style=&quot;font-size:12px&quot;&gt;Logs / Traces / Metriken&lt;/font&gt;" vertex="1">
-          <mxGeometry height="80" width="230" x="860" y="730" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-l-customer" parent="1" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="HTTP(S), HTML, REST/JSON&lt;br&gt;Produkte, Bestellung, Rechnung" vertex="1">
-          <mxGeometry height="48" width="210" x="170" y="232" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-l-operator" parent="1" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="PowerShell, OpenAPI/Swagger,&lt;br&gt;dotnet test" vertex="1">
-          <mxGeometry height="45" width="210" x="170" y="475" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-l-demo" parent="1" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="IPaymentProvider&lt;br&gt;In-Process-Testaufruf" vertex="1">
-          <mxGeometry height="45" width="180" x="1060" y="213" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-l-paypal" parent="1" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="IPaymentProvider" vertex="1">
-          <mxGeometry height="28" width="150" x="1080" y="363" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-l-stripe" parent="1" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="IPaymentProvider" vertex="1">
-          <mxGeometry height="28" width="150" x="1080" y="493" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-l-rabbit" parent="1" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="AMQP 0-9-1&lt;br&gt;Payment- und Audit-Events" vertex="1">
-          <mxGeometry height="45" width="180" x="295" y="645" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-l-postgres" parent="1" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="Npgsql / TCP 6688" vertex="1">
-          <mxGeometry height="28" width="155" x="735" y="650" as="geometry" />
-        </mxCell>
-        <mxCell id="ctx-l-otel" parent="1" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="OTLP/HTTP 6687" vertex="1">
-          <mxGeometry height="28" width="140" x="985" y="650" as="geometry" />
-        </mxCell>
+        <mxCell id="ctx-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#1f2937;" value="01 · Systemkontext – Das Holzwerk OnlineStore" vertex="1"><mxGeometry x="40" y="25" width="950" height="45" as="geometry" /></mxCell>
+        <mxCell id="ctx-subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#6b7280;" value="Akteure, Systemgrenze, externe Stubs und betrieblich notwendige Infrastruktur" vertex="1"><mxGeometry x="42" y="68" width="900" height="30" as="geometry" /></mxCell>
+        <mxCell id="ctx-customer" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;fontStyle=1;" value="Kunde" vertex="1"><mxGeometry x="75" y="205" width="90" height="130" as="geometry" /></mxCell>
+        <mxCell id="ctx-operator" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#f5f5f5;strokeColor=#666666;fontSize=16;fontStyle=1;" value="Entwicklung / Betrieb" vertex="1"><mxGeometry x="75" y="645" width="90" height="130" as="geometry" /></mxCell>
+        <mxCell id="ctx-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;dashPattern=8 4;fillColor=#f8fbff;strokeColor=#1a73e8;strokeWidth=2;verticalAlign=top;align=left;spacingTop=14;spacingLeft=18;fontSize=17;fontStyle=1;fontColor=#174ea6;" value="Systemgrenze · Das Holzwerk OnlineStore" vertex="1"><mxGeometry x="390" y="120" width="770" height="820" as="geometry" /></mxCell>
+        <mxCell id="ctx-system" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=19;fontStyle=1;spacing=14;" value="OnlineStore&lt;br&gt;&lt;font style=&quot;font-size:14px;font-weight:normal&quot;&gt;Produktkatalog · Warenkorb · Bestellung · Zahlung · Rechnung · Auditnachweise&lt;/font&gt;" vertex="1"><mxGeometry x="500" y="220" width="550" height="150" as="geometry" /></mxCell>
+        <mxCell id="ctx-capabilities" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#9ca3af;fontSize=14;align=left;verticalAlign=top;spacing=16;" value="&lt;b&gt;Enthaltene Laufzeitkomponenten&lt;/b&gt;&lt;br&gt;&lt;br&gt;StoreProxy · ShopService · WarehouseService · StoreBackend&lt;br&gt;BillingService · Payment-Fassade · InvoiceService · AuditService&lt;br&gt;&lt;br&gt;&lt;b&gt;Lokale Persistenzadapter&lt;/b&gt;&lt;br&gt;Bestand und Reservierungen als JSON · Rechnungen als JSON · E-Mail-Pickup-Outbox" vertex="1"><mxGeometry x="500" y="420" width="550" height="270" as="geometry" /></mxCell>
+        <mxCell id="ctx-api-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;align=left;spacing=10;" value="Öffentlicher Zugang ausschließlich über StoreProxy (Port 6680). Interne Services kommunizieren per gRPC; asynchrone Folgeprozesse laufen über RabbitMQ." vertex="1"><mxGeometry x="500" y="750" width="550" height="110" as="geometry" /></mxCell>
+        <mxCell id="ctx-provider-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#fff5f5;strokeColor=#b85450;verticalAlign=top;spacingTop=10;fontSize=15;fontStyle=1;" value="Zahlungsanbieter-Stubs" vertex="1"><mxGeometry x="1360" y="130" width="350" height="230" as="geometry" /></mxCell>
+        <mxCell id="ctx-demo" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;fontStyle=1;" value="DemoPay" vertex="1"><mxGeometry x="1390" y="205" width="90" height="70" as="geometry" /></mxCell>
+        <mxCell id="ctx-paypal" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;fontStyle=1;" value="PayPal" vertex="1"><mxGeometry x="1490" y="205" width="90" height="70" as="geometry" /></mxCell>
+        <mxCell id="ctx-stripe" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;fontStyle=1;" value="Stripe" vertex="1"><mxGeometry x="1590" y="205" width="90" height="70" as="geometry" /></mxCell>
+        <mxCell id="ctx-provider-note" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=12;fontColor=#7f1d1d;align=center;" value="aktuell In-Process-Testadapter" vertex="1"><mxGeometry x="1410" y="295" width="250" height="30" as="geometry" /></mxCell>
+        <mxCell id="ctx-rabbit" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;fontStyle=1;" value="RabbitMQ&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;Event Broker&lt;/font&gt;" vertex="1"><mxGeometry x="1360" y="405" width="350" height="120" as="geometry" /></mxCell>
+        <mxCell id="ctx-postgres" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;fontStyle=1;" value="PostgreSQL 18&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;Audit-Snapshots&lt;/font&gt;" vertex="1"><mxGeometry x="1360" y="590" width="350" height="130" as="geometry" /></mxCell>
+        <mxCell id="ctx-otel" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=15;fontStyle=1;" value="OpenTelemetry Collector&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;Logs · Traces · Metriken&lt;/font&gt;" vertex="1"><mxGeometry x="1360" y="785" width="350" height="110" as="geometry" /></mxCell>
+        <mxCell id="ctx-legend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d1d5db;fontSize=12;align=left;spacing=10;" value="&lt;b&gt;Legende&lt;/b&gt; · Blau: Benutzerzugang · Rot: simulierte Anbieter · Violett: Messaging · Gelb: Persistenz · Grün: Observability" vertex="1"><mxGeometry x="390" y="975" width="1320" height="55" as="geometry" /></mxCell>
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="components" name="02 Komponenten">
-    <mxGraphModel dx="1228" dy="719" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2100" pageHeight="1150" math="0" shadow="0">
+  <diagram id="components-v2" name="02 Komponenten">
+    <mxGraphModel dx="1365" dy="768" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1200" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="cmp-e1" edge="1" parent="1" source="cmp-customer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="cmp-proxy" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-e2" edge="1" parent="1" source="cmp-proxy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="cmp-shop" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-e3" edge="1" parent="1" source="cmp-shop" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=0;entryX=0;entryY=0.5;" target="cmp-warehouse" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="720" y="400" />
-              <mxPoint x="720" y="150" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="cmp-e4" edge="1" parent="1" source="cmp-shop" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.3;entryX=0;entryY=0.5;" target="cmp-billing" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="760" y="469" />
-              <mxPoint x="760" y="355" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="cmp-e5" edge="1" parent="1" source="cmp-shop" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.77;entryX=0;entryY=0.5;" target="cmp-invoice" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="800" y="530" />
-              <mxPoint x="800" y="595" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="cmp-e6" edge="1" parent="1" source="cmp-shop" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" target="cmp-audit" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="740" y="620" />
-              <mxPoint x="740" y="845" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="cmp-e7" edge="1" parent="1" style="rounded=0;html=1;endArrow=block;endFill=1;exitX=1.003;exitY=0.484;entryX=-0.004;entryY=0.441;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=elbowEdgeStyle;elbow=vertical;exitDx=0;exitDy=0;exitPerimeter=0;" value="">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1160.8099999999997" y="149.94" as="sourcePoint" />
-            <mxPoint x="1299.1999999999998" y="150.05" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="cmp-e8" edge="1" parent="1" source="cmp-billing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="cmp-providers" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-e9" edge="1" parent="1" style="rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=-0.004;entryY=0.538;entryDx=0;entryDy=0;entryPerimeter=0;elbow=vertical;edgeStyle=elbowEdgeStyle;" value="">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1160.44" y="595.6" as="sourcePoint" />
-            <mxPoint x="1299.56" y="594.4" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="cmp-e10" edge="1" parent="1" source="cmp-billing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.8;exitY=1;entryX=0;entryY=0.36;" target="cmp-payment-exchange" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="1106" y="470" />
-              <mxPoint x="1680" y="470" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="cmp-e11" edge="1" parent="1" source="cmp-payment-exchange" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.3;exitY=1;entryX=1.002;entryY=0.507;entryDx=0;entryDy=0;entryPerimeter=0;" target="cmp-invoice" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="1785" y="700" />
-              <mxPoint x="1230" y="700" />
-              <mxPoint x="1230" y="596" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="cmp-e12" edge="1" parent="1" source="cmp-audit-exchange" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.3;exitY=1;entryX=1;entryY=0.5;" target="cmp-audit" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="1785" y="930" />
-              <mxPoint x="1230" y="930" />
-              <mxPoint x="1230" y="845" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="cmp-e13" edge="1" parent="1" source="cmp-audit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="cmp-postgres" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-e14" edge="1" parent="1" source="cmp-audit-note" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;dashed=1;exitX=0.8;exitY=0;entryX=0.5;entryY=1;" target="cmp-audit-exchange" value="">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="1626" y="950" />
-              <mxPoint x="1835" y="950" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="cmp-e17" edge="1" parent="1" source="cmp-note" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;dashed=1;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" target="cmp-otel" value="">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=24;fontStyle=1;" value="Komponentendiagramm – Services, Schnittstellen und Infrastruktur" vertex="1">
-          <mxGeometry height="40" width="900" x="40" y="20" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-customer" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;fontSize=15;" value="Kunde / Browser" vertex="1">
-          <mxGeometry height="130" width="80" x="40" y="430" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-proxy" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;" value="&lt;b&gt;StoreProxy&lt;/b&gt;&lt;br&gt;YARP / REST&lt;br&gt;Port 6680" vertex="1">
-          <mxGeometry height="110" width="180" x="210" y="440" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-shop" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=15;" value="&lt;b&gt;ShopService&lt;/b&gt;&lt;br&gt;REST-Fassade / Orchestrator&lt;br&gt;Port 6682" vertex="1">
-          <mxGeometry height="130" width="230" x="480" y="430" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-warehouse" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" value="&lt;b&gt;WarehouseService&lt;/b&gt;&lt;br&gt;gRPC Port 6683" vertex="1">
-          <mxGeometry height="100" width="230" x="930" y="100" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-billing" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" value="&lt;b&gt;BillingService&lt;/b&gt;&lt;br&gt;Payment-Fassade&lt;br&gt;gRPC Port 6684" vertex="1">
-          <mxGeometry height="110" width="230" x="930" y="300" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-invoice" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" value="&lt;b&gt;InvoiceService&lt;/b&gt;&lt;br&gt;PDF / E-Mail-Pickup&lt;br&gt;gRPC Port 6685" vertex="1">
-          <mxGeometry height="110" width="230" x="930" y="540" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-audit" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" value="&lt;b&gt;AuditService&lt;/b&gt;&lt;br&gt;Snapshots / gRPC&lt;br&gt;Port 6686" vertex="1">
-          <mxGeometry height="110" width="230" x="930" y="790" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-backend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;" value="&lt;b&gt;StoreBackend&lt;/b&gt;&lt;br&gt;Bestand / JSON&lt;br&gt;gRPC Port 6681" vertex="1">
-          <mxGeometry height="110" width="230" x="1300" y="100" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-providers" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;" value="&lt;b&gt;Payment-Adapter&lt;/b&gt;&lt;br&gt;DemoPay · PayPal · Stripe&lt;br&gt;IPaymentProvider" vertex="1">
-          <mxGeometry height="110" width="250" x="1300" y="300" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-outbox" parent="1" style="shape=folder;tabWidth=50;tabHeight=20;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;" value="E-Mail-Outbox&lt;br&gt;.eml + PDF" vertex="1">
-          <mxGeometry height="100" width="220" x="1300" y="540" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-payment-exchange" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;" value="RabbitMQ&lt;br&gt;vst.billing.events&lt;br&gt;payment.succeeded" vertex="1">
-          <mxGeometry height="110" width="250" x="1710" y="430" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-audit-exchange" parent="1" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;" value="RabbitMQ&lt;br&gt;vst.audit.events&lt;br&gt;audit.#" vertex="1">
-          <mxGeometry height="110" width="250" x="1710" y="780" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-postgres" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;" value="PostgreSQL 18&lt;br&gt;Audit-Snapshots&lt;br&gt;Port 6688" vertex="1">
-          <mxGeometry height="120" width="230" x="1300" y="780" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-otel" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;" value="OpenTelemetry Collector&lt;br&gt;OTLP/HTTP Port 6687" vertex="1">
-          <mxGeometry height="90" width="250" x="1710" y="100" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;" value="Alle .NET-Komponenten exportieren Telemetrie per OTLP/HTTP an den Collector." vertex="1">
-          <mxGeometry height="90" width="370" x="1650" y="230" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-audit-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" value="&lt;b&gt;Audit-Publisher&lt;/b&gt;&lt;br&gt;StoreProxy, ShopService, WarehouseService, StoreBackend, BillingService und InvoiceService veröffentlichen Audit-Events." vertex="1">
-          <mxGeometry height="80" width="420" x="1290" y="990" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l1" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="HTTP / HTML / JSON" vertex="1">
-          <mxGeometry height="28" width="170" x="120" y="402" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l2" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="YARP HTTP" vertex="1">
-          <mxGeometry height="28" width="110" x="385" y="402" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l3" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="gRPC Katalog / Reservierung" vertex="1">
-          <mxGeometry height="28" width="185" x="735" y="110" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l4" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="gRPC Payment" vertex="1">
-          <mxGeometry height="28" width="135" x="785" y="315" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l5" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="gRPC Rechnung" vertex="1">
-          <mxGeometry height="28" width="115" x="805" y="555" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l6" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="gRPC Audit-Abfrage" vertex="1">
-          <mxGeometry height="28" width="170" x="750" y="805" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l7" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="internes gRPC" vertex="1">
-          <mxGeometry height="28" width="130" x="1165" y="112" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l8" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="in-process" vertex="1">
-          <mxGeometry height="28" width="120" x="1170" y="317" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l9" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="MimeKit" vertex="1">
-          <mxGeometry height="28" width="120" x="1170" y="557" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l10" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="publish payment.succeeded" vertex="1">
-          <mxGeometry height="28" width="220" x="1350" y="432" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l11" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="consume (asynchron)" vertex="1">
-          <mxGeometry height="28" width="180" x="1390" y="665" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l12" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="consume audit.#" vertex="1">
-          <mxGeometry height="28" width="160" x="1390" y="902" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l13" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="Npgsql" vertex="1">
-          <mxGeometry height="28" width="120" x="1170" y="807" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l14" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="publish audit.*" vertex="1">
-          <mxGeometry height="28" width="150" x="1590" y="890" as="geometry" />
-        </mxCell>
-        <mxCell id="cmp-l17" parent="1" style="text;html=1;whiteSpace=wrap;align=center;fillColor=#ffffff;strokeColor=none;fontSize=12;" value="OTLP/HTTP" vertex="1">
-          <mxGeometry height="28" width="100" x="1840" y="195" as="geometry" />
-        </mxCell>
+        <mxCell id="cmp-e-browser" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#1a73e8;labelBackgroundColor=#ffffff;fontSize=13;" value="REST / HTML"><mxGeometry relative="1" as="geometry"><mxPoint x="230" y="220" as="sourcePoint" /><mxPoint x="310" y="220" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="cmp-e-proxy" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#1a73e8;labelBackgroundColor=#ffffff;fontSize=13;" value="YARP"><mxGeometry relative="1" as="geometry"><mxPoint x="540" y="220" as="sourcePoint" /><mxPoint x="610" y="220" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="cmp-e-shop-warehouse" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#6c8ebf;labelBackgroundColor=#ffffff;fontSize=12;" value="gRPC · Katalog / Reserve / Commit / Release"><mxGeometry relative="1" as="geometry"><mxPoint x="690" y="280" as="sourcePoint" /><mxPoint x="250" y="400" as="targetPoint" /><Array as="points"><mxPoint x="690" y="335" /><mxPoint x="250" y="335" /></Array></mxGeometry></mxCell>
+        <mxCell id="cmp-e-shop-billing" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#9673a6;labelBackgroundColor=#ffffff;fontSize=12;" value="gRPC · Providerliste / Payment / Refund / Status"><mxGeometry relative="1" as="geometry"><mxPoint x="730" y="280" as="sourcePoint" /><mxPoint x="590" y="400" as="targetPoint" /><Array as="points"><mxPoint x="730" y="360" /><mxPoint x="590" y="360" /></Array></mxGeometry></mxCell>
+        <mxCell id="cmp-e-shop-invoice" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#9673a6;labelBackgroundColor=#ffffff;fontSize=12;" value="gRPC · PDF abrufen"><mxGeometry relative="1" as="geometry"><mxPoint x="780" y="280" as="sourcePoint" /><mxPoint x="930" y="400" as="targetPoint" /><Array as="points"><mxPoint x="780" y="335" /><mxPoint x="930" y="335" /></Array></mxGeometry></mxCell>
+        <mxCell id="cmp-e-shop-audit" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d6b656;labelBackgroundColor=#ffffff;fontSize=12;" value="gRPC · Snapshots abfragen"><mxGeometry relative="1" as="geometry"><mxPoint x="810" y="250" as="sourcePoint" /><mxPoint x="1270" y="400" as="targetPoint" /><Array as="points"><mxPoint x="1270" y="310" /></Array></mxGeometry></mxCell>
+        <mxCell id="cmp-e-warehouse-backend" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=12;" value="internes gRPC"><mxGeometry relative="1" as="geometry"><mxPoint x="250" y="520" as="sourcePoint" /><mxPoint x="250" y="660" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="cmp-e-backend-json" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=12;" value="JSON · atomare Updates"><mxGeometry relative="1" as="geometry"><mxPoint x="250" y="780" as="sourcePoint" /><mxPoint x="250" y="900" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="cmp-e-billing-facade" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#9673a6;labelBackgroundColor=#ffffff;fontSize=12;" value="IPaymentFacade"><mxGeometry relative="1" as="geometry"><mxPoint x="590" y="520" as="sourcePoint" /><mxPoint x="590" y="660" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="cmp-e-facade-providers" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;labelBackgroundColor=#ffffff;fontSize=12;" value="IPaymentProvider"><mxGeometry relative="1" as="geometry"><mxPoint x="590" y="780" as="sourcePoint" /><mxPoint x="590" y="900" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="cmp-e-payment-event" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#9673a6;labelBackgroundColor=#ffffff;fontSize=12;" value="publish payment.succeeded"><mxGeometry relative="1" as="geometry"><mxPoint x="720" y="500" as="sourcePoint" /><mxPoint x="930" y="660" as="targetPoint" /><Array as="points"><mxPoint x="720" y="600" /><mxPoint x="930" y="600" /></Array></mxGeometry></mxCell>
+        <mxCell id="cmp-e-rabbit-invoice" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#9673a6;labelBackgroundColor=#ffffff;fontSize=12;" value="consume asynchron"><mxGeometry relative="1" as="geometry"><mxPoint x="930" y="660" as="sourcePoint" /><mxPoint x="930" y="520" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="cmp-e-invoice-outbox" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=12;" value="JSON · PDF · MimeKit"><mxGeometry relative="1" as="geometry"><mxPoint x="1060" y="470" as="sourcePoint" /><mxPoint x="1060" y="960" as="targetPoint" /><Array as="points"><mxPoint x="1100" y="470" /><mxPoint x="1100" y="960" /></Array></mxGeometry></mxCell>
+        <mxCell id="cmp-e-rabbit-audit" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d6b656;labelBackgroundColor=#ffffff;fontSize=12;" value="consume audit.#"><mxGeometry relative="1" as="geometry"><mxPoint x="1060" y="690" as="sourcePoint" /><mxPoint x="1270" y="520" as="targetPoint" /><Array as="points"><mxPoint x="1090" y="600" /><mxPoint x="1270" y="600" /></Array></mxGeometry></mxCell>
+        <mxCell id="cmp-e-audit-postgres" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d6b656;labelBackgroundColor=#ffffff;fontSize=12;" value="Npgsql"><mxGeometry relative="1" as="geometry"><mxPoint x="1270" y="520" as="sourcePoint" /><mxPoint x="1270" y="660" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="cmp-e-otel" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=12;" value="OTLP"><mxGeometry relative="1" as="geometry"><mxPoint x="1430" y="1115" as="sourcePoint" /><mxPoint x="1530" y="960" as="targetPoint" /><Array as="points"><mxPoint x="1480" y="1115" /><mxPoint x="1480" y="960" /></Array></mxGeometry></mxCell>
+        <mxCell id="cmp-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#1f2937;" value="02 · Komponenten – Services, Schnittstellen und Persistenz" vertex="1"><mxGeometry x="40" y="25" width="1100" height="45" as="geometry" /></mxCell>
+        <mxCell id="cmp-subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#6b7280;" value="Ist-Struktur: StoreProxy als einziger öffentlicher Einstieg, ShopService als Orchestrator" vertex="1"><mxGeometry x="42" y="68" width="1050" height="30" as="geometry" /></mxCell>
+        <mxCell id="cmp-browser" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;fontStyle=1;" value="Kunde / Browser" vertex="1"><mxGeometry x="40" y="160" width="190" height="120" as="geometry" /></mxCell>
+        <mxCell id="cmp-proxy" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;fontStyle=1;" value="StoreProxy&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;YARP · Website · OpenAPI&lt;br&gt;Port 6680&lt;/font&gt;" vertex="1"><mxGeometry x="310" y="150" width="230" height="140" as="geometry" /></mxCell>
+        <mxCell id="cmp-shop" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=16;fontStyle=1;" value="ShopService&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;REST-Fassade · Readiness-Gate&lt;br&gt;CheckoutOrchestrator · Port 6682&lt;/font&gt;" vertex="1"><mxGeometry x="610" y="145" width="280" height="145" as="geometry" /></mxCell>
+        <mxCell id="cmp-service-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#fbfbfb;strokeColor=#9ca3af;verticalAlign=top;align=left;spacingTop=12;spacingLeft=15;fontSize=15;fontStyle=1;" value="Interne fachliche Services" vertex="1"><mxGeometry x="80" y="350" width="1370" height="205" as="geometry" /></mxCell>
+        <mxCell id="cmp-warehouse" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;fontStyle=1;" value="WarehouseService&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;Katalog · Reserve · Commit · Release&lt;br&gt;gRPC 6683&lt;/font&gt;" vertex="1"><mxGeometry x="120" y="400" width="260" height="120" as="geometry" /></mxCell>
+        <mxCell id="cmp-billing" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;fontStyle=1;" value="BillingService&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;BillingOperations gRPC&lt;br&gt;Port 6684&lt;/font&gt;" vertex="1"><mxGeometry x="460" y="400" width="260" height="120" as="geometry" /></mxCell>
+        <mxCell id="cmp-invoice" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;fontStyle=1;" value="InvoiceService&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;Event-Consumer · QuestPDF · E-Mail&lt;br&gt;gRPC 6685&lt;/font&gt;" vertex="1"><mxGeometry x="800" y="400" width="260" height="120" as="geometry" /></mxCell>
+        <mxCell id="cmp-audit" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;fontStyle=1;" value="AuditService&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;Event-Consumer · Snapshot-Abfrage&lt;br&gt;gRPC 6686&lt;/font&gt;" vertex="1"><mxGeometry x="1140" y="400" width="260" height="120" as="geometry" /></mxCell>
+        <mxCell id="cmp-infra-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#fffdf7;strokeColor=#d6b656;verticalAlign=top;align=left;spacingTop=12;spacingLeft=15;fontSize=15;fontStyle=1;" value="Adapter und Infrastruktur" vertex="1"><mxGeometry x="80" y="610" width="1370" height="430" as="geometry" /></mxCell>
+        <mxCell id="cmp-backend" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;fontStyle=1;" value="StoreBackend&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;Bestand + persistente Reservierungen&lt;br&gt;gRPC 6681&lt;/font&gt;" vertex="1"><mxGeometry x="120" y="660" width="260" height="120" as="geometry" /></mxCell>
+        <mxCell id="cmp-facade" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;fontStyle=1;" value="PaymentFacade&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;Charge · Refund · Status&lt;br&gt;Timeout + Transaktionsrouting&lt;/font&gt;" vertex="1"><mxGeometry x="460" y="660" width="260" height="120" as="geometry" /></mxCell>
+        <mxCell id="cmp-rabbit" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;fontStyle=1;" value="RabbitMQ&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;vst.billing.events&lt;br&gt;vst.audit.events&lt;/font&gt;" vertex="1"><mxGeometry x="800" y="660" width="260" height="120" as="geometry" /></mxCell>
+        <mxCell id="cmp-postgres" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;fontStyle=1;" value="PostgreSQL 18&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;Audit-Snapshots · 6688&lt;/font&gt;" vertex="1"><mxGeometry x="1140" y="650" width="260" height="140" as="geometry" /></mxCell>
+        <mxCell id="cmp-stock-json" parent="1" style="shape=folder;tabWidth=60;tabHeight=20;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;" value="warehouse-products.json&lt;br&gt;reservations.json" vertex="1"><mxGeometry x="120" y="900" width="260" height="120" as="geometry" /></mxCell>
+        <mxCell id="cmp-providers" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;fontStyle=1;" value="PaymentProvider-Adapter&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;DemoPay · PayPal · Stripe&lt;br&gt;Assembly-Scan · EnabledProviderKeys&lt;/font&gt;" vertex="1"><mxGeometry x="460" y="900" width="260" height="120" as="geometry" /></mxCell>
+        <mxCell id="cmp-outbox" parent="1" style="shape=folder;tabWidth=60;tabHeight=20;tabPosition=left;html=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;" value="invoices.json&lt;br&gt;email-outbox/*.eml" vertex="1"><mxGeometry x="800" y="900" width="260" height="120" as="geometry" /></mxCell>
+        <mxCell id="cmp-audit-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;align=left;spacing=10;" value="Alle fachlichen Komponenten veröffentlichen Audit-Events über RabbitMQ. Der AuditService persistiert sie in PostgreSQL." vertex="1"><mxGeometry x="1140" y="900" width="260" height="120" as="geometry" /></mxCell>
+        <mxCell id="cmp-otel-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;align=left;spacing=10;" value="Alle .NET-Komponenten exportieren technische Telemetrie." vertex="1"><mxGeometry x="1140" y="1080" width="290" height="70" as="geometry" /></mxCell>
+        <mxCell id="cmp-otel" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;fontStyle=1;" value="OpenTelemetry Collector&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;OTLP/HTTP 6687&lt;/font&gt;" vertex="1"><mxGeometry x="1530" y="900" width="290" height="120" as="geometry" /></mxCell>
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="happy-path" name="03 Happy Path">
-    <mxGraphModel dx="1149" dy="672" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1200" math="0" shadow="0">
+  <diagram id="happy-path-v2" name="03 Happy Path">
+    <mxGraphModel dx="1365" dy="768" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2350" pageHeight="1700" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="hp-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=24;fontStyle=1;" value="Sequenzdiagramm – Happy Path (Bestellung, Zahlung und Rechnung)" vertex="1">
-          <mxGeometry height="40" width="950" x="40" y="20" as="geometry" />
-        </mxCell>
-        <mxCell id="hp-p1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;" value="Kunde" vertex="1">
-          <mxGeometry height="50" width="130" x="30" y="80" as="geometry" />
-        </mxCell>
-        <mxCell id="hp-p2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;" value="StoreProxy" vertex="1">
-          <mxGeometry height="50" width="130" x="210" y="80" as="geometry" />
-        </mxCell>
-        <mxCell id="hp-p3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;fontStyle=1;" value="ShopService" vertex="1">
-          <mxGeometry height="50" width="140" x="390" y="80" as="geometry" />
-        </mxCell>
-        <mxCell id="hp-p4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;fontStyle=1;" value="Warehouse" vertex="1">
-          <mxGeometry height="50" width="140" x="590" y="80" as="geometry" />
-        </mxCell>
-        <mxCell id="hp-p5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;fontStyle=1;" value="StoreBackend" vertex="1">
-          <mxGeometry height="50" width="140" x="790" y="80" as="geometry" />
-        </mxCell>
-        <mxCell id="hp-p6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;fontStyle=1;" value="BillingService" vertex="1">
-          <mxGeometry height="50" width="140" x="990" y="80" as="geometry" />
-        </mxCell>
-        <mxCell id="hp-p7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;fontStyle=1;" value="Provider-Stub" vertex="1">
-          <mxGeometry height="50" width="140" x="1190" y="80" as="geometry" />
-        </mxCell>
-        <mxCell id="hp-p8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;fontStyle=1;" value="RabbitMQ" vertex="1">
-          <mxGeometry height="50" width="140" x="1390" y="80" as="geometry" />
-        </mxCell>
-        <mxCell id="hp-p9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;fontStyle=1;" value="InvoiceService" vertex="1">
-          <mxGeometry height="50" width="150" x="1590" y="80" as="geometry" />
-        </mxCell>
-        <mxCell id="hp-l1" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="95" y="130" as="sourcePoint" />
-            <mxPoint x="95" y="1120" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-l2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="275" y="130" as="sourcePoint" />
-            <mxPoint x="275" y="1120" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-l3" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="460" y="130" as="sourcePoint" />
-            <mxPoint x="460" y="1120" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-l4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="660" y="130" as="sourcePoint" />
-            <mxPoint x="660" y="1120" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-l5" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="860" y="130" as="sourcePoint" />
-            <mxPoint x="860" y="1120" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-l6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1060" y="130" as="sourcePoint" />
-            <mxPoint x="1060" y="1120" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-l7" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1260" y="130" as="sourcePoint" />
-            <mxPoint x="1260" y="1120" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-l8" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1460" y="130" as="sourcePoint" />
-            <mxPoint x="1460" y="1120" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-l9" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1665" y="130" as="sourcePoint" />
-            <mxPoint x="1665" y="1120" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m1" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="1  POST /api/orders">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="95" y="180" as="sourcePoint" />
-            <mxPoint x="275" y="180" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m2" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="2  REST/JSON + Correlation-ID">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="275" y="230" as="sourcePoint" />
-            <mxPoint x="460" y="230" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m3" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="3  ListPaymentProviders">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="460" y="290" as="sourcePoint" />
-            <mxPoint x="1060" y="290" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m4" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="4  GetFeaturedProducts">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="460" y="350" as="sourcePoint" />
-            <mxPoint x="660" y="350" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m5" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="5  GetProducts">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="660" y="400" as="sourcePoint" />
-            <mxPoint x="860" y="400" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m6" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="6  ReserveCart">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="460" y="470" as="sourcePoint" />
-            <mxPoint x="660" y="470" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m7" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="7  ReserveProducts">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="660" y="520" as="sourcePoint" />
-            <mxPoint x="860" y="520" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m8" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="8  ProcessPayment">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="460" y="600" as="sourcePoint" />
-            <mxPoint x="1060" y="600" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m9" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="9  ChargeAsync">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1060" y="650" as="sourcePoint" />
-            <mxPoint x="1260" y="650" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m10" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="10  Zahlung bestätigt">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1260" y="700" as="sourcePoint" />
-            <mxPoint x="1060" y="700" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m11" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="11  publish payment.succeeded">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1060" y="760" as="sourcePoint" />
-            <mxPoint x="1460" y="760" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m12" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="12  consume (asynchron)">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1460" y="820" as="sourcePoint" />
-            <mxPoint x="1665" y="820" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-invoice-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;" value="13  Rechnung persistieren&lt;br&gt;PDF erzeugen&lt;br&gt;.eml in Pickup-Outbox" vertex="1">
-          <mxGeometry height="120" width="220" x="1570" y="850" as="geometry" />
-        </mxCell>
-        <mxCell id="hp-m14" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="14  Success + InvoiceQueued + InvoiceId">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1060" y="990" as="sourcePoint" />
-            <mxPoint x="460" y="990" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m15" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="15  201 Created">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="460" y="1040" as="sourcePoint" />
-            <mxPoint x="275" y="1040" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-m16" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" value="16  Bestellung + Rechnungs-URL">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="275" y="1090" as="sourcePoint" />
-            <mxPoint x="95" y="1090" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="hp-audit-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;" value="Audit-Snapshots werden für Validierung, Reservierung, Zahlung, Rechnung und Abschluss zusätzlich über vst.audit.events veröffentlicht." vertex="1">
-          <mxGeometry height="70" width="650" x="600" y="860" as="geometry" />
-        </mxCell>
+        <mxCell id="hp-parallel" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;dashPattern=8 4;fillColor=none;strokeColor=#9673a6;verticalAlign=top;align=left;spacingTop=8;spacingLeft=12;fontSize=13;fontStyle=1;fontColor=#6a3d7a;" value="parallel · Rechnung wird asynchron verarbeitet; der Shop wartet nur auf den Lager-Commit" vertex="1"><mxGeometry x="420" y="975" width="1810" height="275" as="geometry" /></mxCell>
+        <mxCell id="hp-l1" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="100" y="145" as="sourcePoint" /><mxPoint x="100" y="1650" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-l2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="310" y="145" as="sourcePoint" /><mxPoint x="310" y="1650" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-l3" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="530" y="145" as="sourcePoint" /><mxPoint x="530" y="1650" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-l4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="760" y="145" as="sourcePoint" /><mxPoint x="760" y="1650" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-l5" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="980" y="145" as="sourcePoint" /><mxPoint x="980" y="1650" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-l6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1200" y="145" as="sourcePoint" /><mxPoint x="1200" y="1650" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-l7" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1420" y="145" as="sourcePoint" /><mxPoint x="1420" y="1650" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-l8" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1640" y="145" as="sourcePoint" /><mxPoint x="1640" y="1650" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-l9" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1860" y="145" as="sourcePoint" /><mxPoint x="1860" y="1650" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-l10" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="2110" y="145" as="sourcePoint" /><mxPoint x="2110" y="1650" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m1" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="1 · POST /api/orders"><mxGeometry relative="1" as="geometry"><mxPoint x="100" y="190" as="sourcePoint" /><mxPoint x="310" y="190" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m2" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="2 · REST/JSON + Correlation-ID"><mxGeometry relative="1" as="geometry"><mxPoint x="310" y="235" as="sourcePoint" /><mxPoint x="530" y="235" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m4" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="4 · ReserveCart(orderId, items)"><mxGeometry relative="1" as="geometry"><mxPoint x="530" y="390" as="sourcePoint" /><mxPoint x="760" y="390" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m5" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="5 · ReserveProducts · persistent"><mxGeometry relative="1" as="geometry"><mxPoint x="760" y="440" as="sourcePoint" /><mxPoint x="980" y="440" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m6" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="6 · reservierte Produkte + Preise"><mxGeometry relative="1" as="geometry"><mxPoint x="980" y="490" as="sourcePoint" /><mxPoint x="760" y="490" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m7" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="7 · STOCK_RESERVED"><mxGeometry relative="1" as="geometry"><mxPoint x="760" y="540" as="sourcePoint" /><mxPoint x="530" y="540" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m8" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="8 · ListPaymentProviders"><mxGeometry relative="1" as="geometry"><mxPoint x="530" y="590" as="sourcePoint" /><mxPoint x="1200" y="590" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m9" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="9 · gewählter Provider ist verfügbar"><mxGeometry relative="1" as="geometry"><mxPoint x="1200" y="635" as="sourcePoint" /><mxPoint x="530" y="635" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m10" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="10 · ProcessPayment(orderId, amount, EUR, providerKey)"><mxGeometry relative="1" as="geometry"><mxPoint x="530" y="685" as="sourcePoint" /><mxPoint x="1200" y="685" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m11" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="11 · charge(providerKey, orderId, amount, currency)"><mxGeometry relative="1" as="geometry"><mxPoint x="1200" y="735" as="sourcePoint" /><mxPoint x="1420" y="735" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m12" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="12 · ChargeAsync"><mxGeometry relative="1" as="geometry"><mxPoint x="1420" y="780" as="sourcePoint" /><mxPoint x="1640" y="780" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m13" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="13 · Zahlung bestätigt + TransactionId"><mxGeometry relative="1" as="geometry"><mxPoint x="1640" y="825" as="sourcePoint" /><mxPoint x="1420" y="825" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m14" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="14 · PaymentChargeResult"><mxGeometry relative="1" as="geometry"><mxPoint x="1420" y="865" as="sourcePoint" /><mxPoint x="1200" y="865" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m15" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;strokeColor=#9673a6;" value="15 · publish payment.succeeded"><mxGeometry relative="1" as="geometry"><mxPoint x="1200" y="910" as="sourcePoint" /><mxPoint x="1860" y="910" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m16" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="16 · Success + InvoiceQueued + InvoiceId"><mxGeometry relative="1" as="geometry"><mxPoint x="1200" y="950" as="sourcePoint" /><mxPoint x="530" y="950" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m17" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;strokeColor=#9673a6;" value="17a · consume PaymentSucceeded"><mxGeometry relative="1" as="geometry"><mxPoint x="1860" y="1015" as="sourcePoint" /><mxPoint x="2110" y="1015" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m18" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="17b · CommitCart"><mxGeometry relative="1" as="geometry"><mxPoint x="530" y="1060" as="sourcePoint" /><mxPoint x="760" y="1060" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m19" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="18 · CommitProducts · idempotent"><mxGeometry relative="1" as="geometry"><mxPoint x="760" y="1110" as="sourcePoint" /><mxPoint x="980" y="1110" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m20" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="19 · STOCK_COMMIT_PERSISTED"><mxGeometry relative="1" as="geometry"><mxPoint x="980" y="1160" as="sourcePoint" /><mxPoint x="760" y="1160" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m21" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="20 · STOCK_COMMITTED"><mxGeometry relative="1" as="geometry"><mxPoint x="760" y="1210" as="sourcePoint" /><mxPoint x="530" y="1210" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m22" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="21 · 201 Created + Rechnungs-URL"><mxGeometry relative="1" as="geometry"><mxPoint x="530" y="1300" as="sourcePoint" /><mxPoint x="310" y="1300" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m23" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="22 · Bestellung abgeschlossen"><mxGeometry relative="1" as="geometry"><mxPoint x="310" y="1345" as="sourcePoint" /><mxPoint x="100" y="1345" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m24" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="23 · GET /api/invoices/{id}/pdf"><mxGeometry relative="1" as="geometry"><mxPoint x="100" y="1405" as="sourcePoint" /><mxPoint x="310" y="1405" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m25" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="24 · REST"><mxGeometry relative="1" as="geometry"><mxPoint x="310" y="1450" as="sourcePoint" /><mxPoint x="530" y="1450" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m26" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="25 · GetInvoicePdf · gRPC"><mxGeometry relative="1" as="geometry"><mxPoint x="530" y="1495" as="sourcePoint" /><mxPoint x="2110" y="1495" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m27" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="26 · PDF"><mxGeometry relative="1" as="geometry"><mxPoint x="2110" y="1540" as="sourcePoint" /><mxPoint x="530" y="1540" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-m28" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="27 · HTTP 200 application/pdf"><mxGeometry relative="1" as="geometry"><mxPoint x="530" y="1585" as="sourcePoint" /><mxPoint x="100" y="1585" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="hp-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#1f2937;" value="03 · Sequenzdiagramm – Happy Path" vertex="1"><mxGeometry x="40" y="20" width="1000" height="45" as="geometry" /></mxCell>
+        <mxCell id="hp-subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#6b7280;" value="Aktueller Codepfad: persistente Reservierung → Zahlung → Event → Commit; Rechnung parallel" vertex="1"><mxGeometry x="42" y="62" width="1200" height="30" as="geometry" /></mxCell>
+        <mxCell id="hp-p1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" value="Kunde" vertex="1"><mxGeometry x="30" y="95" width="140" height="50" as="geometry" /></mxCell>
+        <mxCell id="hp-p2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" value="StoreProxy" vertex="1"><mxGeometry x="240" y="95" width="140" height="50" as="geometry" /></mxCell>
+        <mxCell id="hp-p3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="ShopService" vertex="1"><mxGeometry x="455" y="95" width="150" height="50" as="geometry" /></mxCell>
+        <mxCell id="hp-p4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;" value="WarehouseService" vertex="1"><mxGeometry x="680" y="95" width="160" height="50" as="geometry" /></mxCell>
+        <mxCell id="hp-p5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="StoreBackend" vertex="1"><mxGeometry x="905" y="95" width="150" height="50" as="geometry" /></mxCell>
+        <mxCell id="hp-p6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;" value="BillingService" vertex="1"><mxGeometry x="1125" y="95" width="150" height="50" as="geometry" /></mxCell>
+        <mxCell id="hp-p7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="PaymentFacade" vertex="1"><mxGeometry x="1345" y="95" width="150" height="50" as="geometry" /></mxCell>
+        <mxCell id="hp-p8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="gewählter Provider" vertex="1"><mxGeometry x="1565" y="95" width="150" height="50" as="geometry" /></mxCell>
+        <mxCell id="hp-p9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;" value="RabbitMQ" vertex="1"><mxGeometry x="1785" y="95" width="150" height="50" as="geometry" /></mxCell>
+        <mxCell id="hp-p10" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;" value="InvoiceService" vertex="1"><mxGeometry x="2030" y="95" width="160" height="50" as="geometry" /></mxCell>
+        <mxCell id="hp-readiness-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;spacing=8;" value="3 · Readiness-Gate prüft Warehouse, Billing, Invoice und Audit. Nur ein betriebsbereiter Shop startet die SAGA." vertex="1"><mxGeometry x="430" y="270" width="520" height="85" as="geometry" /></mxCell>
+        <mxCell id="hp-validate-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;align=left;spacing=8;" value="Validierung erzeugt ORDER_STARTED und ORDER_VALIDATED; die orderId entspricht der Correlation-ID." vertex="1"><mxGeometry x="1010" y="280" width="500" height="75" as="geometry" /></mxCell>
+        <mxCell id="hp-invoice-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;align=left;spacing=8;" value="PDF erzeugen → invoices.json persistieren → .eml in Pickup-Outbox → emailDispatchedAtUtc speichern → Event ACK" vertex="1"><mxGeometry x="1950" y="1050" width="330" height="145" as="geometry" /></mxCell>
+        <mxCell id="hp-complete-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;align=left;spacing=8;" value="ORDER_COMPLETED wird nach erfolgreichem Commit geschrieben. Auf die fertige PDF wartet der Bestellaufruf nicht." vertex="1"><mxGeometry x="1040" y="1245" width="570" height="75" as="geometry" /></mxCell>
+        <mxCell id="hp-audit-note" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d1d5db;fontSize=12;align=left;spacing=10;" value="Audit-Snapshots: ORDER_STARTED → ORDER_VALIDATED → STOCK_RESERVED → PAYMENT_PROVIDER_SELECTED → PAYMENT_COMPLETED → INVOICE_QUEUED → STOCK_COMMITTED → ORDER_COMPLETED → INVOICE_GENERATED → INVOICE_EMAIL_DISPATCHED" vertex="1"><mxGeometry x="420" y="1640" width="1810" height="45" as="geometry" /></mxCell>
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="fail1" name="04 fail1 Bestand">
-    <mxGraphModel dx="1450" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1450" pageHeight="900" math="0" shadow="0">
+  <diagram id="fail1-v2" name="04 fail1 Bestand">
+    <mxGraphModel dx="1365" dy="768" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1550" pageHeight="1000" math="0" shadow="0">
       <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="f1-title" value="Sequenzdiagramm – fail1: Unzureichender Bestand" style="text;html=1;strokeColor=none;fillColor=none;fontSize=24;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="40" y="20" width="800" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="f1-p1" value="Kunde" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="40" y="80" width="130" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f1-p2" value="StoreProxy" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="240" y="80" width="130" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f1-p3" value="ShopService" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="440" y="80" width="140" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f1-p4" value="BillingService" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="670" y="80" width="150" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f1-p5" value="Warehouse" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="900" y="80" width="140" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f1-p6" value="StoreBackend" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="1130" y="80" width="150" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f1-l1" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="105" y="130" as="sourcePoint" />
-            <mxPoint x="105" y="820" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-l2" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="305" y="130" as="sourcePoint" />
-            <mxPoint x="305" y="820" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-l3" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="510" y="130" as="sourcePoint" />
-            <mxPoint x="510" y="820" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-l4" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="745" y="130" as="sourcePoint" />
-            <mxPoint x="745" y="820" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-l5" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="970" y="130" as="sourcePoint" />
-            <mxPoint x="970" y="820" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-l6" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1205" y="130" as="sourcePoint" />
-            <mxPoint x="1205" y="820" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-m1" value="1  POST /api/orders" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="105" y="180" as="sourcePoint" />
-            <mxPoint x="305" y="180" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-m2" value="2  REST/JSON" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="305" y="230" as="sourcePoint" />
-            <mxPoint x="510" y="230" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-m3" value="3  ListPaymentProviders" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="510" y="290" as="sourcePoint" />
-            <mxPoint x="745" y="290" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-m4" value="4  GetFeaturedProducts" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="510" y="350" as="sourcePoint" />
-            <mxPoint x="970" y="350" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-m5" value="5  GetProducts" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="970" y="400" as="sourcePoint" />
-            <mxPoint x="1205" y="400" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-m6" value="6  ReserveCart" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="510" y="470" as="sourcePoint" />
-            <mxPoint x="970" y="470" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-m7" value="7  ReserveProducts" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="970" y="520" as="sourcePoint" />
-            <mxPoint x="1205" y="520" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-m8" value="8  Success=false: Bestand unzureichend" style="endArrow=open;dashed=1;html=1;strokeColor=#b85450;fontColor=#b85450;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1205" y="580" as="sourcePoint" />
-            <mxPoint x="510" y="580" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-note" value="Payment wird nicht aufgerufen.&lt;br&gt;Kein payment.succeeded-Event.&lt;br&gt;Keine Rechnungserstellung." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;" vertex="1" parent="1">
-          <mxGeometry x="650" y="620" width="360" height="110" as="geometry" />
-        </mxCell>
-        <mxCell id="f1-m9" value="9  409 Conflict / Problem Details" style="endArrow=open;dashed=1;html=1;strokeColor=#b85450;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="510" y="760" as="sourcePoint" />
-            <mxPoint x="305" y="760" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f1-m10" value="10  Bestand nicht verfügbar" style="endArrow=open;dashed=1;html=1;strokeColor=#b85450;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="305" y="810" as="sourcePoint" />
-            <mxPoint x="105" y="810" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="f1-l1" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="100" y="145" as="sourcePoint" /><mxPoint x="100" y="900" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-l2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="145" as="sourcePoint" /><mxPoint x="330" y="900" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-l3" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="570" y="145" as="sourcePoint" /><mxPoint x="570" y="900" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-l4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="830" y="145" as="sourcePoint" /><mxPoint x="830" y="900" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-l5" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1080" y="145" as="sourcePoint" /><mxPoint x="1080" y="900" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-l6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1350" y="145" as="sourcePoint" /><mxPoint x="1350" y="900" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-m1" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="1 · POST /api/orders"><mxGeometry relative="1" as="geometry"><mxPoint x="100" y="190" as="sourcePoint" /><mxPoint x="330" y="190" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-m2" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="2 · Weiterleitung + Correlation-ID"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="240" as="sourcePoint" /><mxPoint x="570" y="240" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-m3" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="4 · ReserveCart"><mxGeometry relative="1" as="geometry"><mxPoint x="570" y="420" as="sourcePoint" /><mxPoint x="830" y="420" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-m4" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="5 · ReserveProducts"><mxGeometry relative="1" as="geometry"><mxPoint x="830" y="480" as="sourcePoint" /><mxPoint x="1080" y="480" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-m5" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeColor=#b85450;" value="6 · Success=false · Bestand unzureichend"><mxGeometry relative="1" as="geometry"><mxPoint x="1080" y="540" as="sourcePoint" /><mxPoint x="830" y="540" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-m6" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeColor=#b85450;" value="7 · STOCK_RESERVATION_FAILED"><mxGeometry relative="1" as="geometry"><mxPoint x="830" y="600" as="sourcePoint" /><mxPoint x="570" y="600" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-m7" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeColor=#b85450;strokeWidth=2;" value="8 · 409 Conflict · ProblemDetails"><mxGeometry relative="1" as="geometry"><mxPoint x="570" y="750" as="sourcePoint" /><mxPoint x="330" y="750" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-m8" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=13;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeColor=#b85450;strokeWidth=2;" value="9 · Bestand nicht verfügbar"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="810" as="sourcePoint" /><mxPoint x="100" y="810" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f1-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#1f2937;" value="04 · Sequenzdiagramm – fail1: Unzureichender Bestand" vertex="1"><mxGeometry x="40" y="20" width="1100" height="45" as="geometry" /></mxCell>
+        <mxCell id="f1-subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#6b7280;" value="Die Reservierung scheitert vor Provider-Auswahl und Zahlung" vertex="1"><mxGeometry x="42" y="62" width="900" height="30" as="geometry" /></mxCell>
+        <mxCell id="f1-p1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" value="Kunde" vertex="1"><mxGeometry x="30" y="95" width="140" height="50" as="geometry" /></mxCell>
+        <mxCell id="f1-p2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" value="StoreProxy" vertex="1"><mxGeometry x="255" y="95" width="150" height="50" as="geometry" /></mxCell>
+        <mxCell id="f1-p3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="ShopService" vertex="1"><mxGeometry x="495" y="95" width="150" height="50" as="geometry" /></mxCell>
+        <mxCell id="f1-p4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;" value="WarehouseService" vertex="1"><mxGeometry x="750" y="95" width="160" height="50" as="geometry" /></mxCell>
+        <mxCell id="f1-p5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="StoreBackend" vertex="1"><mxGeometry x="1005" y="95" width="150" height="50" as="geometry" /></mxCell>
+        <mxCell id="f1-p6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=13;fontStyle=1;" value="BillingService" vertex="1"><mxGeometry x="1275" y="95" width="150" height="50" as="geometry" /></mxCell>
+        <mxCell id="f1-gate" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;spacing=8;" value="3 · Readiness-Gate erfolgreich; Warenkorb wird validiert (ORDER_STARTED / ORDER_VALIDATED)." vertex="1"><mxGeometry x="480" y="285" width="500" height="90" as="geometry" /></mxCell>
+        <mxCell id="f1-stop" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;align=left;spacing=10;" value="Abbruchgrenze&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;Kein ListPaymentProviders · kein ProcessPayment · kein payment.succeeded · keine Rechnung · keine Kompensation nötig, weil keine Reservierung angelegt wurde.&lt;/font&gt;" vertex="1"><mxGeometry x="820" y="650" width="610" height="125" as="geometry" /></mxCell>
+        <mxCell id="f1-audit" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d1d5db;fontSize=12;align=left;spacing=10;" value="Audit: STOCK_RESERVATION / FAILURE → ORDER_COMPLETED / FAILURE" vertex="1"><mxGeometry x="480" y="880" width="650" height="50" as="geometry" /></mxCell>
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="fail2" name="05 fail2 Zahlung">
-    <mxGraphModel dx="1700" dy="1050" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1050" math="0" shadow="0">
+  <diagram id="fail2-v2" name="05 fail2 Zahlung">
+    <mxGraphModel dx="1365" dy="768" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1200" math="0" shadow="0">
       <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="f2-title" value="Sequenzdiagramm – fail2: Zahlungsablehnung mit Kompensation" style="text;html=1;strokeColor=none;fillColor=none;fontSize=24;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="40" y="20" width="900" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="f2-p1" value="Kunde" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="30" y="80" width="120" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f2-p2" value="StoreProxy" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="220" y="80" width="130" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f2-p3" value="ShopService" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="420" y="80" width="140" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f2-p4" value="Warehouse" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="650" y="80" width="140" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f2-p5" value="StoreBackend" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="880" y="80" width="150" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f2-p6" value="BillingService" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="1110" y="80" width="150" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f2-p7" value="Provider-Stub" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="1350" y="80" width="150" height="50" as="geometry" />
-        </mxCell>
-        <mxCell id="f2-l1" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="90" y="130" as="sourcePoint" />
-            <mxPoint x="90" y="980" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-l2" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="285" y="130" as="sourcePoint" />
-            <mxPoint x="285" y="980" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-l3" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="490" y="130" as="sourcePoint" />
-            <mxPoint x="490" y="980" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-l4" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="720" y="130" as="sourcePoint" />
-            <mxPoint x="720" y="980" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-l5" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="955" y="130" as="sourcePoint" />
-            <mxPoint x="955" y="980" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-l6" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1185" y="130" as="sourcePoint" />
-            <mxPoint x="1185" y="980" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-l7" style="endArrow=none;dashed=1;strokeColor=#999999;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1425" y="130" as="sourcePoint" />
-            <mxPoint x="1425" y="980" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m1" value="1  POST /api/orders" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="90" y="180" as="sourcePoint" />
-            <mxPoint x="285" y="180" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m2" value="2  REST/JSON" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="285" y="230" as="sourcePoint" />
-            <mxPoint x="490" y="230" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m3" value="3  Provider wählen + Katalog laden" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="490" y="300" as="sourcePoint" />
-            <mxPoint x="720" y="300" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m4" value="4  ReserveCart" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="490" y="370" as="sourcePoint" />
-            <mxPoint x="720" y="370" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m5" value="5  ReserveProducts" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="720" y="420" as="sourcePoint" />
-            <mxPoint x="955" y="420" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m6" value="6  Reservierung erfolgreich" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="955" y="470" as="sourcePoint" />
-            <mxPoint x="490" y="470" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m7" value="7  ProcessPayment" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="490" y="540" as="sourcePoint" />
-            <mxPoint x="1185" y="540" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m8" value="8  ChargeAsync" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1185" y="590" as="sourcePoint" />
-            <mxPoint x="1425" y="590" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m9" value="9  Success=false / abgelehnt" style="endArrow=open;dashed=1;html=1;strokeColor=#b85450;fontColor=#b85450;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="1425" y="640" as="sourcePoint" />
-            <mxPoint x="490" y="640" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m10" value="10  ReleaseCart (Kompensation)" style="endArrow=block;endFill=1;html=1;strokeColor=#d6b656;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="490" y="710" as="sourcePoint" />
-            <mxPoint x="720" y="710" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m11" value="11  ReleaseProducts" style="endArrow=block;endFill=1;html=1;strokeColor=#d6b656;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="720" y="760" as="sourcePoint" />
-            <mxPoint x="955" y="760" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m12" value="12  Bestand wiederhergestellt" style="endArrow=open;dashed=1;html=1;strokeColor=#82b366;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="955" y="810" as="sourcePoint" />
-            <mxPoint x="490" y="810" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-note" value="Kein payment.succeeded-Event&lt;br&gt;und keine Rechnungserstellung." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;" vertex="1" parent="1">
-          <mxGeometry x="1080" y="700" width="320" height="90" as="geometry" />
-        </mxCell>
-        <mxCell id="f2-m13" value="13  422 Unprocessable Entity" style="endArrow=open;dashed=1;html=1;strokeColor=#b85450;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="490" y="900" as="sourcePoint" />
-            <mxPoint x="285" y="900" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="f2-m14" value="14  Zahlung abgelehnt" style="endArrow=open;dashed=1;html=1;strokeColor=#b85450;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=8;" edge="1" parent="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="285" y="950" as="sourcePoint" />
-            <mxPoint x="90" y="950" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="f2-l1" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="90" y="145" as="sourcePoint" /><mxPoint x="90" y="1110" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-l2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="300" y="145" as="sourcePoint" /><mxPoint x="300" y="1110" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-l3" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="520" y="145" as="sourcePoint" /><mxPoint x="520" y="1110" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-l4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="750" y="145" as="sourcePoint" /><mxPoint x="750" y="1110" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-l5" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="970" y="145" as="sourcePoint" /><mxPoint x="970" y="1110" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-l6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1190" y="145" as="sourcePoint" /><mxPoint x="1190" y="1110" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-l7" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1410" y="145" as="sourcePoint" /><mxPoint x="1410" y="1110" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-l8" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1650" y="145" as="sourcePoint" /><mxPoint x="1650" y="1110" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m1" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="1 · POST /api/orders"><mxGeometry relative="1" as="geometry"><mxPoint x="90" y="185" as="sourcePoint" /><mxPoint x="300" y="185" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m2" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="2 · Correlation-ID"><mxGeometry relative="1" as="geometry"><mxPoint x="300" y="225" as="sourcePoint" /><mxPoint x="520" y="225" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m3" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="4 · ReserveCart"><mxGeometry relative="1" as="geometry"><mxPoint x="520" y="360" as="sourcePoint" /><mxPoint x="750" y="360" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m4" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="5 · ReserveProducts"><mxGeometry relative="1" as="geometry"><mxPoint x="750" y="405" as="sourcePoint" /><mxPoint x="970" y="405" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m5" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="6 · STOCK_RESERVED"><mxGeometry relative="1" as="geometry"><mxPoint x="970" y="450" as="sourcePoint" /><mxPoint x="520" y="450" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m6" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="7 · ListPaymentProviders + ProcessPayment"><mxGeometry relative="1" as="geometry"><mxPoint x="520" y="500" as="sourcePoint" /><mxPoint x="1190" y="500" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m7" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="8 · charge(...)"><mxGeometry relative="1" as="geometry"><mxPoint x="1190" y="550" as="sourcePoint" /><mxPoint x="1410" y="550" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m8" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="9 · ChargeAsync"><mxGeometry relative="1" as="geometry"><mxPoint x="1410" y="595" as="sourcePoint" /><mxPoint x="1650" y="595" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m9" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeColor=#b85450;" value="10 · Success=false · abgelehnt"><mxGeometry relative="1" as="geometry"><mxPoint x="1650" y="640" as="sourcePoint" /><mxPoint x="1190" y="640" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m10" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeColor=#b85450;" value="11 · PAYMENT_FAILED"><mxGeometry relative="1" as="geometry"><mxPoint x="1190" y="685" as="sourcePoint" /><mxPoint x="520" y="685" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m11" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;strokeColor=#b85450;" value="12 · ReleaseCart · Kompensation"><mxGeometry relative="1" as="geometry"><mxPoint x="520" y="745" as="sourcePoint" /><mxPoint x="750" y="745" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m12" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;strokeColor=#b85450;" value="13 · ReleaseProducts"><mxGeometry relative="1" as="geometry"><mxPoint x="750" y="790" as="sourcePoint" /><mxPoint x="970" y="790" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m13" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeColor=#82b366;" value="14 · STOCK_RELEASED"><mxGeometry relative="1" as="geometry"><mxPoint x="970" y="835" as="sourcePoint" /><mxPoint x="520" y="835" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m14" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeColor=#b85450;strokeWidth=2;" value="15 · 422 Unprocessable Entity"><mxGeometry relative="1" as="geometry"><mxPoint x="520" y="930" as="sourcePoint" /><mxPoint x="300" y="930" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-m15" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeColor=#b85450;strokeWidth=2;" value="16 · Zahlung abgelehnt"><mxGeometry relative="1" as="geometry"><mxPoint x="300" y="980" as="sourcePoint" /><mxPoint x="90" y="980" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="f2-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#1f2937;" value="05 · Sequenzdiagramm – fail2: Zahlungsablehnung" vertex="1"><mxGeometry x="40" y="20" width="1100" height="45" as="geometry" /></mxCell>
+        <mxCell id="f2-subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#6b7280;" value="Die erfolgreiche Reservierung wird durch ReleaseCart / ReleaseProducts kompensiert" vertex="1"><mxGeometry x="42" y="62" width="1100" height="30" as="geometry" /></mxCell>
+        <mxCell id="f2-p1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" value="Kunde" vertex="1"><mxGeometry x="25" y="95" width="130" height="50" as="geometry" /></mxCell>
+        <mxCell id="f2-p2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" value="StoreProxy" vertex="1"><mxGeometry x="235" y="95" width="130" height="50" as="geometry" /></mxCell>
+        <mxCell id="f2-p3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" value="ShopService" vertex="1"><mxGeometry x="455" y="95" width="130" height="50" as="geometry" /></mxCell>
+        <mxCell id="f2-p4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;" value="WarehouseService" vertex="1"><mxGeometry x="675" y="95" width="150" height="50" as="geometry" /></mxCell>
+        <mxCell id="f2-p5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" value="StoreBackend" vertex="1"><mxGeometry x="900" y="95" width="140" height="50" as="geometry" /></mxCell>
+        <mxCell id="f2-p6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;" value="BillingService" vertex="1"><mxGeometry x="1120" y="95" width="140" height="50" as="geometry" /></mxCell>
+        <mxCell id="f2-p7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" value="PaymentFacade" vertex="1"><mxGeometry x="1340" y="95" width="140" height="50" as="geometry" /></mxCell>
+        <mxCell id="f2-p8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontStyle=1;" value="gewählter Provider" vertex="1"><mxGeometry x="1570" y="95" width="160" height="50" as="geometry" /></mxCell>
+        <mxCell id="f2-gate" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;align=left;spacing=8;" value="3 · Readiness-Gate und Validierung erfolgreich." vertex="1"><mxGeometry x="455" y="270" width="410" height="65" as="geometry" /></mxCell>
+        <mxCell id="f2-noevent" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;align=left;spacing=8;" value="Kein payment.succeeded-Event, keine InvoiceId und keine Rechnung. Da keine Zahlung erfolgte, ist kein Refund erforderlich." vertex="1"><mxGeometry x="1120" y="720" width="560" height="105" as="geometry" /></mxCell>
+        <mxCell id="f2-audit" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d1d5db;fontSize=12;align=left;spacing=10;" value="Audit: PAYMENT_FAILED / FAILURE → STOCK_RELEASE_REQUESTED / COMPENSATING → STOCK_RELEASED / COMPENSATED → ORDER_COMPLETED / FAILURE" vertex="1"><mxGeometry x="455" y="1060" width="1160" height="55" as="geometry" /></mxCell>
       </root>
     </mxGraphModel>
   </diagram>
-  <diagram id="payment-facade" name="06 Payment-Fassade">
-    <mxGraphModel dx="1900" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1100" math="0" shadow="0">
+  <diagram id="payment-facade-v2" name="06 Payment-Fassade">
+    <mxGraphModel dx="1365" dy="768" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1200" math="0" shadow="0">
       <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="pf-e1" edge="1" parent="1" source="pf-shop" target="pf-facade" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e2" edge="1" parent="1" source="pf-facade" target="pf-validation" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e3" edge="1" parent="1" source="pf-validation" target="pf-resolver" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e4" edge="1" parent="1" source="pf-resolver" target="pf-provider" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e5" edge="1" parent="1" source="pf-provider" target="pf-result" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e6" edge="1" parent="1" source="pf-result" target="pf-post" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e7" edge="1" parent="1" source="pf-post" target="pf-audit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.15;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="379" y="810" /><mxPoint x="185" y="810" /></Array></mxGeometry></mxCell>
-        <mxCell id="pf-e8" edge="1" parent="1" source="pf-post" target="pf-invoice-event" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-e9" edge="1" parent="1" source="pf-post" target="pf-response" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.85;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="561" y="810" /><mxPoint x="770" y="810" /></Array></mxGeometry></mxCell>
-        <mxCell id="pf-x-e1" edge="1" parent="1" source="pf-ext1" target="pf-ext2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-x-e2" edge="1" parent="1" source="pf-ext2" target="pf-ext3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-x-e3" edge="1" parent="1" source="pf-ext3" target="pf-ext4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-x-e4" edge="1" parent="1" source="pf-ext4" target="pf-ext5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" value=""><mxGeometry relative="1" as="geometry" /></mxCell>
-        <mxCell id="pf-x-e5" edge="1" parent="1" source="pf-ext3" target="pf-unchanged" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" value=""><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1410" y="520" /><mxPoint x="1410" y="330" /></Array></mxGeometry></mxCell>
-        <mxCell id="pf-x-e6" edge="1" parent="1" source="pf-ext4" target="pf-additional" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;dashed=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" value=""><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1410" y="685" /><mxPoint x="1410" y="715" /></Array></mxGeometry></mxCell>
-        <mxCell id="pf-title" value="Payment-Fassade – Ablauf und Erweiterung um einen Provider" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=24;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="40" as="geometry" /></mxCell>
-        <mxCell id="pf-runtime-boundary" value="&lt;b&gt;A · Laufzeit: Zahlungsabwicklung&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;strokeWidth=2;fillColor=none;verticalAlign=top;align=left;fontSize=16;spacingTop=12;spacingLeft=15;" vertex="1" parent="1"><mxGeometry x="40" y="80" width="900" height="950" as="geometry" /></mxCell>
-        <mxCell id="pf-extension-boundary" value="&lt;b&gt;B · Erweiterung um einen PaymentProvider&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;strokeWidth=2;fillColor=none;verticalAlign=top;align=left;fontSize=16;spacingTop=12;spacingLeft=15;" vertex="1" parent="1"><mxGeometry x="980" y="80" width="880" height="950" as="geometry" /></mxCell>
-        <mxCell id="pf-shop" value="&lt;b&gt;ShopService&lt;/b&gt;&lt;br&gt;Bestell-Orchestrator" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=15;" vertex="1" parent="1"><mxGeometry x="60" y="150" width="170" height="80" as="geometry" /></mxCell>
-        <mxCell id="pf-facade" value="&lt;b&gt;BillingOperationsGrpcService&lt;/b&gt;&lt;br&gt;gRPC-Adapter&lt;br&gt;Process · Refund · Status" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=15;" vertex="1" parent="1"><mxGeometry x="340" y="130" width="260" height="120" as="geometry" /></mxCell>
-        <mxCell id="pf-validation" value="&lt;b&gt;Request validieren&lt;/b&gt;&lt;br&gt;orderId · Betrag · Währung&lt;br&gt;transactionId · Refund-Betrag" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" vertex="1" parent="1"><mxGeometry x="340" y="300" width="260" height="90" as="geometry" /></mxCell>
-        <mxCell id="pf-resolver" value="&lt;b&gt;PaymentFacade&lt;/b&gt;&lt;br&gt;ActiveProviderKey aus Konfiguration&lt;br&gt;einheitliches Timeout&lt;br&gt;Transaktion → Provider" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" vertex="1" parent="1"><mxGeometry x="340" y="450" width="260" height="120" as="geometry" /></mxCell>
-        <mxCell id="pf-provider" value="&lt;b&gt;aktiver IPaymentProvider&lt;/b&gt;&lt;br&gt;DemoPay · PayPal · Stripe&lt;br&gt;ChargeAsync · RefundAsync&lt;br&gt;GetStatusAsync" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" vertex="1" parent="1"><mxGeometry x="680" y="440" width="220" height="140" as="geometry" /></mxCell>
-        <mxCell id="pf-result" value="&lt;b&gt;Payment-Ergebnisse&lt;/b&gt;&lt;br&gt;Charge · Refund · Status&lt;br&gt;TransactionId · Message" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=14;" vertex="1" parent="1"><mxGeometry x="680" y="650" width="220" height="90" as="geometry" /></mxCell>
-        <mxCell id="pf-post" value="&lt;b&gt;BillingOperationsGrpcService&lt;/b&gt;&lt;br&gt;Ergebnis in gRPC abbilden&lt;br&gt;Audit veröffentlichen&lt;br&gt;bei Charge ggf. Rechnung" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" vertex="1" parent="1"><mxGeometry x="340" y="640" width="260" height="120" as="geometry" /></mxCell>
-        <mxCell id="pf-audit" value="&lt;b&gt;Audit-Ereignisse&lt;/b&gt;&lt;br&gt;PAYMENT / INVOICE&lt;br&gt;vst.audit.events" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;" vertex="1" parent="1"><mxGeometry x="80" y="860" width="210" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-invoice-event" value="&lt;b&gt;payment.succeeded&lt;/b&gt;&lt;br&gt;vst.billing.events&lt;br&gt;nur bei Success=true" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;" vertex="1" parent="1"><mxGeometry x="365" y="860" width="220" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-response" value="&lt;b&gt;gRPC-Antwort&lt;/b&gt;&lt;br&gt;Payment · Refund · Status&lt;br&gt;Provider · TransactionId&lt;br&gt;InvoiceQueued" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;" vertex="1" parent="1"><mxGeometry x="660" y="860" width="220" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-l1" value="gRPC-Operation" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" vertex="1" parent="1"><mxGeometry x="220" y="100" width="120" height="30" as="geometry" /></mxCell>
-        <mxCell id="pf-l4" value="Charge · Refund · Status" style="text;html=1;whiteSpace=wrap;align=center;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=12;" vertex="1" parent="1"><mxGeometry x="590" y="395" width="130" height="30" as="geometry" /></mxCell>
-        <mxCell id="pf-l5" value="einheitliches Ergebnis" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fillColor=#ffffff;strokeColor=none;fontSize=11;" vertex="1" parent="1"><mxGeometry x="800" y="605" width="100" height="28" as="geometry" /></mxCell>
-        <mxCell id="pf-ext1" value="&lt;b&gt;1 · Adapter implementieren&lt;/b&gt;&lt;br&gt;KlarnaPaymentProvider : IPaymentProvider&lt;br&gt;Charge · Refund · GetStatus" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1040" y="150" width="330" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-ext2" value="&lt;b&gt;2 · Automatisch registrieren&lt;/b&gt;&lt;br&gt;Assembly-Scan findet den Adapter&lt;br&gt;keine bestehende Registrierung ändern" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1040" y="310" width="330" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-ext3" value="&lt;b&gt;3 · Automatisch verfügbar&lt;/b&gt;&lt;br&gt;ListPaymentProviders&lt;br&gt;zunächst als inaktiver Adapter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1040" y="470" width="330" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-ext4" value="&lt;b&gt;4 · Aktivieren&lt;/b&gt;&lt;br&gt;ActiveProviderKey = klarna&lt;br&gt;per Konfigurationsdatei oder Umgebung" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1040" y="630" width="330" height="110" as="geometry" /></mxCell>
-        <mxCell id="pf-ext5" value="&lt;b&gt;5 · Testen&lt;/b&gt;&lt;br&gt;Charge · Refund · GetStatus&lt;br&gt;Timeout · Konfigurationswechsel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1040" y="790" width="330" height="100" as="geometry" /></mxCell>
-        <mxCell id="pf-unchanged" value="&lt;b&gt;Keine Änderung an bestehendem Code&lt;/b&gt;&lt;br&gt;&lt;br&gt;• Billing-gRPC-Vertrag&lt;br&gt;• PaymentFacade&lt;br&gt;• PaymentProviderRegistration&lt;br&gt;• ShopService-Bestellablauf&lt;br&gt;• PaymentSucceededEvent&lt;br&gt;• InvoiceService&lt;br&gt;&lt;br&gt;Nur neue Adapterklasse und Konfiguration." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;align=left;spacing=12;" vertex="1" parent="1"><mxGeometry x="1450" y="180" width="350" height="300" as="geometry" /></mxCell>
-        <mxCell id="pf-additional" value="&lt;b&gt;Für einen realen Provider zusätzlich&lt;/b&gt;&lt;br&gt;&lt;br&gt;• HTTP-Client oder Anbieter-SDK&lt;br&gt;• Secret- und Credential-Verwaltung&lt;br&gt;• externe Idempotency Keys&lt;br&gt;• Webhook-Signatur und Abgleich&lt;br&gt;• Mapping der Fehlercodes&lt;br&gt;• Datenschutz- und PCI-Prüfung" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;align=left;spacing=12;" vertex="1" parent="1"><mxGeometry x="1450" y="570" width="350" height="290" as="geometry" /></mxCell>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="pf-e-config" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d6b656;labelBackgroundColor=#ffffff;fontSize=12;" value="IOptions beim Start"><mxGeometry relative="1" as="geometry"><mxPoint x="580" y="190" as="sourcePoint" /><mxPoint x="580" y="250" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="pf-e-request" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#6c8ebf;labelBackgroundColor=#ffffff;fontSize=13;" value="Charge · Refund · GetStatus"><mxGeometry relative="1" as="geometry"><mxPoint x="340" y="340" as="sourcePoint" /><mxPoint x="420" y="340" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="pf-e-charge" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;labelBackgroundColor=#ffffff;fontSize=12;" value="Charge → gewählter, freigegebener Provider"><mxGeometry relative="1" as="geometry"><mxPoint x="740" y="310" as="sourcePoint" /><mxPoint x="850" y="310" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="pf-e-route" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#9673a6;labelBackgroundColor=#ffffff;fontSize=12;" value="Refund / Status → ursprünglicher Provider"><mxGeometry relative="1" as="geometry"><mxPoint x="740" y="430" as="sourcePoint" /><mxPoint x="850" y="430" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="pf-e-response" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=open;dashed=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=12;" value="einheitliches Ergebnis"><mxGeometry relative="1" as="geometry"><mxPoint x="850" y="520" as="sourcePoint" /><mxPoint x="340" y="520" as="targetPoint" /><Array as="points"><mxPoint x="790" y="590" /><mxPoint x="340" y="590" /></Array></mxGeometry></mxCell>
+        <mxCell id="pf-e-result" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=12;" value="gRPC-Antwort"><mxGeometry relative="1" as="geometry"><mxPoint x="340" y="430" as="sourcePoint" /><mxPoint x="1390" y="330" as="targetPoint" /><Array as="points"><mxPoint x="380" y="650" /><mxPoint x="1330" y="650" /><mxPoint x="1330" y="330" /></Array></mxGeometry></mxCell>
+        <mxCell id="pf-e-event" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#9673a6;labelBackgroundColor=#ffffff;fontSize=12;" value="nur bei Charge Success=true"><mxGeometry relative="1" as="geometry"><mxPoint x="340" y="470" as="sourcePoint" /><mxPoint x="1390" y="510" as="targetPoint" /><Array as="points"><mxPoint x="1210" y="470" /><mxPoint x="1210" y="510" /></Array></mxGeometry></mxCell>
+        <mxCell id="pf-x1" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#1a73e8;labelBackgroundColor=#ffffff;fontSize=12;" value="implementiert"><mxGeometry relative="1" as="geometry"><mxPoint x="300" y="890" as="sourcePoint" /><mxPoint x="390" y="890" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="pf-x2" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#1a73e8;labelBackgroundColor=#ffffff;fontSize=12;" value="Assembly-Scan"><mxGeometry relative="1" as="geometry"><mxPoint x="620" y="890" as="sourcePoint" /><mxPoint x="710" y="890" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="pf-x3" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#1a73e8;labelBackgroundColor=#ffffff;fontSize=12;" value="DI-Registrierung"><mxGeometry relative="1" as="geometry"><mxPoint x="940" y="890" as="sourcePoint" /><mxPoint x="1030" y="890" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="pf-x4" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d6b656;labelBackgroundColor=#ffffff;fontSize=12;" value="EnabledProviderKeys"><mxGeometry relative="1" as="geometry"><mxPoint x="1260" y="890" as="sourcePoint" /><mxPoint x="1350" y="890" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="pf-x5" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=12;" value="Neustart"><mxGeometry relative="1" as="geometry"><mxPoint x="1580" y="890" as="sourcePoint" /><mxPoint x="1670" y="890" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="pf-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#1f2937;" value="06 · Payment-Fassade – Laufzeit und Provider-Erweiterung" vertex="1"><mxGeometry x="40" y="20" width="1200" height="45" as="geometry" /></mxCell>
+        <mxCell id="pf-subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#6b7280;" value="Einziger Zugriffspunkt auf Zahlungsanbieter; Konfiguration und OCP-Erweiterung entsprechen dem aktuellen Code" vertex="1"><mxGeometry x="42" y="62" width="1300" height="30" as="geometry" /></mxCell>
+        <mxCell id="pf-runtime" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#6c8ebf;verticalAlign=top;align=left;spacingTop=12;spacingLeft=15;fontSize=16;fontStyle=1;" value="A · Laufzeitfluss" vertex="1"><mxGeometry x="40" y="110" width="1790" height="600" as="geometry" /></mxCell>
+        <mxCell id="pf-config" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="PaymentProviderOptions&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;EnabledProviderKeys&lt;br&gt;ActiveProviderKey (Fallback)&lt;br&gt;TimeoutMilliseconds&lt;/font&gt;" vertex="1"><mxGeometry x="450" y="112" width="260" height="90" as="geometry" /></mxCell>
+        <mxCell id="pf-grpc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;" value="BillingOperationsGrpcService&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;ProcessPayment&lt;br&gt;RefundPayment&lt;br&gt;GetPaymentStatus&lt;br&gt;ListPaymentProviders&lt;/font&gt;" vertex="1"><mxGeometry x="80" y="260" width="260" height="250" as="geometry" /></mxCell>
+        <mxCell id="pf-facade" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=15;fontStyle=1;" value="PaymentFacade : IPaymentFacade&lt;br&gt;&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;charge(providerKey, orderId, amount, currency)&lt;br&gt;refund(transactionId, amount)&lt;br&gt;getStatus(transactionId)&lt;br&gt;&lt;br&gt;Provider-Freigabe prüfen&lt;br&gt;einheitliches Timeout&lt;br&gt;Providers&lt;/font&gt;" vertex="1"><mxGeometry x="420" y="250" width="320" height="300" as="geometry" /></mxCell>
+        <mxCell id="pf-map" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;align=left;spacing=8;" value="ConcurrentDictionary&lt;br&gt;TransactionId → ProviderKey&lt;br&gt;&lt;br&gt;Refund und Status werden zum ursprünglichen Adapter geroutet." vertex="1"><mxGeometry x="470" y="560" width="260" height="115" as="geometry" /></mxCell>
+        <mxCell id="pf-provider-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#fff5f5;strokeColor=#b85450;verticalAlign=top;spacingTop=10;fontSize=14;fontStyle=1;" value="registrierte IPaymentProvider" vertex="1"><mxGeometry x="850" y="180" width="400" height="390" as="geometry" /></mxCell>
+        <mxCell id="pf-demo" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="DemoPay&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;key: demo&lt;/font&gt;" vertex="1"><mxGeometry x="900" y="250" width="300" height="75" as="geometry" /></mxCell>
+        <mxCell id="pf-paypal" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="PayPal&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;key: paypal&lt;/font&gt;" vertex="1"><mxGeometry x="900" y="350" width="300" height="75" as="geometry" /></mxCell>
+        <mxCell id="pf-stripe" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="Stripe&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;key: stripe&lt;/font&gt;" vertex="1"><mxGeometry x="900" y="450" width="300" height="75" as="geometry" /></mxCell>
+        <mxCell id="pf-response" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="Einheitliche Ergebnisse&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;PaymentChargeResult&lt;br&gt;PaymentRefundResult&lt;br&gt;PaymentStatusResult&lt;br&gt;Provider · TransactionId · Status · Message&lt;/font&gt;" vertex="1"><mxGeometry x="1390" y="230" width="350" height="200" as="geometry" /></mxCell>
+        <mxCell id="pf-event" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;" value="RabbitMQ&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;payment.succeeded&lt;br&gt;InvoiceId + CorrelationId&lt;/font&gt;" vertex="1"><mxGeometry x="1390" y="470" width="350" height="120" as="geometry" /></mxCell>
+        <mxCell id="pf-contract-note" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#ffffff;strokeColor=#9ca3af;fontSize=12;align=left;spacing=8;" value="PaymentRequest enthält den ProviderKey der Bestellung. Nur die Fassade löst ihn zu einem freigegebenen Adapter auf; Billing greift nie direkt auf Adapter zu." vertex="1"><mxGeometry x="1390" y="610" width="350" height="85" as="geometry" /></mxCell>
+        <mxCell id="pf-extension" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#9ca3af;verticalAlign=top;align=left;spacingTop=12;spacingLeft=15;fontSize=16;fontStyle=1;" value="B · Erweiterung um einen vierten Provider" vertex="1"><mxGeometry x="40" y="750" width="1790" height="390" as="geometry" /></mxCell>
+        <mxCell id="pf-new" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" value="Neue Klasse&lt;br&gt;&lt;font style=&quot;font-size:12px;font-weight:normal&quot;&gt;KlarnaPaymentProvider&lt;/font&gt;" vertex="1"><mxGeometry x="70" y="830" width="230" height="120" as="geometry" /></mxCell>
+        <mxCell id="pf-interface" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="IPaymentProvider&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;ChargeAsync&lt;br&gt;RefundAsync&lt;br&gt;GetStatusAsync&lt;/font&gt;" vertex="1"><mxGeometry x="390" y="830" width="230" height="120" as="geometry" /></mxCell>
+        <mxCell id="pf-scan" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;" value="PaymentProviderRegistration&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;konkrete Adapter automatisch finden&lt;/font&gt;" vertex="1"><mxGeometry x="710" y="830" width="230" height="120" as="geometry" /></mxCell>
+        <mxCell id="pf-list" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="Providerliste&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;Klarna registriert, zunächst deaktiviert&lt;/font&gt;" vertex="1"><mxGeometry x="1030" y="830" width="230" height="120" as="geometry" /></mxCell>
+        <mxCell id="pf-activate" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="Konfiguration&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;EnabledProviderKeys += klarna&lt;/font&gt;" vertex="1"><mxGeometry x="1350" y="830" width="230" height="120" as="geometry" /></mxCell>
+        <mxCell id="pf-active" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="BillingService&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;Klarna nach Neustart verfügbar&lt;/font&gt;" vertex="1"><mxGeometry x="1670" y="830" width="130" height="120" as="geometry" /></mxCell>
+        <mxCell id="pf-unchanged" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;align=left;spacing=8;" value="Open/Closed Principle: PaymentFacade, Billing-gRPC-Vertrag, ShopService, Events und InvoiceService bleiben unverändert. Neu sind nur Adapterklasse, Tests und Konfiguration." vertex="1"><mxGeometry x="390" y="990" width="1190" height="90" as="geometry" /></mxCell>
+        <mxCell id="pf-risk" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;align=left;spacing=8;" value="Ist-Einschränkung: Die Transaktionszuordnung lebt nur im Arbeitsspeicher der PaymentFacade und geht bei einem Neustart verloren." vertex="1"><mxGeometry x="70" y="990" width="270" height="105" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="provider-switch-v2" name="07 Providerauswahl Warenkorb">
+    <mxGraphModel dx="1365" dy="768" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1350" math="0" shadow="0">
+      <root>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="ps-l1" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="100" y="145" as="sourcePoint" /><mxPoint x="100" y="1280" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-l2" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="145" as="sourcePoint" /><mxPoint x="330" y="1280" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-l3" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="560" y="145" as="sourcePoint" /><mxPoint x="560" y="1280" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-l4" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="790" y="145" as="sourcePoint" /><mxPoint x="790" y="1280" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-l5" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1020" y="145" as="sourcePoint" /><mxPoint x="1020" y="1280" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-l6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1250" y="145" as="sourcePoint" /><mxPoint x="1250" y="1280" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-l7" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1480" y="145" as="sourcePoint" /><mxPoint x="1480" y="1280" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-l8" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;strokeColor=#9ca3af;"><mxGeometry relative="1" as="geometry"><mxPoint x="1710" y="145" as="sourcePoint" /><mxPoint x="1710" y="1280" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m1" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;strokeColor=#d6b656;" value="1 · EnabledProviderKeys = paypal, stripe"><mxGeometry relative="1" as="geometry"><mxPoint x="100" y="190" as="sourcePoint" /><mxPoint x="330" y="190" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m2" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="2 · Warenkorb öffnen"><mxGeometry relative="1" as="geometry"><mxPoint x="1480" y="235" as="sourcePoint" /><mxPoint x="1250" y="235" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m3" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="3 · GET /api/payment-providers"><mxGeometry relative="1" as="geometry"><mxPoint x="1250" y="280" as="sourcePoint" /><mxPoint x="1020" y="280" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m4" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="4 · YARP"><mxGeometry relative="1" as="geometry"><mxPoint x="1020" y="325" as="sourcePoint" /><mxPoint x="790" y="325" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m5" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="5 · ListPaymentProviders"><mxGeometry relative="1" as="geometry"><mxPoint x="790" y="370" as="sourcePoint" /><mxPoint x="330" y="370" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m6" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="6 · Providers"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="415" as="sourcePoint" /><mxPoint x="560" y="415" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m7" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeColor=#82b366;" value="7 · Demo=false · PayPal=true · Stripe=true"><mxGeometry relative="1" as="geometry"><mxPoint x="560" y="460" as="sourcePoint" /><mxPoint x="330" y="460" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m8" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="8 · Provider + isEnabled"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="505" as="sourcePoint" /><mxPoint x="790" y="505" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m9" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="9 · JSON"><mxGeometry relative="1" as="geometry"><mxPoint x="790" y="550" as="sourcePoint" /><mxPoint x="1020" y="550" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m10" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;" value="10 · alle Provider + Verfügbarkeit"><mxGeometry relative="1" as="geometry"><mxPoint x="1020" y="595" as="sourcePoint" /><mxPoint x="1250" y="595" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m11" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;strokeColor=#6c8ebf;" value="11 · PayPal oder Stripe auswählen"><mxGeometry relative="1" as="geometry"><mxPoint x="1480" y="735" as="sourcePoint" /><mxPoint x="1250" y="735" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m12" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="12 · Bezahlen"><mxGeometry relative="1" as="geometry"><mxPoint x="1480" y="790" as="sourcePoint" /><mxPoint x="1250" y="790" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m13" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="13 · POST /api/orders · paymentProviderKey"><mxGeometry relative="1" as="geometry"><mxPoint x="1250" y="845" as="sourcePoint" /><mxPoint x="1020" y="845" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m14" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="14 · YARP"><mxGeometry relative="1" as="geometry"><mxPoint x="1020" y="895" as="sourcePoint" /><mxPoint x="790" y="895" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m15" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="15 · Verfügbarkeit erneut prüfen"><mxGeometry relative="1" as="geometry"><mxPoint x="790" y="945" as="sourcePoint" /><mxPoint x="330" y="945" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m16" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeColor=#82b366;" value="16 · gewählter Provider ist freigegeben"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="995" as="sourcePoint" /><mxPoint x="790" y="995" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m17" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;" value="17 · ProcessPayment(providerKey)"><mxGeometry relative="1" as="geometry"><mxPoint x="790" y="1045" as="sourcePoint" /><mxPoint x="330" y="1045" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m18" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;strokeColor=#b85450;" value="18 · ChargeAsync(providerKey, …)"><mxGeometry relative="1" as="geometry"><mxPoint x="330" y="1095" as="sourcePoint" /><mxPoint x="560" y="1095" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m19" edge="1" parent="1" style="endArrow=block;endFill=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeWidth=2;strokeColor=#b85450;" value="19 · ChargeAsync"><mxGeometry relative="1" as="geometry"><mxPoint x="560" y="1145" as="sourcePoint" /><mxPoint x="1710" y="1145" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-m20" edge="1" parent="1" style="endArrow=open;dashed=1;html=1;fontSize=12;labelBackgroundColor=#ffffff;verticalAlign=bottom;spacingBottom=7;strokeColor=#82b366;" value="20 · Zahlungsergebnis für genau diese Bestellung"><mxGeometry relative="1" as="geometry"><mxPoint x="1710" y="1195" as="sourcePoint" /><mxPoint x="790" y="1195" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="ps-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#1f2937;" value="07 · Providerauswahl im Warenkorb – Verfügbarkeit und Bestellwirkung" vertex="1"><mxGeometry x="40" y="20" width="1400" height="45" as="geometry" /></mxCell>
+        <mxCell id="ps-subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#6b7280;" value="DemoPay deaktiviert; PayPal und Stripe auswählbar; keine Vorauswahl" vertex="1"><mxGeometry x="42" y="62" width="1300" height="30" as="geometry" /></mxCell>
+        <mxCell id="ps-p1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" value="appsettings / ENV" vertex="1"><mxGeometry x="25" y="95" width="150" height="50" as="geometry" /></mxCell>
+        <mxCell id="ps-p2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;fontStyle=1;" value="BillingService" vertex="1"><mxGeometry x="260" y="95" width="140" height="50" as="geometry" /></mxCell>
+        <mxCell id="ps-p3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;" value="PaymentFacade" vertex="1"><mxGeometry x="490" y="95" width="140" height="50" as="geometry" /></mxCell>
+        <mxCell id="ps-p4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;" value="ShopService" vertex="1"><mxGeometry x="720" y="95" width="140" height="50" as="geometry" /></mxCell>
+        <mxCell id="ps-p5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" value="StoreProxy" vertex="1"><mxGeometry x="950" y="95" width="140" height="50" as="geometry" /></mxCell>
+        <mxCell id="ps-p6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" value="Website / Warenkorb" vertex="1"><mxGeometry x="1170" y="95" width="160" height="50" as="geometry" /></mxCell>
+        <mxCell id="ps-p7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" value="Kunde" vertex="1"><mxGeometry x="1415" y="95" width="130" height="50" as="geometry" /></mxCell>
+        <mxCell id="ps-p8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontStyle=1;" value="gewählter Provider" vertex="1"><mxGeometry x="1630" y="95" width="160" height="50" as="geometry" /></mxCell>
+        <mxCell id="ps-visual-state" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;align=left;spacing=8;" value="Darstellung im Warenkorb&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;DemoPay: ausgegraut und nicht auswählbar&lt;br&gt;PayPal / Stripe: verfügbar und auswählbar&lt;br&gt;Initial: kein Radio-Button ausgewählt&lt;/font&gt;" vertex="1"><mxGeometry x="1070" y="615" width="520" height="100" as="geometry" /></mxCell>
+        <mxCell id="ps-effect" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;align=left;spacing=8;" value="Die Auswahl ist bestellungsbezogen. Erst der Klick auf „Bezahlen“ überträgt den ProviderKey; ShopService und PaymentFacade validieren ihn erneut gegen die Konfiguration." vertex="1"><mxGeometry x="80" y="1220" width="950" height="75" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="saga-compensation-v2" name="08 SAGA-Kompensation">
+    <mxGraphModel dx="1365" dy="768" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2100" pageHeight="1350" math="0" shadow="0">
+      <root>
+        <mxCell id="0" /><mxCell id="1" parent="0" />
+        <mxCell id="saga-e1" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#1a73e8;"><mxGeometry relative="1" as="geometry"><mxPoint x="280" y="235" as="sourcePoint" /><mxPoint x="360" y="235" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e2" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#1a73e8;"><mxGeometry relative="1" as="geometry"><mxPoint x="580" y="235" as="sourcePoint" /><mxPoint x="660" y="235" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e3" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#1a73e8;"><mxGeometry relative="1" as="geometry"><mxPoint x="880" y="235" as="sourcePoint" /><mxPoint x="940" y="235" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e-pay-no" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;labelBackgroundColor=#ffffff;fontSize=13;" value="nein · Ablehnung / Fehler / Timeout"><mxGeometry relative="1" as="geometry"><mxPoint x="1040" y="335" as="sourcePoint" /><mxPoint x="940" y="410" as="targetPoint" /><Array as="points"><mxPoint x="1040" y="370" /><mxPoint x="940" y="370" /></Array></mxGeometry></mxCell>
+        <mxCell id="saga-e-pay-yes" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=13;" value="ja"><mxGeometry relative="1" as="geometry"><mxPoint x="1140" y="235" as="sourcePoint" /><mxPoint x="1240" y="235" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e4" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;"><mxGeometry relative="1" as="geometry"><mxPoint x="940" y="520" as="sourcePoint" /><mxPoint x="940" y="575" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e5" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;"><mxGeometry relative="1" as="geometry"><mxPoint x="940" y="685" as="sourcePoint" /><mxPoint x="940" y="735" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e-release-yes" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=13;" value="ja"><mxGeometry relative="1" as="geometry"><mxPoint x="890" y="835" as="sourcePoint" /><mxPoint x="720" y="920" as="targetPoint" /><Array as="points"><mxPoint x="890" y="875" /><mxPoint x="720" y="875" /></Array></mxGeometry></mxCell>
+        <mxCell id="saga-e-release-no" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;labelBackgroundColor=#ffffff;fontSize=13;" value="nein"><mxGeometry relative="1" as="geometry"><mxPoint x="990" y="835" as="sourcePoint" /><mxPoint x="990" y="920" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e-compensated" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;"><mxGeometry relative="1" as="geometry"><mxPoint x="720" y="1020" as="sourcePoint" /><mxPoint x="900" y="1120" as="targetPoint" /><Array as="points"><mxPoint x="720" y="1070" /><mxPoint x="900" y="1070" /></Array></mxGeometry></mxCell>
+        <mxCell id="saga-e-release-failed" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;"><mxGeometry relative="1" as="geometry"><mxPoint x="1100" y="970" as="sourcePoint" /><mxPoint x="1480" y="970" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e-invoice-no" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;labelBackgroundColor=#ffffff;fontSize=13;" value="nein"><mxGeometry relative="1" as="geometry"><mxPoint x="1340" y="335" as="sourcePoint" /><mxPoint x="1320" y="410" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e-invoice-yes" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=13;" value="ja"><mxGeometry relative="1" as="geometry"><mxPoint x="1440" y="235" as="sourcePoint" /><mxPoint x="1530" y="235" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e-refund" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;"><mxGeometry relative="1" as="geometry"><mxPoint x="1320" y="520" as="sourcePoint" /><mxPoint x="1320" y="575" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e-refund-decision" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;"><mxGeometry relative="1" as="geometry"><mxPoint x="1320" y="685" as="sourcePoint" /><mxPoint x="1320" y="735" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e-refund-yes" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=13;" value="ja"><mxGeometry relative="1" as="geometry"><mxPoint x="1270" y="835" as="sourcePoint" /><mxPoint x="1250" y="920" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e-refund-no" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;labelBackgroundColor=#ffffff;fontSize=13;" value="nein"><mxGeometry relative="1" as="geometry"><mxPoint x="1370" y="835" as="sourcePoint" /><mxPoint x="1480" y="920" as="targetPoint" /><Array as="points"><mxPoint x="1370" y="875" /><mxPoint x="1480" y="875" /></Array></mxGeometry></mxCell>
+        <mxCell id="saga-e-refunded-release" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;"><mxGeometry relative="1" as="geometry"><mxPoint x="1250" y="1020" as="sourcePoint" /><mxPoint x="900" y="1120" as="targetPoint" /><Array as="points"><mxPoint x="1250" y="1070" /><mxPoint x="900" y="1070" /></Array></mxGeometry></mxCell>
+        <mxCell id="saga-e-commit" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;"><mxGeometry relative="1" as="geometry"><mxPoint x="1750" y="295" as="sourcePoint" /><mxPoint x="1750" y="410" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e-commit-decision" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;"><mxGeometry relative="1" as="geometry"><mxPoint x="1750" y="520" as="sourcePoint" /><mxPoint x="1750" y="575" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e-commit-yes" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;labelBackgroundColor=#ffffff;fontSize=13;" value="ja"><mxGeometry relative="1" as="geometry"><mxPoint x="1800" y="675" as="sourcePoint" /><mxPoint x="1840" y="920" as="targetPoint" /><Array as="points"><mxPoint x="1840" y="675" /></Array></mxGeometry></mxCell>
+        <mxCell id="saga-e-commit-no" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;labelBackgroundColor=#ffffff;fontSize=13;" value="nein"><mxGeometry relative="1" as="geometry"><mxPoint x="1700" y="675" as="sourcePoint" /><mxPoint x="1630" y="760" as="targetPoint" /><Array as="points"><mxPoint x="1630" y="675" /></Array></mxGeometry></mxCell>
+        <mxCell id="saga-e-commit-ops" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;"><mxGeometry relative="1" as="geometry"><mxPoint x="1630" y="870" as="sourcePoint" /><mxPoint x="1590" y="920" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-e-ops-response" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#b85450;"><mxGeometry relative="1" as="geometry"><mxPoint x="1590" y="1020" as="sourcePoint" /><mxPoint x="1450" y="1120" as="targetPoint" /><Array as="points"><mxPoint x="1590" y="1070" /><mxPoint x="1450" y="1070" /></Array></mxGeometry></mxCell>
+        <mxCell id="saga-e-success" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#82b366;"><mxGeometry relative="1" as="geometry"><mxPoint x="1840" y="1020" as="sourcePoint" /><mxPoint x="1840" y="1120" as="targetPoint" /></mxGeometry></mxCell>
+        <mxCell id="saga-title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=26;fontStyle=1;fontColor=#1f2937;" value="08 · SAGA-Kompensation – aktuelle Fehlerzweige" vertex="1"><mxGeometry x="40" y="20" width="1200" height="45" as="geometry" /></mxCell>
+        <mxCell id="saga-subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=13;fontColor=#6b7280;" value="ShopService orchestriert Reserve, Payment, Event-Publikation, Commit sowie notwendige Gegenaktionen" vertex="1"><mxGeometry x="42" y="62" width="1400" height="30" as="geometry" /></mxCell>
+        <mxCell id="saga-boundary" parent="1" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;dashPattern=8 4;fillColor=none;strokeColor=#9ca3af;verticalAlign=top;align=left;spacingTop=10;spacingLeft=15;fontSize=15;fontStyle=1;" value="Checkout-SAGA · Orchestrator: ShopService" vertex="1"><mxGeometry x="40" y="105" width="2000" height="1170" as="geometry" /></mxCell>
+        <mxCell id="saga-start" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" value="1 · Bestellung validiert&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;Correlation-ID · Readiness OK&lt;/font&gt;" vertex="1"><mxGeometry x="60" y="180" width="220" height="110" as="geometry" /></mxCell>
+        <mxCell id="saga-reserved" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="2 · Bestand reserviert&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;ReserveCart / ReserveProducts&lt;br&gt;persistent&lt;/font&gt;" vertex="1"><mxGeometry x="360" y="180" width="220" height="110" as="geometry" /></mxCell>
+        <mxCell id="saga-payment" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;" value="3 · Zahlung ausführen&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;Billing → PaymentFacade&lt;br&gt;→ gewählter Provider&lt;/font&gt;" vertex="1"><mxGeometry x="660" y="180" width="220" height="110" as="geometry" /></mxCell>
+        <mxCell id="saga-payment-decision" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="Zahlung&lt;br&gt;erfolgreich?" vertex="1"><mxGeometry x="940" y="135" width="200" height="200" as="geometry" /></mxCell>
+        <mxCell id="saga-payment-failed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="4a · PAYMENT_FAILED&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;kein payment.succeeded&lt;br&gt;kein Refund nötig&lt;/font&gt;" vertex="1"><mxGeometry x="830" y="410" width="220" height="110" as="geometry" /></mxCell>
+        <mxCell id="saga-release" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="5a · STOCK_RELEASE_REQUESTED&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;ReleaseCart → ReleaseProducts&lt;br&gt;CancellationToken.None&lt;/font&gt;" vertex="1"><mxGeometry x="830" y="575" width="220" height="110" as="geometry" /></mxCell>
+        <mxCell id="saga-release-decision" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="Freigabe&lt;br&gt;erfolgreich?" vertex="1"><mxGeometry x="840" y="735" width="200" height="100" as="geometry" /></mxCell>
+        <mxCell id="saga-compensated" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="6a · STOCK_RELEASED&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;AuditStatus COMPENSATED&lt;/font&gt;" vertex="1"><mxGeometry x="610" y="920" width="220" height="100" as="geometry" /></mxCell>
+        <mxCell id="saga-release-failed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="6b · STOCK_RELEASE_FAILED&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;Reservierung möglicherweise offen&lt;/font&gt;" vertex="1"><mxGeometry x="880" y="920" width="220" height="100" as="geometry" /></mxCell>
+        <mxCell id="saga-invoice-decision" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="PaymentSucceeded&lt;br&gt;publiziert?" vertex="1"><mxGeometry x="1240" y="135" width="200" height="200" as="geometry" /></mxCell>
+        <mxCell id="saga-invoice-failed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="4b · INVOICE_QUEUE_FAILED&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;Zahlung war bereits erfolgreich&lt;/font&gt;" vertex="1"><mxGeometry x="1210" y="410" width="220" height="110" as="geometry" /></mxCell>
+        <mxCell id="saga-refund" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="5b · PAYMENT_REFUND_REQUESTED&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;RefundPayment über Fassade&lt;/font&gt;" vertex="1"><mxGeometry x="1210" y="575" width="220" height="110" as="geometry" /></mxCell>
+        <mxCell id="saga-refund-decision" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="Refund&lt;br&gt;erfolgreich?" vertex="1"><mxGeometry x="1220" y="735" width="200" height="100" as="geometry" /></mxCell>
+        <mxCell id="saga-refunded" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="6c · PAYMENT_REFUNDED&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;danach ReleaseCart&lt;br&gt;AuditStatus COMPENSATED&lt;/font&gt;" vertex="1"><mxGeometry x="1140" y="920" width="220" height="100" as="geometry" /></mxCell>
+        <mxCell id="saga-commit" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="4c · CommitCart&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;bei Unavailable / Timeout&lt;br&gt;ein idempotenter Retry&lt;/font&gt;" vertex="1"><mxGeometry x="1530" y="180" width="220" height="115" as="geometry" /></mxCell>
+        <mxCell id="saga-commit-retry" parent="1" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacing=8;" value="STOCK_COMMIT_RETRY wird auditiert; der zweite Versuch läuft mit CancellationToken.None." vertex="1"><mxGeometry x="1640" y="410" width="220" height="110" as="geometry" /></mxCell>
+        <mxCell id="saga-commit-decision" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" value="Commit&lt;br&gt;erfolgreich?" vertex="1"><mxGeometry x="1650" y="575" width="200" height="100" as="geometry" /></mxCell>
+        <mxCell id="saga-commit-failed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="6d · STOCK_COMMIT_FAILED&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;Zahlung + Rechnungsevent bestehen bereits&lt;br&gt;keine automatische Rücknahme&lt;/font&gt;" vertex="1"><mxGeometry x="1520" y="760" width="220" height="110" as="geometry" /></mxCell>
+        <mxCell id="saga-ops" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=13;fontStyle=1;" value="Betriebsstörung&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;strukturiertes Error-Logging&lt;br&gt;Correlation-ID&lt;br&gt;manuelle Prüfung erforderlich&lt;/font&gt;" vertex="1"><mxGeometry x="1480" y="920" width="220" height="100" as="geometry" /></mxCell>
+        <mxCell id="saga-completed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=13;fontStyle=1;" value="6e · STOCK_COMMITTED&lt;br&gt;ORDER_COMPLETED" vertex="1"><mxGeometry x="1740" y="920" width="200" height="100" as="geometry" /></mxCell>
+        <mxCell id="saga-order-failed" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="ORDER_FAILED&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;AuditEvent ORDER_COMPLETED&lt;br&gt;Status FAILURE&lt;/font&gt;" vertex="1"><mxGeometry x="790" y="1120" width="220" height="90" as="geometry" /></mxCell>
+        <mxCell id="saga-problem" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=13;fontStyle=1;" value="ProblemDetails an Kunde&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;422 · 502 · 503 · 504&lt;/font&gt;" vertex="1"><mxGeometry x="1340" y="1120" width="220" height="90" as="geometry" /></mxCell>
+        <mxCell id="saga-success" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" value="201 Created&lt;br&gt;&lt;font style=&quot;font-size:11px;font-weight:normal&quot;&gt;Rechnungs-URL&lt;/font&gt;" vertex="1"><mxGeometry x="1730" y="1120" width="220" height="90" as="geometry" /></mxCell>
+        <mxCell id="saga-audit" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d1d5db;fontSize=12;align=left;spacing=10;" value="Jeder Übergang schreibt strukturierte Logs und Audit-Snapshots. Kompensationen werden mit COMPENSATING / COMPENSATED gekennzeichnet; Folgefehler bleiben als FAILURE sichtbar." vertex="1"><mxGeometry x="80" y="1275" width="1940" height="50" as="geometry" /></mxCell>
       </root>
     </mxGraphModel>
   </diagram>

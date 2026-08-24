@@ -40,7 +40,8 @@ public sealed record PaymentProviderDescriptor(
     string Key,
     string Name,
     bool IsTestMode,
-    bool IsActive);
+    bool IsActive,
+    bool IsEnabled);
 
 public sealed record PaymentChargeResult(
     bool Success,

@@ -8,7 +8,16 @@ public interface IPaymentFacade {
 
     IReadOnlyList<PaymentProviderDescriptor> Providers { get; }
 
+    PaymentProviderDescriptor GetProvider(string? providerKey);
+
     Task<PaymentChargeResult> ChargeAsync(
+        Guid orderId,
+        long amountInCents,
+        string currency,
+        CancellationToken cancellationToken = default);
+
+    Task<PaymentChargeResult> ChargeAsync(
+        string providerKey,
         Guid orderId,
         long amountInCents,
         string currency,
@@ -31,6 +40,7 @@ public interface IPaymentFacade {
 /// </summary>
 public sealed class PaymentFacade : IPaymentFacade {
     private readonly IReadOnlyDictionary<string, IPaymentProvider> _providers;
+    private readonly IReadOnlySet<string> _enabledProviderKeys;
     private readonly IPaymentProvider _activeProvider;
     private readonly TimeSpan _timeout;
     private readonly ConcurrentDictionary<string, string> _transactionProviders =
@@ -44,12 +54,13 @@ public sealed class PaymentFacade : IPaymentFacade {
         ArgumentNullException.ThrowIfNull(options);
 
         var providerArr = providers.ToArray();
-        _providers = providers.ToDictionary(
+        _providers = providerArr.ToDictionary(
             provider => provider.Key,
             StringComparer.OrdinalIgnoreCase);
 
         var configuredOptions = options.Value;
         configuredOptions.Validate();
+        _enabledProviderKeys = configuredOptions.GetEnabledProviderKeys();
         _timeout = TimeSpan.FromMilliseconds(configuredOptions.TimeoutMilliseconds);
 
         if (_providers.Count < 2) {
@@ -63,33 +74,76 @@ public sealed class PaymentFacade : IPaymentFacade {
                 $"Der konfigurierte aktive Zahlungsanbieter " +
                 $"'{configuredOptions.ActiveProviderKey}' ist nicht registriert.");
         }
+        var unknownEnabledProviderKeys = _enabledProviderKeys
+            .Where(key => !_providers.ContainsKey(key))
+            .ToArray();
+        if (unknownEnabledProviderKeys.Length > 0) {
+            throw new InvalidOperationException(
+                $"Die aktivierten Zahlungsanbieter sind nicht registriert: " +
+                string.Join(", ", unknownEnabledProviderKeys));
+        }
 
         Providers = providerArr
             .Select(provider => ToDescriptor(
                 provider,
-                provider.Key.Equals(_activeProvider.Key, StringComparison.OrdinalIgnoreCase)))
+                provider.Key.Equals(_activeProvider.Key, StringComparison.OrdinalIgnoreCase),
+                _enabledProviderKeys.Contains(provider.Key)))
             .ToArray();
-        ActiveProvider = ToDescriptor(_activeProvider, true);
+        ActiveProvider = ToDescriptor(_activeProvider, true, true);
     }
 
     public PaymentProviderDescriptor ActiveProvider { get; }
 
     public IReadOnlyList<PaymentProviderDescriptor> Providers { get; }
 
+    public PaymentProviderDescriptor GetProvider(string? providerKey) {
+        var effectiveProviderKey = string.IsNullOrWhiteSpace(providerKey)
+            ? _activeProvider.Key
+            : providerKey.Trim();
+        if (!_enabledProviderKeys.Contains(effectiveProviderKey)
+            || !_providers.TryGetValue(effectiveProviderKey, out var provider)) {
+            throw new ArgumentException(
+                $"Der Zahlungsanbieter '{effectiveProviderKey}' ist nicht verfügbar.",
+                nameof(providerKey));
+        }
+
+        return ToDescriptor(
+            provider,
+            provider.Key.Equals(_activeProvider.Key, StringComparison.OrdinalIgnoreCase),
+            true);
+    }
+
+    public Task<PaymentChargeResult> ChargeAsync(
+        Guid orderId,
+        long amountInCents,
+        string currency,
+        CancellationToken cancellationToken = default) =>
+        ChargeAsync(
+            _activeProvider.Key,
+            orderId,
+            amountInCents,
+            currency,
+            cancellationToken);
+
     public async Task<PaymentChargeResult> ChargeAsync(
+        string providerKey,
         Guid orderId,
         long amountInCents,
         string currency,
         CancellationToken cancellationToken = default) {
 
+        ArgumentException.ThrowIfNullOrWhiteSpace(providerKey);
         ArgumentOutOfRangeException.ThrowIfEqual(orderId, Guid.Empty);
         ArgumentOutOfRangeException.ThrowIfLessThan(amountInCents, 1);
         ArgumentException.ThrowIfNullOrWhiteSpace(currency);
 
+        var providerDescriptor = GetProvider(providerKey);
+        var provider = _providers[providerDescriptor.Key];
+
         var result = await ExecuteWithTimeoutAsync(
-            _activeProvider,
+            provider,
             "charge",
-            providerCancellation => _activeProvider.ChargeAsync(
+            providerCancellation => provider.ChargeAsync(
                 orderId,
                 amountInCents,
                 currency,
@@ -97,7 +151,7 @@ public sealed class PaymentFacade : IPaymentFacade {
             cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(result.TransactionId)) {
-            _transactionProviders[result.TransactionId] = _activeProvider.Key;
+            _transactionProviders[result.TransactionId] = provider.Key;
         }
 
         return result;
@@ -203,6 +257,7 @@ public sealed class PaymentFacade : IPaymentFacade {
 
     private static PaymentProviderDescriptor ToDescriptor(
         IPaymentProvider provider,
-        bool isActive) =>
-        new(provider.Key, provider.Name, provider.IsTestMode, isActive);
+        bool isActive,
+        bool isEnabled) =>
+        new(provider.Key, provider.Name, provider.IsTestMode, isActive, isEnabled);
 }

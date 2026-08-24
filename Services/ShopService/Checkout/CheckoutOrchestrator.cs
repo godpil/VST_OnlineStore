@@ -32,6 +32,7 @@ public sealed class CheckoutOrchestrator(
         ArgumentOutOfRangeException.ThrowIfEqual(orderId, Guid.Empty);
 
         var customerEmail = request.CustomerEmail?.Trim();
+        var paymentProviderKey = request.PaymentProviderKey?.Trim();
         var auditState = new OrderAuditState(
             orderId,
             request.Items ?? [],
@@ -41,6 +42,7 @@ public sealed class CheckoutOrchestrator(
             return await CheckoutCoreAsync(
                 request,
                 customerEmail,
+                paymentProviderKey,
                 auditState,
                 cancellationToken);
         }
@@ -84,6 +86,7 @@ public sealed class CheckoutOrchestrator(
     private async Task<CheckoutOutcome> CheckoutCoreAsync(
         CheckoutRequest request,
         string? customerEmail,
+        string? paymentProviderKey,
         OrderAuditState auditState,
         CancellationToken cancellationToken) {
 
@@ -97,7 +100,8 @@ public sealed class CheckoutOrchestrator(
 
         var validation = ValidateAndGroup(
             request.Items,
-            customerEmail);
+            customerEmail,
+            paymentProviderKey);
         if (!validation.Success) {
             auditState.Phase = "ORDER_VALIDATION_FAILED";
             auditState.FailureReason = validation.Message;
@@ -259,12 +263,13 @@ public sealed class CheckoutOrchestrator(
                 deadline: DateTime.UtcNow.Add(_timeouts.CatalogQuery),
                 cancellationToken: cancellationToken);
             selectedPaymentProvider = availableProviders.Providers.SingleOrDefault(provider =>
-                provider.IsActive);
+                provider.IsEnabled
+                && provider.Key.Equals(paymentProviderKey, StringComparison.OrdinalIgnoreCase));
 
             if (selectedPaymentProvider is null) {
                 auditState.Phase = "PAYMENT_PROVIDER_CONFIGURATION_INVALID";
                 auditState.FailureReason =
-                    "Der zentral konfigurierte Zahlungsanbieter ist nicht verfügbar.";
+                    "Der gewählte Zahlungsanbieter ist nicht verfügbar.";
                 auditState.Message = auditState.FailureReason;
                 await RecordAuditAsync(
                     AuditEventType.PAYMENT,
@@ -278,7 +283,8 @@ public sealed class CheckoutOrchestrator(
                     auditState,
                     cancellationToken);
                 logger.Warn(
-                    "Checkout rejected an invalid active payment provider configuration.");
+                    "Checkout rejected an unavailable payment provider.",
+                    new { requestedProviderKey = paymentProviderKey });
                 return await CompleteWithFailureAsync(
                     auditState,
                     StatusCodes.Status422UnprocessableEntity,
@@ -345,7 +351,8 @@ public sealed class CheckoutOrchestrator(
                 Currency = "EUR",
                 PaymentMethod = "test",
                 Reference = reference,
-                CustomerEmail = customerEmail
+                CustomerEmail = customerEmail,
+                ProviderKey = selectedPaymentProvider.Key
             };
             paymentRequest.InvoiceItems.AddRange(quantities.Select(item => {
                 var product = products[item.Key];
@@ -910,7 +917,8 @@ public sealed class CheckoutOrchestrator(
 
     private static ValidationResult ValidateAndGroup(
         IReadOnlyList<CheckoutItemRequest>? items,
-        string? customerEmail) {
+        string? customerEmail,
+        string? paymentProviderKey) {
 
         if (items is null || items.Count == 0) {
             return new ValidationResult(false, "Der Warenkorb ist leer.", null);
@@ -920,6 +928,13 @@ public sealed class CheckoutOrchestrator(
             return new ValidationResult(
                 false,
                 "Bitte geben Sie eine gültige E-Mail-Adresse für die Rechnung an.",
+                null);
+        }
+
+        if (string.IsNullOrWhiteSpace(paymentProviderKey)) {
+            return new ValidationResult(
+                false,
+                "Bitte wählen Sie einen Zahlungsanbieter aus.",
                 null);
         }
 

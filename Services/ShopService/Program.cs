@@ -146,7 +146,8 @@ public class Program {
                             provider.Key,
                             provider.Name,
                             provider.IsTestMode,
-                            provider.IsActive)).ToArray());
+                            provider.IsActive,
+                            provider.IsEnabled)).ToArray());
                 }
                 catch (RpcException exception)
                     when (!IsRequestCancellation(exception, cancellationToken)) {
@@ -161,8 +162,8 @@ public class Program {
             .WithTags("Payment providers")
             .WithSummary("Zahlungsanbieter abrufen")
             .WithDescription(
-                "Liefert die registrierten Zahlungsanbieter und kennzeichnet den " +
-                "zentral konfigurierten aktiven Anbieter.")
+                "Liefert alle registrierten Zahlungsanbieter und kennzeichnet, " +
+                "welche davon laut Konfiguration für neue Bestellungen verfügbar sind.")
             .Produces<PaymentProviderResponse[]>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
@@ -227,7 +228,8 @@ public class Program {
             .WithTags("Orders")
             .WithSummary("Bestellung anlegen")
             .WithDescription(
-                "Validiert den Warenkorb, reserviert den Bestand und führt die Zahlung aus. " +
+                "Validiert Warenkorb und gewählten Zahlungsanbieter, reserviert den Bestand " +
+                "und führt die Zahlung aus. " +
                 "Die zurückgegebene orderId entspricht der Correlation-ID des Vorgangs.")
             .Accepts<CheckoutRequest>("application/json")
             .Produces<CheckoutResponse>(StatusCodes.Status201Created)

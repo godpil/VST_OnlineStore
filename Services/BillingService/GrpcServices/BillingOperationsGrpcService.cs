@@ -21,9 +21,41 @@ public sealed class BillingOperationsGrpcService(
         PaymentRequest request,
         ServerCallContext context) {
 
-        var paymentProvider = paymentFacade.ActiveProvider;
+        PaymentProviderDescriptor paymentProvider;
+        try {
+            paymentProvider = paymentFacade.GetProvider(request.ProviderKey);
+        }
+        catch (ArgumentException exception) {
+            const string message = "Der gewählte Zahlungsanbieter ist nicht verfügbar.";
+            logger.Warn(
+                "Payment request selected an unavailable provider.",
+                new {
+                    requestedProviderKey = request.ProviderKey,
+                    request.OrderId,
+                    request.Reference
+                },
+                exception);
+            await audit.PublishAsync(
+                AuditEventType.PAYMENT,
+                "BillingService",
+                new {
+                    phase = "PAYMENT_PROVIDER_UNAVAILABLE",
+                    request.OrderId,
+                    requestedProviderKey = request.ProviderKey,
+                    success = false,
+                    message
+                },
+                "BillingService",
+                AuditStatusCode.FAILURE,
+                cancellationToken: context.CancellationToken);
+            return new PaymentResponse {
+                Success = false,
+                Provider = request.ProviderKey,
+                Message = message
+            };
+        }
         logger.Info(
-            "Configured payment provider selected.",
+            "Payment provider selected for request.",
             new {
                 providerKey = paymentProvider.Key,
                 providerName = paymentProvider.Name,
@@ -69,6 +101,7 @@ public sealed class BillingOperationsGrpcService(
         PaymentChargeResult result;
         try {
             result = await paymentFacade.ChargeAsync(
+                paymentProvider.Key,
                 orderId,
                 request.AmountInCents,
                 request.Currency,
@@ -297,7 +330,8 @@ public sealed class BillingOperationsGrpcService(
                 Key = provider.Key,
                 Name = provider.Name,
                 IsTestMode = provider.IsTestMode,
-                IsActive = provider.IsActive
+                IsActive = provider.IsActive,
+                IsEnabled = provider.IsEnabled
             }));
 
         logger.Debug(
@@ -331,6 +365,7 @@ public sealed class BillingOperationsGrpcService(
             request.Currency,
             paymentMethodSupplied = !string.IsNullOrWhiteSpace(request.PaymentMethod),
             request.Reference,
+            requestedProviderKey = request.ProviderKey,
             providerKey = provider.Key,
             provider = provider.Name,
             provider.IsTestMode,

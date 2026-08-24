@@ -20,6 +20,22 @@ namespace ShopService.IntegrationTests;
 
 public sealed class CheckoutIntegrationTests {
     [Fact]
+    public async Task OpenApiVerwendetRelativeProxyServerAdresse() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.Success);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        using var response = await client.GetAsync("/openapi/v1.json");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = JsonDocument.Parse(
+            await response.Content.ReadAsStreamAsync());
+        var servers = document.RootElement.GetProperty("servers");
+        Assert.Equal(JsonValueKind.Array, servers.ValueKind);
+        Assert.Equal("/", servers[0].GetProperty("url").GetString());
+    }
+
+    [Fact]
     public async Task HappyPath_ErzeugtErfolgreicheBestellungMitRechnung() {
         var scenario = new CheckoutScenario(CheckoutScenarioMode.Success);
         using var application = new ShopApplicationFactory(scenario);

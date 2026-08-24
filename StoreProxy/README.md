@@ -21,6 +21,11 @@ Service außer dem ShopService.
 - Swagger UI: `/swagger`
 - Weiterleitungsziel: ShopService unter `http://localhost:6682`
 
+Das OpenAPI-Dokument verwendet bewusst die relative Serveradresse `/`.
+Dadurch sendet die Swagger-UI auch ihre interaktiven `Try it out`-Aufrufe
+immer über den öffentlichen StoreProxy und nicht direkt an den internen
+ShopService-Port.
+
 Die freigegebenen Routen, Timeouts, Rate-Limit-Policies und Health Checks stehen
 in `StoreProxy/appsettings.json`.
 

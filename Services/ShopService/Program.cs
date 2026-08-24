@@ -24,6 +24,14 @@ public class Program {
         builder.Services.AddVstProblemDetails();
         builder.Services.AddOpenApi(options => {
             options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_1;
+            options.AddDocumentTransformer((document, _, _) => {
+                // Die Swagger-UI wird am öffentlichen StoreProxy ausgeliefert.
+                // Eine relative Server-URL hält sämtliche "Try it out"-Aufrufe
+                // auf genau diesem Ursprung und verhindert direkte Browser-
+                // Zugriffe auf den internen ShopService-Port.
+                document.Servers = [new OpenApiServer { Url = "/" }];
+                return Task.CompletedTask;
+            });
         });
         builder.Services.AddRabbitMqAuditPublishing(
             builder.Configuration,

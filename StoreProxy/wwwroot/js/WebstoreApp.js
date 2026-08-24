@@ -4,7 +4,7 @@ const storeState = {
     products: [],
     cart: new Map(),
     paymentProviders: [],
-    activePaymentProvider: null,
+    selectedPaymentProviderKey: null,
     customerEmail: "",
     isCheckingOut: false,
     readinessKnown: false,
@@ -161,15 +161,19 @@ async function loadPaymentProviders() {
     try {
         const providers = await StoreAPI.getPaymentProviders();
         storeState.paymentProviders = Array.isArray(providers) ? providers : [];
-        storeState.activePaymentProvider =
-            storeState.paymentProviders.find(provider => provider.isActive === true) ?? null;
+        const selectionStillAvailable = storeState.paymentProviders.some(provider =>
+            provider.isEnabled === true
+            && provider.key === storeState.selectedPaymentProviderKey);
+        if (!selectionStillAvailable) {
+            storeState.selectedPaymentProviderKey = null;
+        }
         renderPaymentProviders();
     }
     catch (error) {
         console.error("Fehler beim Laden der Zahlungsanbieter:", error);
         handleOperationalRequestFailure(error);
         storeState.paymentProviders = [];
-        storeState.activePaymentProvider = null;
+        storeState.selectedPaymentProviderKey = null;
         showPaymentProviderError("Zahlungsanbieter konnten nicht geladen werden.");
     }
 
@@ -193,21 +197,17 @@ function renderPaymentProviders() {
 
     for (const provider of storeState.paymentProviders) {
         cardsContainer.appendChild(createPaymentProviderCard(provider));
-    }
-
-    if (storeState.activePaymentProvider) {
         optionsContainer.appendChild(
-            createActivePaymentProviderDisplay(storeState.activePaymentProvider));
-    }
-    else {
-        optionsContainer.textContent =
-            "Der aktive Zahlungsanbieter ist nicht korrekt konfiguriert.";
+            createPaymentProviderOption(provider));
     }
 }
 
 function createPaymentProviderCard(provider) {
     const card = document.createElement("article");
     card.className = "payment-provider-card";
+    if (provider.isEnabled !== true) {
+        card.classList.add("is-disabled");
+    }
 
     const heading = document.createElement("div");
     heading.className = "payment-provider-heading";
@@ -229,30 +229,37 @@ function createPaymentProviderCard(provider) {
 
     const status = document.createElement("span");
     status.className = "provider-status";
-    status.textContent = provider.isActive
-        ? "Aktiv konfiguriert"
-        : provider.isTestMode ? "Testadapter" : "Verfügbar";
+    status.textContent = provider.isEnabled === true ? "Verfügbar" : "Deaktiviert";
+    if (provider.isEnabled !== true) {
+        status.classList.add("is-disabled");
+    }
 
     const description = document.createElement("p");
-    description.textContent = provider.isTestMode
-        ? provider.isActive
-            ? "Dieser Testadapter wird zentral für alle Zahlungen verwendet."
-            : "Registrierter Testadapter; derzeit nicht aktiv."
-        : provider.isActive
-            ? "Dieser Zahlungsanbieter wird zentral für den Checkout verwendet."
-            : "Registrierter Adapter; derzeit nicht aktiv.";
+    description.textContent = provider.isEnabled === true
+        ? "Dieser Anbieter kann im Warenkorb für die Bestellung gewählt werden."
+        : "Dieser Anbieter ist laut Konfiguration für neue Bestellungen deaktiviert.";
 
     heading.append(symbol, titleContainer, status);
     card.append(heading, description);
     return card;
 }
 
-function createActivePaymentProviderDisplay(provider) {
+function createPaymentProviderOption(provider) {
     const label = document.createElement("div");
-    label.className = "payment-provider-option active-payment-provider";
+    label.className = "payment-provider-option";
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "payment-provider";
+    input.value = provider.key;
+    input.checked = storeState.selectedPaymentProviderKey === provider.key;
+    input.disabled = provider.isEnabled !== true || storeState.isCheckingOut;
+    input.addEventListener("change", () => {
+        storeState.selectedPaymentProviderKey = provider.key;
+        renderCart();
+    });
     const text = document.createElement("span");
-    text.textContent = `${provider.name} · zentral konfiguriert`;
-    label.append(text);
+    text.textContent = provider.name;
+    label.append(input, text);
     return label;
 }
 
@@ -358,7 +365,9 @@ function renderCart() {
     countElement.textContent = String(itemCount);
     countElement.setAttribute("aria-label", `${itemCount} Artikel`);
     checkoutButton.disabled = itemCount === 0 || storeState.isCheckingOut;
-    checkoutButton.disabled ||= storeState.activePaymentProvider === null;
+    checkoutButton.disabled ||= !storeState.paymentProviders.some(provider =>
+        provider.isEnabled === true
+        && provider.key === storeState.selectedPaymentProviderKey);
     checkoutButton.disabled ||= !storeState.readinessKnown || !storeState.isOperational;
     const customerEmailInput = document.getElementById("customer-email");
     checkoutButton.disabled ||= !customerEmailInput?.checkValidity();
@@ -435,6 +444,13 @@ async function checkoutCart() {
     if (!customerEmailInput?.reportValidity()) {
         return;
     }
+    const selectedPaymentProvider = storeState.paymentProviders.find(provider =>
+        provider.isEnabled === true
+        && provider.key === storeState.selectedPaymentProviderKey);
+    if (!selectedPaymentProvider) {
+        showCartMessage("Bitte wählen Sie PayPal oder Stripe als Zahlungsanbieter aus.", "error");
+        return;
+    }
 
     // Das Fenster muss noch innerhalb der direkten Benutzeraktion geöffnet
     // werden, sonst blockieren Browser es häufig als Popup.
@@ -456,7 +472,8 @@ async function checkoutCart() {
         }));
         const result = await StoreAPI.createOrder(
             items,
-            storeState.customerEmail);
+            storeState.customerEmail,
+            selectedPaymentProvider.key);
 
         storeState.cart.clear();
         await loadFeaturedProducts();

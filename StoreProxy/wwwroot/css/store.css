@@ -349,6 +349,18 @@ h2 {
     box-shadow: 0 8px 20px rgba(45, 33, 26, 0.08);
 }
 
+.payment-provider-card.is-disabled {
+    color: #756f69;
+    background: #efedea;
+    box-shadow: none;
+    filter: grayscale(1);
+    opacity: 0.7;
+}
+
+.payment-provider-card.is-disabled .provider-symbol {
+    background: #8d8883;
+}
+
 .payment-provider-list {
     display: grid;
     gap: 14px;
@@ -401,6 +413,11 @@ h2 {
     background: #e7f2e8;
     font-size: 12px;
     font-weight: 750;
+}
+
+.provider-status.is-disabled {
+    color: #655f59;
+    background: #dedbd7;
 }
 
 .loading {
@@ -617,8 +634,11 @@ footer {
 }
 
 .payment-provider-option:has(input:disabled) {
-    cursor: wait;
-    opacity: 0.68;
+    color: #77716b;
+    background: #efedea;
+    cursor: not-allowed;
+    filter: grayscale(1);
+    opacity: 0.62;
 }
 
 .payment-provider-option input {

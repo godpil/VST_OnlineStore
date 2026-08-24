@@ -76,12 +76,15 @@ const StoreAPI = (() => {
         });
     }
 
-    async function createOrder(items, customerEmail) {
+    async function createOrder(items, customerEmail, paymentProviderKey) {
         if (!Array.isArray(items) || items.length === 0) {
             throw new Error("Der Warenkorb ist leer.");
         }
         if (typeof customerEmail !== "string" || customerEmail.trim().length === 0) {
             throw new Error("Bitte geben Sie eine E-Mail-Adresse für die Rechnung an.");
+        }
+        if (typeof paymentProviderKey !== "string" || paymentProviderKey.trim().length === 0) {
+            throw new Error("Bitte wählen Sie einen Zahlungsanbieter aus.");
         }
 
         return await request("/orders", {
@@ -90,7 +93,8 @@ const StoreAPI = (() => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 items,
-                customerEmail: customerEmail.trim()
+                customerEmail: customerEmail.trim(),
+                paymentProviderKey: paymentProviderKey.trim()
             })
         });
     }

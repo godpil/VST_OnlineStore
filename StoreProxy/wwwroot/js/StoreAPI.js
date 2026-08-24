@@ -76,12 +76,9 @@ const StoreAPI = (() => {
         });
     }
 
-    async function createOrder(items, paymentProvider, customerEmail) {
+    async function createOrder(items, customerEmail) {
         if (!Array.isArray(items) || items.length === 0) {
             throw new Error("Der Warenkorb ist leer.");
-        }
-        if (typeof paymentProvider !== "string" || paymentProvider.trim().length === 0) {
-            throw new Error("Bitte wählen Sie einen Zahlungsanbieter aus.");
         }
         if (typeof customerEmail !== "string" || customerEmail.trim().length === 0) {
             throw new Error("Bitte geben Sie eine E-Mail-Adresse für die Rechnung an.");
@@ -93,7 +90,6 @@ const StoreAPI = (() => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 items,
-                paymentProvider,
                 customerEmail: customerEmail.trim()
             })
         });

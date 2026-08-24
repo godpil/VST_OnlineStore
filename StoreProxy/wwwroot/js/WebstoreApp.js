@@ -4,7 +4,7 @@ const storeState = {
     products: [],
     cart: new Map(),
     paymentProviders: [],
-    selectedPaymentProvider: null,
+    activePaymentProvider: null,
     customerEmail: "",
     isCheckingOut: false,
     readinessKnown: false,
@@ -161,21 +161,15 @@ async function loadPaymentProviders() {
     try {
         const providers = await StoreAPI.getPaymentProviders();
         storeState.paymentProviders = Array.isArray(providers) ? providers : [];
-        const selectedProviderStillExists = storeState.paymentProviders.some(provider =>
-            provider.key === storeState.selectedPaymentProvider);
-        if (!selectedProviderStillExists) {
-            storeState.selectedPaymentProvider =
-                storeState.paymentProviders.find(provider => provider.key === "demo")?.key
-                ?? storeState.paymentProviders[0]?.key
-                ?? null;
-        }
+        storeState.activePaymentProvider =
+            storeState.paymentProviders.find(provider => provider.isActive === true) ?? null;
         renderPaymentProviders();
     }
     catch (error) {
         console.error("Fehler beim Laden der Zahlungsanbieter:", error);
         handleOperationalRequestFailure(error);
         storeState.paymentProviders = [];
-        storeState.selectedPaymentProvider = null;
+        storeState.activePaymentProvider = null;
         showPaymentProviderError("Zahlungsanbieter konnten nicht geladen werden.");
     }
 
@@ -199,7 +193,15 @@ function renderPaymentProviders() {
 
     for (const provider of storeState.paymentProviders) {
         cardsContainer.appendChild(createPaymentProviderCard(provider));
-        optionsContainer.appendChild(createPaymentProviderOption(provider));
+    }
+
+    if (storeState.activePaymentProvider) {
+        optionsContainer.appendChild(
+            createActivePaymentProviderDisplay(storeState.activePaymentProvider));
+    }
+    else {
+        optionsContainer.textContent =
+            "Der aktive Zahlungsanbieter ist nicht korrekt konfiguriert.";
     }
 }
 
@@ -227,39 +229,30 @@ function createPaymentProviderCard(provider) {
 
     const status = document.createElement("span");
     status.className = "provider-status";
-    status.textContent = provider.isTestMode ? "Testbetrieb" : "Verfügbar";
+    status.textContent = provider.isActive
+        ? "Aktiv konfiguriert"
+        : provider.isTestMode ? "Testadapter" : "Verfügbar";
 
     const description = document.createElement("p");
     description.textContent = provider.isTestMode
-        ? "Sicherer Testadapter ohne echte Geldbewegung."
-        : "Dieser Zahlungsanbieter ist für den Checkout verfügbar.";
+        ? provider.isActive
+            ? "Dieser Testadapter wird zentral für alle Zahlungen verwendet."
+            : "Registrierter Testadapter; derzeit nicht aktiv."
+        : provider.isActive
+            ? "Dieser Zahlungsanbieter wird zentral für den Checkout verwendet."
+            : "Registrierter Adapter; derzeit nicht aktiv.";
 
     heading.append(symbol, titleContainer, status);
     card.append(heading, description);
     return card;
 }
 
-function createPaymentProviderOption(provider) {
-    const label = document.createElement("label");
-    label.className = "payment-provider-option";
-
-    const input = document.createElement("input");
-    input.type = "radio";
-    input.name = "payment-provider";
-    input.value = provider.key;
-    input.checked = provider.key === storeState.selectedPaymentProvider;
-    input.disabled = storeState.isCheckingOut || !storeState.isOperational;
-    input.addEventListener("change", () => {
-        if (input.checked) {
-            storeState.selectedPaymentProvider = provider.key;
-            showCartMessage(`${provider.name} wurde ausgewählt.`, "");
-            renderCart();
-        }
-    });
-
+function createActivePaymentProviderDisplay(provider) {
+    const label = document.createElement("div");
+    label.className = "payment-provider-option active-payment-provider";
     const text = document.createElement("span");
-    text.textContent = provider.name;
-    label.append(input, text);
+    text.textContent = `${provider.name} · zentral konfiguriert`;
+    label.append(text);
     return label;
 }
 
@@ -365,16 +358,13 @@ function renderCart() {
     countElement.textContent = String(itemCount);
     countElement.setAttribute("aria-label", `${itemCount} Artikel`);
     checkoutButton.disabled = itemCount === 0 || storeState.isCheckingOut;
-    checkoutButton.disabled ||= storeState.selectedPaymentProvider === null;
+    checkoutButton.disabled ||= storeState.activePaymentProvider === null;
     checkoutButton.disabled ||= !storeState.readinessKnown || !storeState.isOperational;
     const customerEmailInput = document.getElementById("customer-email");
     checkoutButton.disabled ||= !customerEmailInput?.checkValidity();
     checkoutButton.textContent = storeState.isCheckingOut
         ? "Zahlung läuft..."
         : storeState.isOperational ? "Bezahlen" : "Shop nicht verfügbar";
-    for (const option of document.querySelectorAll('input[name="payment-provider"]')) {
-        option.disabled = storeState.isCheckingOut || !storeState.isOperational;
-    }
 }
 
 function createCartItem(product, quantity) {
@@ -466,7 +456,6 @@ async function checkoutCart() {
         }));
         const result = await StoreAPI.createOrder(
             items,
-            storeState.selectedPaymentProvider,
             storeState.customerEmail);
 
         storeState.cart.clear();

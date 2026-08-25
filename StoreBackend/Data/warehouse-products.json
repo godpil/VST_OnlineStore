@@ -4,7 +4,7 @@
     "name": "Ahorn-Schneidebrett",
     "price": 34.50,
     "image": "",
-    "availableQuantity": 10
+    "availableQuantity": 9
   },
   {
     "id": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
@@ -46,7 +46,7 @@
     "name": "Nussbaumleiste",
     "price": 18.50,
     "image": "",
-    "availableQuantity": 8
+    "availableQuantity": 5
   },
   {
     "id": "b2e9d3d1-b3b9-4ef1-9fe1-46fdb08371b2",

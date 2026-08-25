@@ -16,7 +16,8 @@ public sealed record PaymentSucceededEvent(
     string Currency,
     string PaymentProvider,
     string TransactionId,
-    IReadOnlyList<PaymentSucceededLineItem> Items);
+    IReadOnlyList<PaymentSucceededLineItem> Items,
+    string? PresentationScenario = null);
 
 public sealed record PaymentSucceededLineItem(
     string ProductId,

@@ -34,6 +34,8 @@ public class Program {
                 CreateFixedWindowPartition(context, permitLimit: 120));
             options.AddPolicy("payment-providers", context =>
                 CreateFixedWindowPartition(context, permitLimit: 120));
+            options.AddPolicy("presentation-scenarios", context =>
+                CreateFixedWindowPartition(context, permitLimit: 120));
             options.AddPolicy("orders", context =>
                 CreateFixedWindowPartition(context, permitLimit: 10));
             options.AddPolicy("service-statuses", context =>

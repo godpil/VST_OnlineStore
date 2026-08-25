@@ -34,6 +34,12 @@ Anbieter vorausgewählt. Erst nach einer bewussten Auswahl wird
 Checkout wird unverändert als `201 Created` samt Rechnungs-URL an den Browser
 zurückgegeben.
 
+Wird der Stack mit `-PresentationMode` gestartet, zeigt der Warenkorb zusätzlich
+vier pro Bestellung auswählbare Fehlerszenarien. Die Website überträgt nur den
+Szenarioschlüssel; Fault Injection und SAGA bleiben vollständig serverseitig.
+Fachliche Fehler zeigen terminalen Bestellstatus und Correlation-ID, ohne den
+gesamten Shop fälschlich als nicht erreichbar zu markieren.
+
 Die freigegebenen Routen, Timeouts, Rate-Limit-Policies und Health Checks stehen
 in `StoreProxy/appsettings.json`.
 

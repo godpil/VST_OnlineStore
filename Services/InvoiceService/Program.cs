@@ -10,6 +10,7 @@ using Microsoft.Extensions.Options;
 using VstOnlineStore.Messaging;
 using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
+using VstOnlineStore.Presentation;
 
 QuestPDF.Settings.License = LicenseType.Community;
 
@@ -18,6 +19,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddGrpc();
 builder.Services.Configure<RabbitMqInvoiceOptions>(
     builder.Configuration.GetSection(RabbitMqInvoiceOptions.SectionName));
+builder.Services.Configure<PresentationModeOptions>(
+    builder.Configuration.GetSection(PresentationModeOptions.SectionName));
+builder.Services
+    .AddOptions<InvoiceRetryOptions>()
+    .Bind(builder.Configuration.GetSection(InvoiceRetryOptions.SectionName))
+    .Validate(options => options.IsValid(), "Invoice-Retry benötigt mindestens drei gültige Versuche.")
+    .ValidateOnStart();
 builder.Services.Configure<InvoiceEmailOptions>(
     builder.Configuration.GetSection(InvoiceEmailOptions.SectionName));
 builder.Services.AddVstOpenTelemetry(

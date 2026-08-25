@@ -28,6 +28,12 @@ ShopService stattdessen mit `ReleaseCart`. Der StoreBackend persistiert diese
 Operationen so, dass Wiederholungen mit derselben Reservierungs-ID idempotent
 bleiben.
 
+Im ausdrücklich aktivierten `PresentationMode` kann eine Bestellung über das
+Feld `presentation_scenario` entweder bei `ReserveCart` als nicht lieferbar oder
+bei `CommitCart` als fehlgeschlagen markiert werden. `ReleaseCart` bleibt dabei
+voll funktionsfähig, damit die SAGA ihre Reservierung tatsächlich kompensiert.
+Jede Lager- und Freigabeoperation erzeugt einen eigenen Audit-Snapshot.
+
 ## Voraussetzungen
 
 - .NET 10 SDK

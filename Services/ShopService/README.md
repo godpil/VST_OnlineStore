@@ -15,6 +15,7 @@ angesprochen.
 - interne Adresse: `http://localhost:6682`
 - `GET /api/products?featured=true`
 - `GET /api/payment-providers`
+- `GET /api/presentation-scenarios`
 - `POST /api/orders`
 - `GET /api/service-statuses`
 - `GET /api/order-audits/{correlationId}/snapshots`
@@ -50,9 +51,17 @@ Bei einer abgelehnten oder fehlgeschlagenen Zahlung wird `ReleaseCart`
 aufgerufen. Konnte das Rechnungsevent nach einer erfolgreichen Zahlung nicht
 veröffentlicht werden, versucht die SAGA `RefundPayment` und anschließend
 `ReleaseCart`. Für einen vorübergehend nicht erreichbaren Lager-Commit erfolgt
-genau ein idempotenter Wiederholungsversuch. Bleiben Kompensation oder Commit
-erfolglos, werden strukturierte Logs und Audit-Snapshots geschrieben und der
-Client erhält je nach Fehlerart HTTP 422, 502, 503 oder 504.
+genau ein idempotenter Wiederholungsversuch. Scheitert der Commit danach oder
+antwortet er fachlich negativ, werden Zahlung und Reservierung kompensiert.
+Jeder Start, Erfolg und Fehler eines Kompensationsschritts wird als eigener
+Audit-Snapshot geschrieben. Der Client erhält neben HTTP 409, 422, 502, 503
+oder 504 den terminalen Bestellstatus `OUT_OF_STOCK`, `PAYMENT_FAILED`,
+`ROLLBACK_COMPLETED` oder `ROLLBACK_FAILED`.
+
+Mit `Start-VSTOnlineStore.ps1 -PresentationMode` liefert
+`GET /api/presentation-scenarios` vier deterministische, pro Bestellung
+auswählbare Fehlerfälle. Ohne diese Startoption ist die Liste leer und eine
+manuell übertragene Szenarioangabe wird abgelehnt.
 
 ## Voraussetzungen
 
@@ -73,6 +82,7 @@ Für den vollständigen Aufrufpfad ist der Gesamtstart die einfachste Variante:
 
 ```powershell
 .\Start-VSTOnlineStore.ps1 -NoBrowser
+.\Start-VSTOnlineStore.ps1 -PresentationMode -NoBrowser
 ```
 
 Ein Einzelstart startet die genannten Abhängigkeiten nicht automatisch:

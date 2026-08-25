@@ -4,6 +4,7 @@ using BillingService.Payments;
 using VstOnlineStore.Messaging;
 using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
+using VstOnlineStore.Presentation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,8 @@ builder.Services
     .ValidateOnStart();
 builder.Services.Configure<RabbitMqInvoiceOptions>(
     builder.Configuration.GetSection(RabbitMqInvoiceOptions.SectionName));
+builder.Services.Configure<PresentationModeOptions>(
+    builder.Configuration.GetSection(PresentationModeOptions.SectionName));
 builder.Services.AddSingleton<IPaymentSucceededEventPublisher,
     RabbitMqPaymentSucceededEventPublisher>();
 builder.Services.AddVstOpenTelemetry(

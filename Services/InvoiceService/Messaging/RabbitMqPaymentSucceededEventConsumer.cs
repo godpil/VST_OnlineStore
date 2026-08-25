@@ -6,11 +6,14 @@ using RabbitMQ.Client.Events;
 using VstOnlineStore.Messaging;
 using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
+using VstOnlineStore.Presentation;
 
 namespace InvoiceService.Messaging;
 
 public sealed class RabbitMqPaymentSucceededEventConsumer(
     IOptions<RabbitMqInvoiceOptions> configuredOptions,
+    IOptions<InvoiceRetryOptions> configuredRetryOptions,
+    IOptions<PresentationModeOptions> configuredPresentationMode,
     InvoiceApplicationService applicationService,
     IAuditEventPublisher auditPublisher,
     IStructuredLogger logger) : BackgroundService {
@@ -21,6 +24,9 @@ public sealed class RabbitMqPaymentSucceededEventConsumer(
     };
 
     private readonly RabbitMqInvoiceOptions _options = configuredOptions.Value;
+    private readonly InvoiceRetryOptions _retryOptions = configuredRetryOptions.Value;
+    private readonly PresentationModeOptions _presentationMode =
+        configuredPresentationMode.Value;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         while (!stoppingToken.IsCancellationRequested) {
@@ -101,9 +107,7 @@ public sealed class RabbitMqPaymentSucceededEventConsumer(
                 JsonOptions) ?? throw new JsonException("Die Rechnungsnachricht ist leer.");
             using var correlationScope = CorrelationId.BeginScope(paymentEvent.CorrelationId);
 
-            await applicationService.ProcessPaymentSucceededAsync(
-                paymentEvent,
-                stoppingToken);
+            await ProcessWithRetryAsync(paymentEvent, stoppingToken);
             await channel.BasicAckAsync(eventArgs.DeliveryTag, false, stoppingToken);
 
             logger.Info(
@@ -168,6 +172,91 @@ public sealed class RabbitMqPaymentSucceededEventConsumer(
                 requeue: false,
                 cancellationToken: CancellationToken.None);
         }
+    }
+
+    private async Task ProcessWithRetryAsync(
+        PaymentSucceededEvent paymentEvent,
+        CancellationToken stoppingToken) {
+
+        Exception? lastFailure = null;
+        for (var attempt = 1; attempt <= _retryOptions.MaxAttempts; attempt++) {
+            try {
+                if (_presentationMode.Enabled && PresentationScenarios.Is(
+                        paymentEvent.PresentationScenario,
+                        PresentationScenarios.InvoiceServiceUnavailable)) {
+                    throw new InvalidOperationException(
+                        "Die Invoice-Verarbeitung ist im Vorführszenario vorübergehend nicht verfügbar.");
+                }
+
+                await applicationService.ProcessPaymentSucceededAsync(
+                    paymentEvent,
+                    stoppingToken);
+                return;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) {
+                throw;
+            }
+            catch (Exception exception) {
+                lastFailure = exception;
+                var retryScheduled = attempt < _retryOptions.MaxAttempts;
+                using var correlationScope = CorrelationId.BeginScope(
+                    paymentEvent.CorrelationId);
+                logger.Warn(
+                    retryScheduled
+                        ? "Invoice processing failed; retry will be attempted."
+                        : "Invoice processing failed; retry attempts are exhausted.",
+                    new {
+                        paymentEvent.EventId,
+                        paymentEvent.InvoiceId,
+                        attempt,
+                        maxAttempts = _retryOptions.MaxAttempts,
+                        retryScheduled,
+                        retryDelayMilliseconds = retryScheduled
+                            ? _retryOptions.DelayMilliseconds
+                            : 0,
+                        presentationScenario = paymentEvent.PresentationScenario,
+                        exceptionType = exception.GetType().FullName,
+                        exceptionMessage = exception.Message
+                    },
+                    exception);
+                await auditPublisher.PublishAsync(
+                    AuditEventType.INVOICE,
+                    "InvoiceService",
+                    new {
+                        phase = retryScheduled
+                            ? "INVOICE_RETRY_SCHEDULED"
+                            : "INVOICE_RETRY_EXHAUSTED",
+                        paymentEvent.EventId,
+                        paymentEvent.InvoiceId,
+                        paymentEvent.OrderReference,
+                        attempt,
+                        maxAttempts = _retryOptions.MaxAttempts,
+                        retryScheduled,
+                        retryDelayMilliseconds = retryScheduled
+                            ? _retryOptions.DelayMilliseconds
+                            : 0,
+                        presentationScenario = paymentEvent.PresentationScenario,
+                        exceptionType = exception.GetType().FullName,
+                        exceptionMessage = exception.Message
+                    },
+                    "InvoiceService",
+                    AuditStatusCode.FAILURE,
+                    paymentEvent.CorrelationId,
+                    CancellationToken.None);
+
+                if (!retryScheduled) {
+                    break;
+                }
+
+                await Task.Delay(
+                    TimeSpan.FromMilliseconds(_retryOptions.DelayMilliseconds),
+                    stoppingToken);
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Die Invoice-Verarbeitung ist nach {_retryOptions.MaxAttempts} Versuchen fehlgeschlagen.",
+            lastFailure);
     }
 
     private async Task DeclareTopologyAsync(

@@ -18,6 +18,16 @@ public sealed record PaymentProviderResponse(
     bool IsActive,
     bool IsEnabled);
 
+public sealed record PresentationModeResponse(
+    bool Enabled,
+    IReadOnlyList<PresentationScenarioResponse> Scenarios);
+
+public sealed record PresentationScenarioResponse(
+    string Key,
+    string Name,
+    string Description,
+    string ExpectedStatus);
+
 public sealed record OrderAuditSnapshotResponse(
     [property: JsonPropertyName("eventID")] Guid EventId,
     [property: JsonPropertyName("correlationID")] Guid CorrelationId,

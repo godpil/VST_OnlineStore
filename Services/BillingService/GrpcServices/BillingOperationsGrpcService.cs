@@ -2,10 +2,12 @@ using System.Net.Mail;
 using BillingService.Messaging;
 using BillingService.Payments;
 using Grpc.Core;
+using Microsoft.Extensions.Options;
 using VstOnlineStore.Contracts.BillingService;
 using VstOnlineStore.Messaging;
 using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
+using VstOnlineStore.Presentation;
 using ContractPaymentStatus = VstOnlineStore.Contracts.BillingService.PaymentTransactionStatus;
 using DomainPaymentStatus = BillingService.Payments.PaymentTransactionStatus;
 
@@ -15,7 +17,12 @@ public sealed class BillingOperationsGrpcService(
     IPaymentFacade paymentFacade,
     IPaymentSucceededEventPublisher invoiceEvents,
     IAuditEventPublisher audit,
-    IStructuredLogger logger) : BillingOperations.BillingOperationsBase {
+    IStructuredLogger logger,
+    IOptions<PresentationModeOptions> configuredPresentationMode)
+    : BillingOperations.BillingOperationsBase {
+
+    private readonly PresentationModeOptions _presentationMode =
+        configuredPresentationMode.Value;
 
     public override async Task<PaymentResponse> ProcessPayment(
         PaymentRequest request,
@@ -99,78 +106,97 @@ public sealed class BillingOperationsGrpcService(
         }
 
         PaymentChargeResult result;
-        try {
-            result = await paymentFacade.ChargeAsync(
-                paymentProvider.Key,
-                orderId,
-                request.AmountInCents,
-                request.Currency,
-                context.CancellationToken);
-        }
-        catch (OperationCanceledException exception)
-            when (context.CancellationToken.IsCancellationRequested) {
-            const string message = "Der Zahlungsvorgang wurde abgebrochen.";
+        if (_presentationMode.Enabled && PresentationScenarios.Is(
+                request.PresentationScenario,
+                PresentationScenarios.PaymentDeclined)) {
+            result = new PaymentChargeResult(
+                false,
+                string.Empty,
+                DomainPaymentStatus.Failed,
+                "Die Zahlung wurde für das Vorführszenario vom Anbieter abgelehnt.");
             logger.Warn(
-                "Payment facade call was cancelled by the client.",
+                "Payment provider declined the presentation scenario charge.",
                 new {
-                    providerKey = paymentProvider.Key,
-                    providerName = paymentProvider.Name,
                     request.OrderId,
                     request.Reference,
-                    request.AmountInCents,
-                    request.Currency,
-                    exceptionType = exception.GetType().FullName,
-                    exceptionMessage = exception.Message
-                },
-                exception);
-            await audit.PublishAsync(
-                AuditEventType.PAYMENT,
-                "BillingService",
-                CreateAuditPayload(
-                    request,
-                    paymentProvider,
-                    false,
-                    null,
-                    message,
-                    "PAYMENT_CANCELLED"),
-                paymentProvider.Name,
-                AuditStatusCode.FAILURE,
-                cancellationToken: CancellationToken.None);
-            throw;
+                    providerKey = paymentProvider.Key,
+                    presentationScenario = request.PresentationScenario
+                });
         }
-        catch (Exception exception) {
-            const string message = "Der Zahlungsanbieter konnte die Zahlung nicht verarbeiten.";
-            logger.Error(
-                "Payment facade call failed.",
-                new {
-                    providerKey = paymentProvider.Key,
-                    providerName = paymentProvider.Name,
-                    request.OrderId,
-                    request.Reference,
+        else {
+            try {
+                result = await paymentFacade.ChargeAsync(
+                    paymentProvider.Key,
+                    orderId,
                     request.AmountInCents,
                     request.Currency,
-                    exceptionType = exception.GetType().FullName,
-                    exceptionMessage = exception.Message
-                },
-                exception);
-            await audit.PublishAsync(
-                AuditEventType.PAYMENT,
-                "BillingService",
-                CreateAuditPayload(
-                    request,
-                    paymentProvider,
-                    false,
-                    null,
-                    message,
-                    "PAYMENT_PROVIDER_ERROR"),
-                paymentProvider.Name,
-                AuditStatusCode.FAILURE,
-                cancellationToken: context.CancellationToken);
-            return new PaymentResponse {
-                Success = false,
-                Provider = paymentProvider.Name,
-                Message = message
-            };
+                    context.CancellationToken);
+            }
+            catch (OperationCanceledException exception)
+                when (context.CancellationToken.IsCancellationRequested) {
+                const string message = "Der Zahlungsvorgang wurde abgebrochen.";
+                logger.Warn(
+                    "Payment facade call was cancelled by the client.",
+                    new {
+                        providerKey = paymentProvider.Key,
+                        providerName = paymentProvider.Name,
+                        request.OrderId,
+                        request.Reference,
+                        request.AmountInCents,
+                        request.Currency,
+                        exceptionType = exception.GetType().FullName,
+                        exceptionMessage = exception.Message
+                    },
+                    exception);
+                await audit.PublishAsync(
+                    AuditEventType.PAYMENT,
+                    "BillingService",
+                    CreateAuditPayload(
+                        request,
+                        paymentProvider,
+                        false,
+                        null,
+                        message,
+                        "PAYMENT_CANCELLED"),
+                    paymentProvider.Name,
+                    AuditStatusCode.FAILURE,
+                    cancellationToken: CancellationToken.None);
+                throw;
+            }
+            catch (Exception exception) {
+                const string message = "Der Zahlungsanbieter konnte die Zahlung nicht verarbeiten.";
+                logger.Error(
+                    "Payment facade call failed.",
+                    new {
+                        providerKey = paymentProvider.Key,
+                        providerName = paymentProvider.Name,
+                        request.OrderId,
+                        request.Reference,
+                        request.AmountInCents,
+                        request.Currency,
+                        exceptionType = exception.GetType().FullName,
+                        exceptionMessage = exception.Message
+                    },
+                    exception);
+                await audit.PublishAsync(
+                    AuditEventType.PAYMENT,
+                    "BillingService",
+                    CreateAuditPayload(
+                        request,
+                        paymentProvider,
+                        false,
+                        null,
+                        message,
+                        "PAYMENT_PROVIDER_ERROR"),
+                    paymentProvider.Name,
+                    AuditStatusCode.FAILURE,
+                    cancellationToken: context.CancellationToken);
+                return new PaymentResponse {
+                    Success = false,
+                    Provider = paymentProvider.Name,
+                    Message = message
+                };
+            }
         }
 
         await audit.PublishAsync(
@@ -206,7 +232,8 @@ public sealed class BillingOperationsGrpcService(
                     item.ProductId,
                     item.Description,
                     item.Quantity,
-                    item.UnitPriceInCents)).ToArray());
+                    item.UnitPriceInCents)).ToArray(),
+                NullIfEmpty(request.PresentationScenario));
             invoiceQueued = await invoiceEvents.PublishAsync(
                 paymentEvent,
                 CancellationToken.None);
@@ -366,6 +393,7 @@ public sealed class BillingOperationsGrpcService(
             paymentMethodSupplied = !string.IsNullOrWhiteSpace(request.PaymentMethod),
             request.Reference,
             requestedProviderKey = request.ProviderKey,
+            presentationScenario = NullIfEmpty(request.PresentationScenario),
             providerKey = provider.Key,
             provider = provider.Name,
             provider.IsTestMode,
@@ -428,4 +456,7 @@ public sealed class BillingOperationsGrpcService(
 
     private static string? GetRecipientDomain(string email) =>
         MailAddress.TryCreate(email, out var address) ? address.Host : null;
+
+    private static string? NullIfEmpty(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
 }

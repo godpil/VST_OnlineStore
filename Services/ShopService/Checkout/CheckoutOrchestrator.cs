@@ -3,6 +3,7 @@ using Grpc.Core;
 using Microsoft.Extensions.Options;
 using ShopService.Orchestration;
 using VstOnlineStore.Observability;
+using VstOnlineStore.Presentation;
 using AuditEventType = VstOnlineStore.Observability.Auditing.AuditEventType;
 using AuditStatusCode = VstOnlineStore.Observability.Auditing.AuditStatusCode;
 using BillingContracts = VstOnlineStore.Contracts.BillingService;
@@ -20,9 +21,12 @@ public sealed class CheckoutOrchestrator(
     BillingContracts.BillingOperations.BillingOperationsClient billing,
     AuditSnapshotRecorder audit,
     IOptions<ShopServiceTimeoutOptions> configuredTimeouts,
+    IOptions<PresentationModeOptions> configuredPresentationMode,
     IStructuredLogger logger) {
 
     private readonly ShopServiceTimeoutOptions _timeouts = configuredTimeouts.Value;
+    private readonly PresentationModeOptions _presentationMode =
+        configuredPresentationMode.Value;
 
     public async Task<CheckoutOutcome> CheckoutAsync(
         CheckoutRequest request,
@@ -33,16 +37,20 @@ public sealed class CheckoutOrchestrator(
 
         var customerEmail = request.CustomerEmail?.Trim();
         var paymentProviderKey = request.PaymentProviderKey?.Trim();
+        var presentationScenario = request.PresentationScenario?.Trim();
         var auditState = new OrderAuditState(
             orderId,
             request.Items ?? [],
-            GetRecipientDomain(customerEmail));
+            GetRecipientDomain(customerEmail)) {
+            PresentationScenario = NullIfEmpty(presentationScenario ?? string.Empty)
+        };
 
         try {
             return await CheckoutCoreAsync(
                 request,
                 customerEmail,
                 paymentProviderKey,
+                presentationScenario,
                 auditState,
                 cancellationToken);
         }
@@ -87,6 +95,7 @@ public sealed class CheckoutOrchestrator(
         CheckoutRequest request,
         string? customerEmail,
         string? paymentProviderKey,
+        string? presentationScenario,
         OrderAuditState auditState,
         CancellationToken cancellationToken) {
 
@@ -101,7 +110,9 @@ public sealed class CheckoutOrchestrator(
         var validation = ValidateAndGroup(
             request.Items,
             customerEmail,
-            paymentProviderKey);
+            paymentProviderKey,
+            presentationScenario,
+            _presentationMode.Enabled);
         if (!validation.Success) {
             auditState.Phase = "ORDER_VALIDATION_FAILED";
             auditState.FailureReason = validation.Message;
@@ -137,7 +148,8 @@ public sealed class CheckoutOrchestrator(
 
         long totalInCents = 0;
         var stockRequest = new WarehouseContracts.CartStockRequest {
-            ReservationId = auditState.OrderId.ToString("D")
+            ReservationId = auditState.OrderId.ToString("D"),
+            PresentationScenario = presentationScenario ?? string.Empty
         };
         stockRequest.Items.AddRange(quantities.Select(item =>
             new WarehouseContracts.CartProductQuantity {
@@ -209,7 +221,8 @@ public sealed class CheckoutOrchestrator(
                 StatusCodes.Status409Conflict,
                 reservation.Message,
                 cancellationToken,
-                totalInCents);
+                totalInCents,
+                "OUT_OF_STOCK");
         }
 
         var products = new Dictionary<Guid, WarehouseContracts.CartProductStock>();
@@ -352,7 +365,8 @@ public sealed class CheckoutOrchestrator(
                 PaymentMethod = "test",
                 Reference = reference,
                 CustomerEmail = customerEmail,
-                ProviderKey = selectedPaymentProvider.Key
+                ProviderKey = selectedPaymentProvider.Key,
+                PresentationScenario = presentationScenario ?? string.Empty
             };
             paymentRequest.InvoiceItems.AddRange(quantities.Select(item => {
                 var product = products[item.Key];
@@ -392,6 +406,7 @@ public sealed class CheckoutOrchestrator(
                 cancellationToken);
 
             if (!payment.Success) {
+                auditState.OrderStatus = "PAYMENT_FAILED";
                 await ReleaseReservationAsync(
                     stockRequest,
                     auditState,
@@ -401,7 +416,8 @@ public sealed class CheckoutOrchestrator(
                     StatusCodes.Status422UnprocessableEntity,
                     payment.Message,
                     cancellationToken,
-                    totalInCents);
+                    totalInCents,
+                    "PAYMENT_FAILED");
             }
 
             if (!payment.InvoiceQueued || string.IsNullOrWhiteSpace(payment.InvoiceId)) {
@@ -421,7 +437,8 @@ public sealed class CheckoutOrchestrator(
                     payment.TransactionId,
                     totalInCents,
                     stockRequest,
-                    auditState);
+                    auditState,
+                    "Das Rechnungsevent konnte nicht dauerhaft in RabbitMQ gespeichert werden.");
                 var message = compensated
                     ? "Die Rechnung konnte nicht eingeplant werden. Zahlung und Reservierung wurden zurückgenommen."
                     : "Die Rechnung konnte nicht eingeplant werden. Die automatische Kompensation ist fehlgeschlagen; " +
@@ -431,7 +448,8 @@ public sealed class CheckoutOrchestrator(
                     StatusCodes.Status503ServiceUnavailable,
                     message,
                     CancellationToken.None,
-                    totalInCents);
+                    totalInCents,
+                    compensated ? "ROLLBACK_COMPLETED" : "ROLLBACK_FAILED");
             }
 
             WarehouseContracts.CartStockResponse commit;
@@ -462,12 +480,25 @@ public sealed class CheckoutOrchestrator(
                     "CommitCart",
                     auditState);
 
+                var compensated = await CompensatePaymentAsync(
+                    payment.TransactionId,
+                    totalInCents,
+                    stockRequest,
+                    auditState,
+                    "Die endgültige Warehouse-Ausbuchung konnte nicht bestätigt werden.");
+                var message = compensated
+                    ? "Die endgültige Lagerbuchung konnte nicht bestätigt werden. " +
+                      "Zahlung und Reservierung wurden zurückgenommen."
+                    : "Die endgültige Lagerbuchung und die automatische Kompensation sind fehlgeschlagen; " +
+                      "der Betreiber wurde informiert.";
+
                 return await CompleteWithFailureAsync(
                     auditState,
                     failure.StatusCode,
-                    $"{auditState.Message} Der Betreiber wurde über den Fehler informiert.",
+                    message,
                     CancellationToken.None,
-                    totalInCents);
+                    totalInCents,
+                    compensated ? "ROLLBACK_COMPLETED" : "ROLLBACK_FAILED");
             }
 
             auditState.StockCommitted = commit.Success;
@@ -498,13 +529,23 @@ public sealed class CheckoutOrchestrator(
                 TryLogError(
                     null,
                     $"Lagerreservierung konnte nicht endgültig ausgebucht werden: {commit.Message}");
+                var compensated = await CompensatePaymentAsync(
+                    payment.TransactionId,
+                    totalInCents,
+                    stockRequest,
+                    auditState,
+                    "Die endgültige Warehouse-Ausbuchung ist fehlgeschlagen.");
+                var message = compensated
+                    ? "Die endgültige Lagerbuchung ist fehlgeschlagen. Zahlung und Reservierung wurden zurückgenommen."
+                    : "Die endgültige Lagerbuchung und die automatische Kompensation sind fehlgeschlagen; " +
+                      "der Betreiber wurde informiert.";
                 return await CompleteWithFailureAsync(
                     auditState,
                     StatusCodes.Status502BadGateway,
-                    "Die Zahlung war erfolgreich, die endgültige Lagerbuchung ist jedoch fehlgeschlagen. " +
-                    "Der Betreiber wurde über den Fehler informiert.",
-                    cancellationToken,
-                    totalInCents);
+                    message,
+                    CancellationToken.None,
+                    totalInCents,
+                    compensated ? "ROLLBACK_COMPLETED" : "ROLLBACK_FAILED");
             }
 
             logger.Info(
@@ -537,6 +578,7 @@ public sealed class CheckoutOrchestrator(
                 new CheckoutResponse(
                     true,
                     auditState.OrderId.ToString("D"),
+                    "COMPLETED",
                     "Vielen Dank! Die Bestellung wurde erfolgreich abgeschlossen.",
                     totalInCents / 100m,
                     "EUR",
@@ -584,11 +626,12 @@ public sealed class CheckoutOrchestrator(
         string transactionId,
         long amountInCents,
         WarehouseContracts.CartStockRequest stockRequest,
-        OrderAuditState auditState) {
+        OrderAuditState auditState,
+        string compensationReason) {
 
         auditState.Phase = "PAYMENT_REFUND_REQUESTED";
         auditState.Message =
-            "Die Zahlung wird wegen des fehlgeschlagenen Rechnungsevents zurückgenommen.";
+            $"Die Zahlung wird zurückgenommen. Grund: {compensationReason}";
         await RecordAuditAsync(
             AuditEventType.PAYMENT,
             "ShopService",
@@ -796,10 +839,11 @@ public sealed class CheckoutOrchestrator(
         int statusCode,
         string message,
         CancellationToken cancellationToken,
-        long totalInCents = 0) {
+        long totalInCents = 0,
+        string orderStatus = "FAILED") {
 
         auditState.Phase = "ORDER_FAILED";
-        auditState.OrderStatus = "FAILED";
+        auditState.OrderStatus = orderStatus;
         auditState.FailureReason ??= message;
         auditState.Message = message;
         await RecordAuditAsync(
@@ -810,7 +854,12 @@ public sealed class CheckoutOrchestrator(
             auditState,
             cancellationToken);
 
-        return Failed(auditState.OrderId, statusCode, message, totalInCents);
+        return Failed(
+            auditState.OrderId,
+            statusCode,
+            message,
+            totalInCents,
+            orderStatus);
     }
 
     private Task RecordAuditAsync(
@@ -918,7 +967,9 @@ public sealed class CheckoutOrchestrator(
     private static ValidationResult ValidateAndGroup(
         IReadOnlyList<CheckoutItemRequest>? items,
         string? customerEmail,
-        string? paymentProviderKey) {
+        string? paymentProviderKey,
+        string? presentationScenario,
+        bool presentationModeEnabled) {
 
         if (items is null || items.Count == 0) {
             return new ValidationResult(false, "Der Warenkorb ist leer.", null);
@@ -935,6 +986,15 @@ public sealed class CheckoutOrchestrator(
             return new ValidationResult(
                 false,
                 "Bitte wählen Sie einen Zahlungsanbieter aus.",
+                null);
+        }
+
+        if (!string.IsNullOrWhiteSpace(presentationScenario) &&
+            (!presentationModeEnabled ||
+             !PresentationScenarios.IsKnown(presentationScenario))) {
+            return new ValidationResult(
+                false,
+                "Das angeforderte Vorführszenario ist nicht aktiviert oder unbekannt.",
                 null);
         }
 
@@ -983,12 +1043,14 @@ public sealed class CheckoutOrchestrator(
         Guid orderId,
         int statusCode,
         string message,
-        long totalInCents = 0) =>
+        long totalInCents = 0,
+        string orderStatus = "FAILED") =>
         new(
             statusCode,
             new CheckoutResponse(
                 false,
                 orderId.ToString("D"),
+                orderStatus,
                 message,
                 totalInCents / 100m,
                 "EUR",
@@ -1035,6 +1097,7 @@ public sealed class CheckoutOrchestrator(
         public string? TransactionId { get; set; }
         public string? InvoiceId { get; set; }
         public bool? InvoiceQueued { get; set; }
+        public string? PresentationScenario { get; set; }
         public bool CustomerEmailSupplied { get; } = customerEmailDomain is not null;
         public string? CustomerEmailDomain { get; } = customerEmailDomain;
         public string? Message { get; set; }

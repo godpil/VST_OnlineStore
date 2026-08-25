@@ -11,6 +11,7 @@ using InvoiceContracts = VstOnlineStore.Contracts.InvoiceService;
 using WarehouseContracts = VstOnlineStore.Contracts.WarehouseService;
 using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
+using VstOnlineStore.Presentation;
 
 namespace ShopService;
 
@@ -41,6 +42,10 @@ public class Program {
             .AddOptions<ShopServiceTimeoutOptions>()
             .Bind(builder.Configuration.GetSection(ShopServiceTimeoutOptions.SectionName))
             .Validate(options => options.IsValid(), "Alle Downstream-Timeouts müssen positiv sein.")
+            .ValidateOnStart();
+        builder.Services
+            .AddOptions<PresentationModeOptions>()
+            .Bind(builder.Configuration.GetSection(PresentationModeOptions.SectionName))
             .ValidateOnStart();
         builder.Services.AddGrpcClient<WarehouseContracts.WarehouseCatalog.WarehouseCatalogClient>(options => {
             options.Address = GetServiceAddress(builder.Configuration, "WarehouseService");
@@ -126,6 +131,45 @@ public class Program {
             .ProducesProblem(StatusCodes.Status502BadGateway)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
             .ProducesProblem(StatusCodes.Status504GatewayTimeout);
+
+        app.MapGet(
+            "/api/presentation-scenarios",
+            (IOptions<PresentationModeOptions> configuredPresentationMode) => {
+                if (!configuredPresentationMode.Value.Enabled) {
+                    return Results.Ok(new PresentationModeResponse(false, []));
+                }
+
+                return Results.Ok(new PresentationModeResponse(
+                    true,
+                    [
+                        new PresentationScenarioResponse(
+                            PresentationScenarios.PaymentDeclined,
+                            "Zahlung abgelehnt",
+                            "Die Lagerreservierung wird storniert.",
+                            "PAYMENT_FAILED"),
+                        new PresentationScenarioResponse(
+                            PresentationScenarios.OutOfStock,
+                            "Lager nicht ausreichend",
+                            "Nach der abgelehnten Reservierung erfolgen keine weiteren Fachaufrufe.",
+                            "OUT_OF_STOCK"),
+                        new PresentationScenarioResponse(
+                            PresentationScenarios.InvoiceServiceUnavailable,
+                            "Invoice-Verarbeitung nicht verfügbar",
+                            "Die Zahlung bleibt bestehen; drei Invoice-Versuche werden auditiert.",
+                            "COMPLETED"),
+                        new PresentationScenarioResponse(
+                            PresentationScenarios.WarehouseCommitFailed,
+                            "Warehouse-Ausbuchung fehlgeschlagen",
+                            "Zahlung und Reservierung werden kompensiert.",
+                            "ROLLBACK_COMPLETED")
+                    ]));
+            })
+            .WithName("ListPresentationScenarios")
+            .WithTags("Presentation")
+            .WithSummary("Vorführbare Fehlerszenarien abrufen")
+            .WithDescription(
+                "Liefert die nur im PresentationMode verfügbaren, pro Bestellung geltenden Fehlerszenarien.")
+            .Produces<PresentationModeResponse>(StatusCodes.Status200OK);
 
         app.MapGet(
             "/api/payment-providers",
@@ -220,6 +264,7 @@ public class Program {
                     statusCode: outcome.StatusCode,
                     extensions: new Dictionary<string, object?> {
                         ["orderId"] = outcome.Response.OrderId,
+                        ["orderStatus"] = outcome.Response.Status,
                         ["total"] = outcome.Response.Total,
                         ["currency"] = outcome.Response.Currency
                     });

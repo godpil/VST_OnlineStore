@@ -31,6 +31,15 @@ Rechnungs-URL kann deshalb noch `404 Not Found` liefern; derselbe Abruf ist nach
 abgeschlossener Verarbeitung erfolgreich. Wiederholte Zustellungen desselben
 Events werden über die Event- und Invoice-ID idempotent behandelt.
 
+Fehler während der Nachrichtenverarbeitung werden gemäß `InvoiceRetry` mit
+mindestens drei Versuchen behandelt. Jeder fehlgeschlagene Versuch erzeugt
+einen Snapshot `INVOICE_RETRY_SCHEDULED` beziehungsweise abschließend
+`INVOICE_RETRY_EXHAUSTED`; danach folgt `INVOICE_PROCESSING_FAILED` und die
+Nachricht gelangt in die Dead-Letter-Queue. Weil die Zahlung vor diesem
+asynchronen Schritt bereits erfolgreich und das Ereignis dauerhaft publiziert
+wurde, wird sie dabei nicht erstattet. Das Vorführszenario
+`invoice-service-unavailable` löst genau diesen Pfad deterministisch aus.
+
 ## Voraussetzungen
 
 - .NET 10 SDK

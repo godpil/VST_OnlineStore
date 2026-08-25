@@ -67,6 +67,12 @@ Neustart verloren. Eine dauerhafte operative Transaktionspersistenz ist nicht
 Teil der derzeitigen Testadapter; die unveränderlichen fachlichen
 Audit-Snapshots werden davon unabhängig weiterhin in PostgreSQL gespeichert.
 
+Im nur über den Gesamtstarter aktivierbaren `PresentationMode` führt das
+Szenario `payment-declined` zu einer deterministischen Ablehnung. Der
+BillingService auditiert diese Anbieterentscheidung; der ShopService gibt die
+Reservierung frei und beendet die Bestellung mit `PAYMENT_FAILED`. Refunds bei
+späteren SAGA-Fehlern laufen weiterhin ausschließlich über die Payment-Fassade.
+
 ## Voraussetzungen
 
 - .NET 10 SDK

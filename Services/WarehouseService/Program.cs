@@ -1,6 +1,7 @@
 using StoreBackend.Contracts;
 using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
+using VstOnlineStore.Presentation;
 using WarehouseService.GrpcServices;
 
 namespace WarehouseService;
@@ -20,6 +21,8 @@ public class Program {
         builder.Services.AddRabbitMqAuditPublishing(
             builder.Configuration,
             "WarehouseService");
+        builder.Services.Configure<PresentationModeOptions>(
+            builder.Configuration.GetSection(PresentationModeOptions.SectionName));
         builder.Services.AddCorrelationIdPropagation();
         builder.Services.AddGrpcClient<WarehouseStorage.WarehouseStorageClient>(options => {
             options.Address = new Uri(backendAddress);

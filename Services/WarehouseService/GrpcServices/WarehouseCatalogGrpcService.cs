@@ -1,8 +1,10 @@
 using Grpc.Core;
+using Microsoft.Extensions.Options;
 using StoreBackend.Contracts;
 using VstOnlineStore.Contracts.WarehouseService;
 using VstOnlineStore.Observability;
 using VstOnlineStore.Observability.Auditing;
+using VstOnlineStore.Presentation;
 
 namespace WarehouseService.GrpcServices;
 
@@ -13,7 +15,12 @@ namespace WarehouseService.GrpcServices;
 public sealed class WarehouseCatalogGrpcService(
     WarehouseStorage.WarehouseStorageClient backend,
     IAuditEventPublisher audit,
-    IStructuredLogger logger) : WarehouseCatalog.WarehouseCatalogBase {
+    IStructuredLogger logger,
+    IOptions<PresentationModeOptions> configuredPresentationMode)
+    : WarehouseCatalog.WarehouseCatalogBase {
+
+    private readonly PresentationModeOptions _presentationMode =
+        configuredPresentationMode.Value;
 
     public override async Task<FeaturedProductsResponse> GetFeaturedProducts(
         FeaturedProductsRequest request,
@@ -93,33 +100,51 @@ public sealed class WarehouseCatalogGrpcService(
         }));
 
         BackendStockChangeResponse backendResponse;
-        try {
-            backendResponse = operation switch {
-                StockOperation.Reserve => await backend.ReserveProductsAsync(
-                    backendRequest,
-                    cancellationToken: cancellationToken),
-                StockOperation.Commit => await backend.CommitProductsAsync(
-                    backendRequest,
-                    cancellationToken: cancellationToken),
-                StockOperation.Release => await backend.ReleaseProductsAsync(
-                    backendRequest,
-                    cancellationToken: cancellationToken),
-                _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null)
+        var presentationFailure = _presentationMode.Enabled
+            ? GetPresentationFailure(request, operation)
+            : null;
+        if (presentationFailure is not null) {
+            backendResponse = new BackendStockChangeResponse {
+                Success = false,
+                Message = presentationFailure
             };
+            logger.Warn(
+                "Warehouse presentation fault injected.",
+                new {
+                    request.ReservationId,
+                    operation = operation.ToString(),
+                    presentationScenario = request.PresentationScenario
+                });
         }
-        catch (Exception exception)
-            when (!IsRequestCancellation(exception, cancellationToken)) {
-            await PublishFailureSnapshotAsync(
-                request,
-                operation,
-                exception,
-                CancellationToken.None);
-            LogBackendFailure(
-                exception,
-                GetBackendOperation(operation),
-                operation,
-                request.ReservationId);
-            throw;
+        else {
+            try {
+                backendResponse = operation switch {
+                    StockOperation.Reserve => await backend.ReserveProductsAsync(
+                        backendRequest,
+                        cancellationToken: cancellationToken),
+                    StockOperation.Commit => await backend.CommitProductsAsync(
+                        backendRequest,
+                        cancellationToken: cancellationToken),
+                    StockOperation.Release => await backend.ReleaseProductsAsync(
+                        backendRequest,
+                        cancellationToken: cancellationToken),
+                    _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null)
+                };
+            }
+            catch (Exception exception)
+                when (!IsRequestCancellation(exception, cancellationToken)) {
+                await PublishFailureSnapshotAsync(
+                    request,
+                    operation,
+                    exception,
+                    CancellationToken.None);
+                LogBackendFailure(
+                    exception,
+                    GetBackendOperation(operation),
+                    operation,
+                    request.ReservationId);
+                throw;
+            }
         }
 
         var response = new CartStockResponse {
@@ -141,6 +166,7 @@ public sealed class WarehouseCatalogGrpcService(
                 phase = GetPhase(operation, response.Success),
                 operation = operation.ToString().ToUpperInvariant(),
                 reservationId = request.ReservationId,
+                presentationScenario = NullIfEmpty(request.PresentationScenario),
                 success = response.Success,
                 response.Message,
                 items = request.Items.Select(item => new {
@@ -172,6 +198,7 @@ public sealed class WarehouseCatalogGrpcService(
                 phase = GetBackendFailurePhase(operation),
                 operation = operation.ToString().ToUpperInvariant(),
                 reservationId = request.ReservationId,
+                presentationScenario = NullIfEmpty(request.PresentationScenario),
                 success = false,
                 downstreamService = "StoreBackend",
                 grpcStatus = (exception as RpcException)?.StatusCode.ToString(),
@@ -242,6 +269,30 @@ public sealed class WarehouseCatalogGrpcService(
             StockOperation.Release => "STORE_BACKEND_RELEASE_FAILED",
             _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, null)
         };
+
+    private static string? GetPresentationFailure(
+        CartStockRequest request,
+        StockOperation operation) {
+
+        if (operation == StockOperation.Reserve &&
+            PresentationScenarios.Is(
+                request.PresentationScenario,
+                PresentationScenarios.OutOfStock)) {
+            return "Der Lagerbestand reicht für das Vorführszenario nicht aus.";
+        }
+
+        if (operation == StockOperation.Commit &&
+            PresentationScenarios.Is(
+                request.PresentationScenario,
+                PresentationScenarios.WarehouseCommitFailed)) {
+            return "Die endgültige Warehouse-Ausbuchung ist im Vorführszenario fehlgeschlagen.";
+        }
+
+        return null;
+    }
+
+    private static string? NullIfEmpty(string value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value;
 
     private static bool IsRequestCancellation(
         Exception exception,

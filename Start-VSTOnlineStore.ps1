@@ -26,6 +26,12 @@
 .PARAMETER SkipCollector
     Startet die Anwendung ohne den OpenTelemetry Collector.
 
+.PARAMETER PresentationMode
+    Aktiviert vier deterministische, pro Bestellung auswählbare Fehlerszenarien.
+
+.PARAMETER CorrelationId
+    Correlation-ID für die Aktion PresentationSnapshots.
+
 .PARAMETER Help
     Zeigt mit -h eine kompakte Übersicht aller Skriptparameter und Beispiele.
 
@@ -50,7 +56,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet("Start", "Status", "Stop", "StartService", "StopService", "FileSinks")]
+    [ValidateSet("Start", "Status", "Stop", "StartService", "StopService", "FileSinks", "PresentationSnapshots")]
     [string]$Action = "Start",
 
     [Alias("Service")]
@@ -71,6 +77,10 @@ param(
     [switch]$NoBrowser,
 
     [switch]$SkipCollector,
+
+    [switch]$PresentationMode,
+
+    [Guid]$CorrelationId = [Guid]::Empty,
 
     [Alias("h")]
     [switch]$Help
@@ -96,6 +106,7 @@ $rabbitMqPort = 5672
 $websiteUrl = "http://localhost:6680/"
 $apiReadinessUrl = "http://localhost:6680/api/products?featured=true"
 $paymentProvidersReadinessUrl = "http://localhost:6680/api/payment-providers"
+$presentationScenariosReadinessUrl = "http://localhost:6680/api/presentation-scenarios"
 $serviceStatusReadinessUrl = "http://localhost:6680/api/service-statuses"
 $auditReadinessUrl = "http://localhost:6680/api/order-audits/$([Guid]::NewGuid().ToString('D'))/snapshots"
 $browserUrl = "{0}?version=6&started={1}" -f `
@@ -159,7 +170,8 @@ Das Holzwerk - VST OnlineStore Verwaltung
 
 Syntax:
   .\Start-VSTOnlineStore.ps1 [-Action <Aktion>] [-ServiceName <Komponente>]
-                              [-SkipBuild] [-NoBrowser] [-SkipCollector] [-h]
+                              [-SkipBuild] [-NoBrowser] [-SkipCollector]
+                              [-PresentationMode] [-CorrelationId <Guid>] [-h]
 
 Aktionen:
   Start          Gesamten Stack bauen, starten und pruefen (Standard)
@@ -168,6 +180,8 @@ Aktionen:
   StartService   Genau eine Komponente starten
   StopService    Genau eine verwaltete Komponente beenden
   FileSinks      Alle bekannten Datei- und Logsenken anzeigen
+  PresentationSnapshots
+                  Audit-Snapshots einer Bestellung sammeln und in Notepad++ oeffnen
 
 Parameter:
   -Action        Auszufuehrende Aktion; Standardwert ist Start
@@ -176,6 +190,9 @@ Parameter:
   -SkipBuild     Restore und Build beim Start ueberspringen
   -NoBrowser     Browser beim Gesamtstart nicht oeffnen
   -SkipCollector OpenTelemetry Collector beim Gesamtstart auslassen
+  -PresentationMode
+                  Vier deterministische Fehlerszenarien in der Website aktivieren
+  -CorrelationId  Bestellung fuer die Aktion PresentationSnapshots
   -h             Diese Hilfe anzeigen; es wird keine Aktion ausgefuehrt
 
 Komponenten:
@@ -198,6 +215,8 @@ Beispiele:
   .\Start-VSTOnlineStore.ps1 -Action StartService -ServiceName AuditService -SkipBuild
   .\Start-VSTOnlineStore.ps1 -Action StopService -Service AuditService
   .\Start-VSTOnlineStore.ps1 -Action FileSinks
+  .\Start-VSTOnlineStore.ps1 -PresentationMode
+  .\Start-VSTOnlineStore.ps1 -Action PresentationSnapshots -CorrelationId <Guid>
   .\Start-VSTOnlineStore.ps1 -Action Stop
 "@
 }
@@ -370,6 +389,12 @@ function Show-ApplicationStatus {
             Port = $service.Port
             PortStatus = if (Test-TcpPort -Port $service.Port) { "offen" } else { "geschlossen" }
             ProcessId = if ($processIsRunning) { $entry.ProcessId } else { "-" }
+            PresentationMode = if ($processIsRunning -and $entry.PresentationMode) {
+                "aktiv"
+            }
+            else {
+                "aus"
+            }
         }
     }
 
@@ -517,6 +542,10 @@ function Start-ApplicationProcess {
     $standardErrorPath = Join-Path $runtimeDirectory ($Service.Name + ".err.log")
 
     $dotnetPath = (Get-Command dotnet -ErrorAction Stop).Source
+    $presentationEnvironmentKey = "PresentationMode__Enabled"
+    $previousPresentationMode = [Environment]::GetEnvironmentVariable(
+        $presentationEnvironmentKey,
+        [EnvironmentVariableTarget]::Process)
 
     # Manche Windows-Umgebungen enthalten gleichzeitig "Path" und "PATH".
     # Windows PowerShell kann dann Start-Process nicht initialisieren. Fuer
@@ -551,6 +580,10 @@ function Start-ApplicationProcess {
             "Path",
             $normalizedPath,
             [EnvironmentVariableTarget]::Process)
+        [Environment]::SetEnvironmentVariable(
+            $presentationEnvironmentKey,
+            $PresentationMode.IsPresent.ToString().ToLowerInvariant(),
+            [EnvironmentVariableTarget]::Process)
 
         $process = Start-Process `
             -FilePath $dotnetPath `
@@ -572,6 +605,10 @@ function Start-ApplicationProcess {
             "Path",
             $null,
             [EnvironmentVariableTarget]::Process)
+        [Environment]::SetEnvironmentVariable(
+            $presentationEnvironmentKey,
+            $previousPresentationMode,
+            [EnvironmentVariableTarget]::Process)
         foreach ($entry in $pathEntries) {
             [Environment]::SetEnvironmentVariable(
                 $entry.Key,
@@ -588,6 +625,7 @@ function Start-ApplicationProcess {
         ProcessId = $process.Id
         StartTimeUtc = $process.StartTime.ToUniversalTime().ToString("O")
         Port = $Service.Port
+        PresentationMode = $PresentationMode.IsPresent
     }
 }
 
@@ -882,6 +920,85 @@ function Show-FileSinks {
             -Wrap
 }
 
+function Show-PresentationSnapshots {
+    if ($CorrelationId -eq [Guid]::Empty) {
+        throw "Für -Action PresentationSnapshots muss -CorrelationId angegeben werden."
+    }
+
+    $snapshotUri = "$($websiteUrl.TrimEnd('/'))/api/order-audits/$($CorrelationId.ToString('D'))/snapshots"
+    Write-Step "Audit-Snapshots für $($CorrelationId.ToString('D')) sammeln"
+    $snapshots = Invoke-RestMethod `
+        -Uri $snapshotUri `
+        -Method Get `
+        -TimeoutSec 10
+    if ($snapshots.Count -eq 0) {
+        throw "Für die Correlation-ID $CorrelationId wurden keine Audit-Snapshots gefunden."
+    }
+
+    $presentationLogDirectory = Join-Path $projectRoot "Logs\Presentation"
+    New-Item -ItemType Directory -Path $presentationLogDirectory -Force | Out-Null
+    $targetPath = Join-Path `
+        $presentationLogDirectory `
+        ("presentation-snapshots-{0}.log" -f $CorrelationId.ToString("D"))
+    $orderedSnapshots = @($snapshots | Sort-Object timestamp, eventID)
+    $sections = for ($index = 0; $index -lt $orderedSnapshots.Count; $index++) {
+        $snapshot = $orderedSnapshots[$index]
+        $phase = if ($null -ne $snapshot.payload.phase) {
+            [string]$snapshot.payload.phase
+        }
+        else {
+            "-"
+        }
+        @"
+================================================================================
+SNAPSHOT $($index + 1)/$($orderedSnapshots.Count)
+Zeit:        $($snapshot.timestamp)
+Service:     $($snapshot.responsibleService)
+Event:       $($snapshot.eventType)
+Phase:       $phase
+Status:      $($snapshot.statusCode)
+Event-ID:    $($snapshot.eventID)
+Vorgänger:   $($snapshot.previousEventID)
+--------------------------------------------------------------------------------
+$($snapshot | ConvertTo-Json -Depth 20)
+"@
+    }
+    $header = @"
+VST OnlineStore - zusammengefasste Audit-Snapshots
+Correlation-ID: $($CorrelationId.ToString('D'))
+Quelle:         $snapshotUri
+Anzahl:         $($orderedSnapshots.Count)
+Erstellt:       $([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss zzz'))
+
+"@
+    $encoding = [System.Text.UTF8Encoding]::new($true)
+    [System.IO.File]::WriteAllText(
+        $targetPath,
+        $header + ($sections -join "`r`n"),
+        $encoding)
+
+    $notepadPlusPlus = @(
+        (Get-Command "notepad++.exe" -ErrorAction SilentlyContinue).Source,
+        "C:\Program Files\Notepad++\notepad++.exe",
+        "C:\Program Files (x86)\Notepad++\notepad++.exe"
+    ) | Where-Object {
+        -not [string]::IsNullOrWhiteSpace($_) -and
+        (Test-Path -LiteralPath $_)
+    } | Select-Object -First 1
+
+    if ([string]::IsNullOrWhiteSpace($notepadPlusPlus)) {
+        throw "Notepad++ wurde nicht gefunden. Die Snapshot-Datei liegt unter: $targetPath"
+    }
+
+    Start-Process `
+        -FilePath $notepadPlusPlus `
+        -ArgumentList @("-multiInst", "-nosession", ('"{0}"' -f $targetPath)) `
+        -WindowStyle Normal
+    Write-Host `
+        "$($orderedSnapshots.Count) Snapshots wurden in Notepad++ geöffnet: $targetPath" `
+        -ForegroundColor Green
+}
+
 function Wait-ApplicationApi {
     $deadline = [DateTime]::UtcNow.AddSeconds(30)
     do {
@@ -901,6 +1018,18 @@ function Wait-ApplicationApi {
                 $paymentProviderKeys -contains "demo" -and `
                 $paymentProviderKeys -contains "paypal" -and `
                 $paymentProviderKeys -contains "stripe"
+            $presentationScenarios = Invoke-RestMethod `
+                -Uri $presentationScenariosReadinessUrl `
+                -Method Get `
+                -TimeoutSec 5
+            $hasExpectedPresentationMode = `
+                [bool]$presentationScenarios.enabled -eq $PresentationMode.IsPresent
+            $hasExpectedPresentationScenarios = if ($PresentationMode.IsPresent) {
+                @($presentationScenarios.scenarios).Count -eq 4
+            }
+            else {
+                @($presentationScenarios.scenarios).Count -eq 0
+            }
             $serviceStatuses = @(
                 Invoke-RestMethod `
                     -Uri $serviceStatusReadinessUrl `
@@ -932,6 +1061,7 @@ function Wait-ApplicationApi {
                 $website.Content.Contains('id="open-cart"') -and `
                 $website.Content.Contains('id="payment-provider-cards"') -and `
                 $website.Content.Contains('id="checkout-payment-providers"') -and `
+                $website.Content.Contains('id="presentation-scenario-panel"') -and `
                 $website.Content.Contains('id="customer-email"') -and `
                 $website.Content.Contains('id="invoice-link"')
 
@@ -940,6 +1070,8 @@ function Wait-ApplicationApi {
                 $auditSnapshotCount -eq 0 -and
                 $productCount -gt 0 -and
                 $hasRequiredPaymentProviders -and
+                $hasExpectedPresentationMode -and
+                $hasExpectedPresentationScenarios -and
                 $hasRequiredServices -and
                 $hasCurrentWebsite) {
                 return $productCount
@@ -1009,6 +1141,7 @@ function Start-Application {
         }
 
         Write-Host "`nDas Holzwerk ist bereit: $websiteUrl" -ForegroundColor Green
+        Write-Host "PresentationMode: $(if ($PresentationMode.IsPresent) { 'aktiv' } else { 'aus' })"
         Write-Host "Status: .\Start-VSTOnlineStore.ps1 -Action Status"
         Write-Host "Dateisenken: .\Start-VSTOnlineStore.ps1 -Action FileSinks"
         Write-Host "Stop:   .\Start-VSTOnlineStore.ps1 -Action Stop"
@@ -1046,6 +1179,9 @@ else {
         }
         "FileSinks" {
             Show-FileSinks
+        }
+        "PresentationSnapshots" {
+            Show-PresentationSnapshots
         }
     }
 }

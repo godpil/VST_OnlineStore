@@ -31,6 +31,7 @@ message WarehouseProduct {
 message CartStockRequest {
   repeated CartProductQuantity items = 1;
   string reservation_id = 2;
+  string presentation_scenario = 3;
 }
 
 message CartProductQuantity {

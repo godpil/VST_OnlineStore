@@ -116,6 +116,18 @@
                     <span class="loading">Anbieter werden geladen...</span>
                 </div>
             </fieldset>
+            <fieldset id="presentation-scenario-panel" class="presentation-scenario-panel" hidden>
+                <legend>Vorführmodus: Fehlerszenario</legend>
+                <label for="presentation-scenario">
+                    <span>Aktion für diese Bestellung</span>
+                    <select id="presentation-scenario" name="presentation-scenario">
+                        <option value="">Normaler Bestellvorgang</option>
+                    </select>
+                </label>
+                <p id="presentation-scenario-description" class="presentation-scenario-description">
+                    Das Szenario gilt ausschließlich für diese Bestellung.
+                </p>
+            </fieldset>
             <button id="checkout-button" class="checkout-button" type="button" disabled>Bezahlen</button>
             <p class="cart-hint">Die Artikel werden erst beim Bezahlen im Lager reserviert.</p>
             <p id="cart-message" class="cart-message" role="status" aria-live="polite"></p>
@@ -127,9 +139,9 @@
 
     <div id="store-message" class="store-message" role="status" aria-live="polite"></div>
 
-    <script src="js/StoreAPI.js?v=8"></script>
-    <script src="js/productCard.js?v=8"></script>
-    <script src="js/WebstoreApp.js?v=8"></script>
+    <script src="js/StoreAPI.js?v=9"></script>
+    <script src="js/productCard.js?v=9"></script>
+    <script src="js/WebstoreApp.js?v=9"></script>
 </body>
 
 </html>

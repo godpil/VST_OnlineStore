@@ -76,7 +76,15 @@ const StoreAPI = (() => {
         });
     }
 
-    async function createOrder(items, customerEmail, paymentProviderKey) {
+    async function getPresentationScenarios() {
+        return await request("/presentation-scenarios", { method: "GET" });
+    }
+
+    async function createOrder(
+        items,
+        customerEmail,
+        paymentProviderKey,
+        presentationScenario = "") {
         if (!Array.isArray(items) || items.length === 0) {
             throw new Error("Der Warenkorb ist leer.");
         }
@@ -94,7 +102,10 @@ const StoreAPI = (() => {
             body: JSON.stringify({
                 items,
                 customerEmail: customerEmail.trim(),
-                paymentProviderKey: paymentProviderKey.trim()
+                paymentProviderKey: paymentProviderKey.trim(),
+                presentationScenario: typeof presentationScenario === "string"
+                    ? presentationScenario.trim()
+                    : ""
             })
         });
     }
@@ -103,6 +114,7 @@ const StoreAPI = (() => {
         getFeaturedProducts,
         getPaymentProviders,
         getServiceStatuses,
+        getPresentationScenarios,
         createOrder
     });
 })();

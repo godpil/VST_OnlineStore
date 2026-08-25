@@ -5,6 +5,9 @@ const storeState = {
     cart: new Map(),
     paymentProviders: [],
     selectedPaymentProviderKey: null,
+    presentationModeEnabled: false,
+    presentationScenarios: [],
+    selectedPresentationScenario: "",
     customerEmail: "",
     isCheckingOut: false,
     readinessKnown: false,
@@ -21,6 +24,10 @@ async function initializeStore() {
     document.getElementById("close-cart")?.addEventListener("click", closeCart);
     document.getElementById("cart-overlay")?.addEventListener("click", closeCart);
     document.getElementById("checkout-button")?.addEventListener("click", checkoutCart);
+    document.getElementById("presentation-scenario")?.addEventListener("change", event => {
+        storeState.selectedPresentationScenario = event.target.value;
+        renderPresentationScenarios();
+    });
     document.getElementById("retry-service-status")?.addEventListener("click", async event => {
         const retryButton = event.currentTarget;
         retryButton.disabled = true;
@@ -58,7 +65,8 @@ async function initializeStore() {
 async function loadStoreData() {
     await Promise.all([
         loadFeaturedProducts(),
-        loadPaymentProviders()
+        loadPaymentProviders(),
+        loadPresentationScenarios()
     ]);
 }
 
@@ -132,9 +140,76 @@ function createServiceFailureMessage(statuses, error) {
 }
 
 function handleOperationalRequestFailure(error) {
+    const terminalStatus = error?.problem?.orderStatus;
+    if ([
+        "OUT_OF_STOCK",
+        "PAYMENT_FAILED",
+        "ROLLBACK_COMPLETED",
+        "ROLLBACK_FAILED"
+    ].includes(terminalStatus)) {
+        return;
+    }
+
     if (Number(error?.status) >= 500) {
         applyServiceReadiness(false, error.serviceStatuses ?? [], error);
     }
+}
+
+async function loadPresentationScenarios() {
+    try {
+        const response = await StoreAPI.getPresentationScenarios();
+        storeState.presentationModeEnabled = response?.enabled === true;
+        storeState.presentationScenarios = Array.isArray(response?.scenarios)
+            ? response.scenarios
+            : [];
+        if (!storeState.presentationModeEnabled ||
+            !storeState.presentationScenarios.some(scenario =>
+                scenario.key === storeState.selectedPresentationScenario)) {
+            storeState.selectedPresentationScenario = "";
+        }
+    }
+    catch (error) {
+        console.error("Fehler beim Laden der Vorführszenarien:", error);
+        storeState.presentationModeEnabled = false;
+        storeState.presentationScenarios = [];
+        storeState.selectedPresentationScenario = "";
+    }
+
+    renderPresentationScenarios();
+}
+
+function renderPresentationScenarios() {
+    const panel = document.getElementById("presentation-scenario-panel");
+    const select = document.getElementById("presentation-scenario");
+    const description = document.getElementById("presentation-scenario-description");
+    if (!panel || !select || !description) {
+        return;
+    }
+
+    panel.hidden = !storeState.presentationModeEnabled;
+    if (!storeState.presentationModeEnabled) {
+        return;
+    }
+
+    select.innerHTML = "";
+    const regularOption = document.createElement("option");
+    regularOption.value = "";
+    regularOption.textContent = "Normaler Bestellvorgang";
+    select.appendChild(regularOption);
+    for (const scenario of storeState.presentationScenarios) {
+        const option = document.createElement("option");
+        option.value = scenario.key;
+        option.textContent = scenario.name;
+        select.appendChild(option);
+    }
+    select.value = storeState.selectedPresentationScenario;
+    select.disabled = storeState.isCheckingOut;
+
+    const selected = storeState.presentationScenarios.find(scenario =>
+        scenario.key === storeState.selectedPresentationScenario);
+    description.textContent = selected
+        ? `${selected.description} Erwarteter Bestellstatus: ${selected.expectedStatus}.`
+        : "Das ausgewählte Szenario gilt ausschließlich für diese Bestellung.";
 }
 
 async function loadFeaturedProducts() {
@@ -374,6 +449,7 @@ function renderCart() {
     checkoutButton.textContent = storeState.isCheckingOut
         ? "Zahlung läuft..."
         : storeState.isOperational ? "Bezahlen" : "Shop nicht verfügbar";
+    renderPresentationScenarios();
 }
 
 function createCartItem(product, quantity) {
@@ -473,15 +549,21 @@ async function checkoutCart() {
         const result = await StoreAPI.createOrder(
             items,
             storeState.customerEmail,
-            selectedPaymentProvider.key);
+            selectedPaymentProvider.key,
+            storeState.selectedPresentationScenario);
 
         storeState.cart.clear();
         await loadFeaturedProducts();
         renderCart();
         showCartMessage(
-            `${result.message} Gesamt: ${formatPrice(result.total)} · ${result.paymentProvider}`,
+            `${result.message} Status: ${result.status} · Bestellung: ${result.orderId} · ` +
+            `Gesamt: ${formatPrice(result.total)} · ${result.paymentProvider}`,
             "success");
-        if (result.invoiceUrl) {
+        if (storeState.selectedPresentationScenario === "invoice-service-unavailable") {
+            invoiceWindow?.close();
+            setInvoiceLink(null);
+        }
+        else if (result.invoiceUrl) {
             setInvoiceLink(result.invoiceUrl);
             invoiceWindow?.location.replace(result.invoiceUrl);
         }
@@ -493,7 +575,16 @@ async function checkoutCart() {
         invoiceWindow?.close();
         console.error("Fehler beim Bezahlen:", error);
         handleOperationalRequestFailure(error);
-        showCartMessage(error.message ?? "Der Kauf konnte nicht abgeschlossen werden.", "error");
+        const terminalStatus = error?.problem?.orderStatus;
+        const orderId = error?.problem?.orderId;
+        const terminalDetails = [
+            terminalStatus ? `Status: ${terminalStatus}` : null,
+            orderId ? `Bestellung: ${orderId}` : null
+        ].filter(Boolean).join(" · ");
+        showCartMessage(
+            `${error.message ?? "Der Kauf konnte nicht abgeschlossen werden."}` +
+            `${terminalDetails ? ` ${terminalDetails}` : ""}`,
+            "error");
         await refreshServiceReadiness(false);
         if (storeState.isOperational) {
             await loadFeaturedProducts();
@@ -511,8 +602,8 @@ function setInvoiceLink(invoiceUrl) {
         return;
     }
 
-    link.href = invoiceUrl;
-    link.hidden = false;
+    link.href = invoiceUrl ?? "#";
+    link.hidden = !invoiceUrl;
 }
 
 function openCart() {

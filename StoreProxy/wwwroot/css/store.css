@@ -565,6 +565,51 @@ footer {
     border: 0;
 }
 
+.presentation-scenario-panel {
+    margin: 0;
+    padding: 0.85rem;
+    border: 1px solid #d6b656;
+    border-radius: 0.65rem;
+    background: #fff7d6;
+}
+
+.presentation-scenario-panel[hidden] {
+    display: none;
+}
+
+.presentation-scenario-panel legend {
+    padding: 0 0.35rem;
+    color: #745b14;
+    font-weight: 800;
+}
+
+.presentation-scenario-panel label,
+.presentation-scenario-panel label span {
+    display: block;
+}
+
+.presentation-scenario-panel label span {
+    margin-bottom: 0.35rem;
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.presentation-scenario-panel select {
+    width: 100%;
+    padding: 0.65rem;
+    border: 1px solid #c3a33c;
+    border-radius: 0.45rem;
+    background: #fff;
+    color: #352a17;
+}
+
+.presentation-scenario-description {
+    margin: 0.6rem 0 0;
+    color: #675628;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
 .customer-email-field {
     display: grid;
     gap: 0.45rem;

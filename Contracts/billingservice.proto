@@ -24,6 +24,7 @@ message PaymentRequest {
   repeated PaymentLineItem invoice_items = 7;
   string order_id = 8;
   string provider_key = 9;
+  string presentation_scenario = 10;
 }
 
 message PaymentResponse {

@@ -70,6 +70,12 @@ und sorgt für die Verwaltung des gesamten Stacks oder einzelner Komponenten:
 
 # Alle bekannten Datei- und Logsenken anzeigen
 .\Start-VSTOnlineStore.ps1 -Action FileSinks
+
+# Vorführmodus mit vier bestellungsbezogenen Fehlerszenarien
+.\Start-VSTOnlineStore.ps1 -PresentationMode
+
+# Alle Snapshots einer vorgeführten Bestellung in Notepad++ öffnen
+.\Start-VSTOnlineStore.ps1 -Action PresentationSnapshots -CorrelationId <Guid>
 ```
 
 Als `ServiceName` werden `PostgreSQL`, `StoreBackend`, `WarehouseService`,
@@ -84,6 +90,14 @@ gestartet oder beendet.
 absoluten Pfad. Erfasst werden die täglich rollierenden Service-Logs,
 Standardausgabe und Standardfehler, die OTLP-JSONL-Datei, den PostgreSQL-Cluster,
 das PostgreSQL-Log, Warehouse-Daten und das Prozessmanifest.
+
+`-PresentationMode` blendet im Warenkorb vier deterministische Szenarien ein:
+Zahlungsablehnung, unzureichender Bestand, eine nach drei Versuchen gescheiterte
+Invoice-Verarbeitung und eine fehlgeschlagene Warehouse-Ausbuchung. Die Auswahl
+gilt nur für die jeweilige Bestellung. Der Modus ist bei einem normalen Start
+ausgeschaltet. Mit `PresentationSnapshots` werden sämtliche über die öffentliche
+Audit-REST-Ressource gelesenen Snapshots einer Correlation-ID in
+`Logs/Presentation` zusammengeführt und sichtbar in Notepad++ geöffnet.
 
 Service-Architektur
 -------------------
@@ -157,7 +171,12 @@ Der erfolgreiche Checkout folgt dem aktuellen SAGA-Pfad:
 Bestellablauf nicht aufgerufen. Bei Zahlungsablehnung oder Zahlungsfehler wird
 die Reservierung über `ReleaseCart` kompensiert. Scheitert nach erfolgreicher
 Zahlung die Veröffentlichung des Rechnungsevents, versucht die SAGA zuerst die
-Zahlung zu erstatten und anschließend die Reservierung freizugeben. Nicht
+Zahlung zu erstatten und anschließend die Reservierung freizugeben. Dasselbe
+gilt, wenn der endgültige Warehouse-Commit fachlich oder nach seinem
+Wiederholungsversuch technisch scheitert. Eine bereits dauerhaft publizierte
+Zahlung wird bei einem Fehler der asynchronen Invoice-Verarbeitung dagegen nicht
+zurückgenommen; der InvoiceService versucht die Verarbeitung mindestens dreimal
+und auditiert jeden Versuch. Nicht
 verfügbare oder zu langsame Services führen zu strukturierten Logs,
 Audit-Snapshots und einer RFC-9457-Fehlerantwort; ein nicht auflösbarer
 Kompensations- oder Commitfehler bleibt als Betriebsstörung sichtbar.

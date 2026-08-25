@@ -59,6 +59,12 @@ public sealed class CheckoutIntegrationTests {
         Assert.Equal(1, scenario.CommitCalls);
         Assert.Equal(0, scenario.ReleaseCalls);
         Assert.Equal(["paypal"], scenario.RequestedProviderKeys);
+        Assert.All(
+            scenario.RequestedPresentationScenarios,
+            value => Assert.Equal(string.Empty, value));
+        Assert.All(
+            scenario.RequestedWarehousePresentationScenarios,
+            value => Assert.Equal(string.Empty, value));
         Assert.Equal(
             [
                 "ReserveCart",
@@ -129,16 +135,24 @@ public sealed class CheckoutIntegrationTests {
 
         var response = await client.PostAsJsonAsync(
             "/api/orders",
-            CreateRequest(scenario.ProductId));
+            CreateRequest(
+                scenario.ProductId,
+                presentationScenario: "out-of-stock"));
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         Assert.NotNull(problem);
         Assert.Contains("Bestand", problem.Detail, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(
+            "OUT_OF_STOCK",
+            Assert.IsType<JsonElement>(problem.Extensions["orderStatus"]).GetString());
         Assert.Equal(1, scenario.ReservationCalls);
         Assert.Equal(0, scenario.PaymentCalls);
         Assert.Equal(0, scenario.CommitCalls);
         Assert.Equal(0, scenario.ReleaseCalls);
+        Assert.Contains(
+            "out-of-stock",
+            scenario.RequestedWarehousePresentationScenarios);
     }
 
     [Fact]
@@ -149,16 +163,24 @@ public sealed class CheckoutIntegrationTests {
 
         var response = await client.PostAsJsonAsync(
             "/api/orders",
-            CreateRequest(scenario.ProductId));
+            CreateRequest(
+                scenario.ProductId,
+                presentationScenario: "payment-declined"));
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         Assert.NotNull(problem);
         Assert.Contains("abgelehnt", problem.Detail, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(
+            "PAYMENT_FAILED",
+            Assert.IsType<JsonElement>(problem.Extensions["orderStatus"]).GetString());
         Assert.Equal(1, scenario.ReservationCalls);
         Assert.Equal(1, scenario.PaymentCalls);
         Assert.Equal(0, scenario.CommitCalls);
         Assert.Equal(1, scenario.ReleaseCalls);
+        Assert.Contains(
+            "payment-declined",
+            scenario.RequestedPresentationScenarios);
     }
 
     [Fact]
@@ -341,19 +363,112 @@ public sealed class CheckoutIntegrationTests {
                 HasStringProperty(audit.Payload, "phase", "PAYMENT_REFUNDED"));
     }
 
+    [Fact]
+    public async Task WarehouseAusbuchungFehlgeschlagen_ErstattetZahlungUndReservierung() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.WarehouseCommitFailed);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/orders",
+            CreateRequest(
+                scenario.ProductId,
+                presentationScenario: "warehouse-commit-failed"));
+
+        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Equal(
+            "ROLLBACK_COMPLETED",
+            Assert.IsType<JsonElement>(problem.Extensions["orderStatus"]).GetString());
+        Assert.Equal(1, scenario.ReservationCalls);
+        Assert.Equal(1, scenario.PaymentCalls);
+        Assert.Equal(1, scenario.InvoiceEventCalls);
+        Assert.Equal(1, scenario.CommitCalls);
+        Assert.Equal(1, scenario.RefundCalls);
+        Assert.Equal(1, scenario.ReleaseCalls);
+        Assert.Contains(
+            "warehouse-commit-failed",
+            scenario.RequestedPresentationScenarios);
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.PAYMENT &&
+                audit.StatusCode == AuditStatusCode.COMPENSATING &&
+                HasStringProperty(audit.Payload, "phase", "PAYMENT_REFUND_REQUESTED"));
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.PAYMENT &&
+                audit.StatusCode == AuditStatusCode.COMPENSATED &&
+                HasStringProperty(audit.Payload, "phase", "PAYMENT_REFUNDED"));
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.STOCK_RELEASE &&
+                audit.StatusCode == AuditStatusCode.COMPENSATED &&
+                HasStringProperty(audit.Payload, "phase", "STOCK_RELEASED"));
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.ORDER_COMPLETED &&
+                HasStringProperty(audit.Payload, "orderStatus", "ROLLBACK_COMPLETED"));
+    }
+
+    [Fact]
+    public async Task WarehouseCommitNichtErreichbar_WiederholtUndKompensiert() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.WarehouseCommitUnavailable);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/orders",
+            CreateRequest(scenario.ProductId));
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.Equal(
+            "ROLLBACK_COMPLETED",
+            Assert.IsType<JsonElement>(problem.Extensions["orderStatus"]).GetString());
+        Assert.Equal(2, scenario.CommitCalls);
+        Assert.Equal(1, scenario.RefundCalls);
+        Assert.Equal(1, scenario.ReleaseCalls);
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.STOCK_RESERVATION &&
+                HasStringProperty(audit.Payload, "phase", "STOCK_COMMIT_RETRY"));
+        Assert.Contains(
+            scenario.AuditEvents,
+            audit => audit.EventType == AuditEventType.ORDER_COMPLETED &&
+                HasStringProperty(audit.Payload, "orderStatus", "ROLLBACK_COMPLETED"));
+    }
+
+    [Fact]
+    public async Task PresentationMode_LiefertVierGezielteSzenarien() {
+        var scenario = new CheckoutScenario(CheckoutScenarioMode.Success);
+        using var application = new ShopApplicationFactory(scenario);
+        using var client = application.CreateClient();
+
+        var response = await client.GetFromJsonAsync<JsonElement>(
+            "/api/presentation-scenarios");
+
+        Assert.True(response.GetProperty("enabled").GetBoolean());
+        Assert.Equal(4, response.GetProperty("scenarios").GetArrayLength());
+    }
+
     private static CheckoutRequest CreateRequest(
         Guid productId,
-        string paymentProviderKey = "paypal") =>
+        string paymentProviderKey = "paypal",
+        string? presentationScenario = null) =>
         new(
             [new CheckoutItemRequest(productId.ToString("D"), 2)],
             "kunde@example.com",
-            paymentProviderKey);
+            paymentProviderKey,
+            presentationScenario);
 
     private sealed class ShopApplicationFactory(CheckoutScenario scenario)
         : WebApplicationFactory<ShopService.Program> {
 
         protected override void ConfigureWebHost(IWebHostBuilder builder) {
             builder.UseEnvironment("Testing");
+            builder.UseSetting("PresentationMode:Enabled", "true");
             builder.ConfigureTestServices(services => {
                 services.RemoveAll<WarehouseContracts.WarehouseCatalog.WarehouseCatalogClient>();
                 services.RemoveAll<BillingContracts.BillingOperations.BillingOperationsClient>();
@@ -385,6 +500,8 @@ public sealed class CheckoutIntegrationTests {
         WarehouseTimeout,
         BillingTimeout,
         InvoiceQueueUnavailable,
+        WarehouseCommitFailed,
+        WarehouseCommitUnavailable,
         ReadinessUnavailable,
         ReadinessTimeout
     }
@@ -402,6 +519,8 @@ public sealed class CheckoutIntegrationTests {
         public List<string> GrpcCalls { get; } = [];
         public List<string> ReservationIds { get; } = [];
         public List<string> RequestedProviderKeys { get; } = [];
+        public List<string> RequestedPresentationScenarios { get; } = [];
+        public List<string> RequestedWarehousePresentationScenarios { get; } = [];
         public List<RecordedLog> Logs { get; } = [];
         public List<RecordedAuditEvent> AuditEvents { get; } = [];
     }
@@ -416,9 +535,13 @@ public sealed class CheckoutIntegrationTests {
             scenario.GrpcCalls.Add(method.Name);
             if (request is WarehouseContracts.CartStockRequest stockRequest) {
                 scenario.ReservationIds.Add(stockRequest.ReservationId);
+                scenario.RequestedWarehousePresentationScenarios.Add(
+                    stockRequest.PresentationScenario);
             }
             if (request is BillingContracts.PaymentRequest paymentRequest) {
                 scenario.RequestedProviderKeys.Add(paymentRequest.ProviderKey);
+                scenario.RequestedPresentationScenarios.Add(
+                    paymentRequest.PresentationScenario);
             }
 
             if (method.Name == "ReserveCart" &&
@@ -437,6 +560,12 @@ public sealed class CheckoutIntegrationTests {
                 scenario.Mode == CheckoutScenarioMode.BillingTimeout) {
                 scenario.PaymentCalls++;
                 return Failed<TResponse>(StatusCode.DeadlineExceeded);
+            }
+
+            if (method.Name == "CommitCart" &&
+                scenario.Mode == CheckoutScenarioMode.WarehouseCommitUnavailable) {
+                scenario.CommitCalls++;
+                return Failed<TResponse>(StatusCode.Unavailable);
             }
 
             object response = method.Name switch {
@@ -545,9 +674,12 @@ public sealed class CheckoutIntegrationTests {
 
         private WarehouseContracts.CartStockResponse CommitCart() {
             scenario.CommitCalls++;
+            var success = scenario.Mode != CheckoutScenarioMode.WarehouseCommitFailed;
             var response = new WarehouseContracts.CartStockResponse {
-                Success = true,
-                Message = "Reservierung wurde endgültig ausgebucht."
+                Success = success,
+                Message = success
+                    ? "Reservierung wurde endgültig ausgebucht."
+                    : "Die endgültige Warehouse-Ausbuchung wurde gezielt abgelehnt."
             };
             response.Products.Add(new WarehouseContracts.CartProductStock {
                 ProductId = scenario.ProductId.ToString("D"),

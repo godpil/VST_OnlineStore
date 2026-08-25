@@ -21,7 +21,7 @@
    2. [Fehlerfall fail1: unzureichender Bestand](#62-fehlerfall-fail1-unzureichender-bestand)
    3. [Fehlerfall fail2: Zahlungsablehnung](#63-fehlerfall-fail2-zahlungsablehnung)
    4. [Providerauswahl im Warenkorb](#64-providerauswahl-im-warenkorb)
-   5. [SAGA-Kompensation bei Zahlungsfehler](#65-saga-kompensation-bei-zahlungsfehler)
+   5. [SAGA-Kompensation bei Zahlungs- und Folgefehlern](#65-saga-kompensation-bei-zahlungs--und-folgefehlern)
 7. [Schnittstellen und Infrastruktur](#7-schnittstellen-und-infrastruktur)
 8. [Architekturentscheidungen](#8-architekturentscheidungen)
    1. [ADR-001: RabbitMQ als Message Broker](#adr-001-rabbitmq-als-message-broker)
@@ -202,7 +202,7 @@ gesperrt.
 *Abbildung 7: Konsequenzen einer bestellungsbezogenen Providerauswahl in der
 Warenkorbansicht.*
 
-### 6.5 SAGA-Kompensation bei Zahlungsfehler
+### 6.5 SAGA-Kompensation bei Zahlungs- und Folgefehlern
 
 Ist der Bestand bereits reserviert und die Zahlung wird abgelehnt, läuft in ein
 Timeout oder erreicht den BillingService beziehungsweise Provider nicht, startet
@@ -218,10 +218,25 @@ offene Reservierung muss dann betrieblich über die Correlation-ID geprüft
 werden. Da keine erfolgreiche Zahlung existiert, wird kein Refund ausgelöst,
 kein `payment.succeeded`-Ereignis veröffentlicht und keine Rechnung erzeugt.
 
+Konnte `payment.succeeded` nach einer erfolgreichen Zahlung nicht dauerhaft
+publiziert werden, startet die SAGA zuerst `PAYMENT_REFUND_REQUESTED` über die
+Payment-Fassade und gibt nach `PAYMENT_REFUNDED` die Reservierung frei. Derselbe
+Refund-und-Release-Pfad gilt, wenn `CommitCart` fachlich fehlschlägt oder nach
+einem idempotenten Wiederholungsversuch weiterhin nicht bestätigt werden kann.
+Ein vollständiger Gegenlauf endet mit `ROLLBACK_COMPLETED`, ein fehlerhafter mit
+`ROLLBACK_FAILED`.
+
+Ist das Ereignis dagegen bereits dauerhaft publiziert und nur seine asynchrone
+Verarbeitung im InvoiceService gestört, bleibt die Zahlung bestehen. Der
+InvoiceService führt mindestens drei Versuche aus und schreibt für jeden
+Versuch `INVOICE_RETRY_SCHEDULED` beziehungsweise
+`INVOICE_RETRY_EXHAUSTED`; anschließend werden
+`INVOICE_PROCESSING_FAILED` und die Dead-Letter-Weiterleitung dokumentiert.
+
 ![SAGA-Kompensation nach Zahlungsfehler](diagrams/saga-compensation.svg)
 
-*Abbildung 8: SAGA-Zustände, Bestandskompensation und Fehlerzweig bei nicht
-erfolgreicher Freigabe.*
+*Abbildung 8: SAGA-Zustände, Refund, Bestandskompensation und terminale
+Rollback-Statuswerte.*
 
 ## 7. Schnittstellen und Infrastruktur
 

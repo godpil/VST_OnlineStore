@@ -15,7 +15,10 @@ Die Tests sind bewusst vom operativen Code getrennt:
   eingeplantes Rechnungsevent und den Lager-Commit. Zusätzlich muss
   `STOCK_COMMITTED` vor `ORDER_COMPLETED` im Audit stehen. Weitere Tests prüfen
   die Propagation einer Stripe-Auswahl und die Ablehnung des deaktivierten
-  DemoPay-Adapters vor der Zahlung.
+  DemoPay-Adapters vor der Zahlung. Die SAGA-Tests verifizieren außerdem die
+  terminalen Statuswerte `OUT_OF_STOCK` und `PAYMENT_FAILED` sowie Refund,
+  Reservierungsfreigabe und die einzelnen Kompensations-Snapshots bei einer
+  fehlgeschlagenen Warehouse-Ausbuchung (`ROLLBACK_COMPLETED`).
 
 Alle Tests vom Repository-Wurzelverzeichnis ausführen:
 

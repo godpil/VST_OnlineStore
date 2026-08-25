@@ -18,7 +18,7 @@ acht Seiten:
    aktuelle Bestellung auswählbar.
 8. **SAGA-Kompensation** – Fehler- und Kompensationszweige für Zahlung,
    Veröffentlichung des Rechnungsevents, Erstattung, Reservierungsfreigabe und
-   endgültige Lagerbuchung.
+   endgültige Lagerbuchung einschließlich `ROLLBACK_COMPLETED`.
 
 Die DrawIO-Datei ist die verbindliche und editierbare Quelle. Alle Seiten lassen
 sich gemeinsam mit diagrams.net öffnen, anzeigen und bearbeiten.

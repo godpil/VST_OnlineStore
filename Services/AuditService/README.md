@@ -31,6 +31,21 @@ Der Service veröffentlicht keine fachliche REST-API. Die öffentliche Abfrage
 läuft über StoreProxy und ShopService. Der Text-Endpunkt `/` ist nur eine
 einfache Prozessdiagnose.
 
+Für Betrieb und Vorführung können die gespeicherten Datensätze zusätzlich
+direkt und ausschließlich lesend über den projektlokalen PostgreSQL-Client
+angezeigt werden. Ohne Filter erscheinen bis zu 100 der neuesten Einträge in
+chronologischer Reihenfolge; `-CorrelationId` begrenzt die Ausgabe auf eine
+Bestellung und `-Limit` akzeptiert Werte von 1 bis 1000:
+
+```powershell
+.\Start-VSTOnlineStore.ps1 -Action DatabaseEntries -Limit 50
+.\Start-VSTPostgreSQL.ps1 -Action DatabaseEntries -CorrelationId <Guid>
+```
+
+Die Abfrage benötigt nur den laufenden projektlokalen PostgreSQL-Cluster, nicht
+den AuditService oder den StoreProxy. Sie verwendet eine feste `SELECT`-Abfrage
+und erlaubt keine frei eingegebenen SQL-Anweisungen.
+
 Da fachliche Ereignisse über RabbitMQ eintreffen, kann die öffentliche
 Snapshot-Kette unmittelbar nach einer Operation kurzzeitig noch unvollständig
 sein. Erfolgreiche Abläufe enden mit `ORDER_COMPLETED/SUCCESS`; fehlgeschlagene

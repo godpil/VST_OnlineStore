@@ -9,8 +9,16 @@
     vom Startskript des OnlineStores eingebunden werden.
 
 .PARAMETER PostgreSqlAction
-    Start (Standard), Status oder Stop. Kann über den kurzen Parameternamen
-    -Action angegeben werden.
+    Start (Standard), Status, Stop oder DatabaseEntries. Kann über den kurzen
+    Parameternamen -Action angegeben werden.
+
+.PARAMETER PostgreSqlCorrelationId
+    Optionale Correlation-ID für die Aktion DatabaseEntries. Kann über den
+    kurzen Parameternamen -CorrelationId angegeben werden.
+
+.PARAMETER PostgreSqlLimit
+    Maximale Anzahl der neuesten Datensätze für DatabaseEntries. Kann über den
+    kurzen Parameternamen -Limit angegeben werden; Standardwert ist 100.
 
 .PARAMETER PostgreSqlHelp
     Zeigt über -h oder -Help eine kompakte Uebersicht und Beispiele.
@@ -23,13 +31,26 @@
 
 .EXAMPLE
     .\Start-VSTPostgreSQL.ps1 -Action Stop
+
+.EXAMPLE
+    .\Start-VSTPostgreSQL.ps1 -Action DatabaseEntries -Limit 50
+
+.EXAMPLE
+    .\Start-VSTPostgreSQL.ps1 -Action DatabaseEntries -CorrelationId <Guid>
 #>
 
 [CmdletBinding()]
 param(
     [Alias("Action")]
-    [ValidateSet("Start", "Status", "Stop")]
+    [ValidateSet("Start", "Status", "Stop", "DatabaseEntries")]
     [string]$PostgreSqlAction = "Start",
+
+    [Alias("CorrelationId")]
+    [Guid]$PostgreSqlCorrelationId = [Guid]::Empty,
+
+    [Alias("Limit")]
+    [ValidateRange(1, 1000)]
+    [int]$PostgreSqlLimit = 100,
 
     [Alias("h", "Help")]
     [switch]$PostgreSqlHelp
@@ -67,7 +88,8 @@ function Show-PostgreSqlScriptHelp {
 Das Holzwerk - PostgreSQL-Verwaltung
 
 Syntax:
-  .\Start-VSTPostgreSQL.ps1 [-Action <Start|Status|Stop>] [-h]
+  .\Start-VSTPostgreSQL.ps1 [-Action <Start|Status|Stop|DatabaseEntries>]
+                                 [-CorrelationId <Guid>] [-Limit <1..1000>] [-h]
 
 Konfiguration:
   Version:    PostgreSQL $postgresVersion
@@ -79,6 +101,8 @@ Konfiguration:
 Beispiele:
   .\Start-VSTPostgreSQL.ps1
   .\Start-VSTPostgreSQL.ps1 -Action Status
+  .\Start-VSTPostgreSQL.ps1 -Action DatabaseEntries -Limit 50
+  .\Start-VSTPostgreSQL.ps1 -Action DatabaseEntries -CorrelationId <Guid>
   .\Start-VSTPostgreSQL.ps1 -Action Stop
 "@
 }
@@ -485,6 +509,98 @@ function Show-PostgreSqlStatus {
     } | Format-Table -AutoSize
 }
 
+function Show-PostgreSqlDatabaseEntries {
+    [CmdletBinding()]
+    param(
+        [Guid]$CorrelationId = [Guid]::Empty,
+
+        [ValidateRange(1, 1000)]
+        [int]$Limit = 100
+    )
+
+    if (-not (Test-Path -LiteralPath $postgresPsqlPath)) {
+        throw (
+            "Der PostgreSQL-Client wurde nicht gefunden: $postgresPsqlPath. " +
+            "PostgreSQL muss mindestens einmal installiert worden sein.")
+    }
+
+    $postgresProcess = Get-PostgreSqlProcess
+    if ($null -eq $postgresProcess) {
+        if (Test-PostgreSqlTcpPort) {
+            throw (
+                "Port $postgresPort ist offen, gehoert aber nicht zum " +
+                "projektlokalen PostgreSQL-Cluster. Die Abfrage wurde abgebrochen.")
+        }
+
+        throw (
+            "Der projektlokale PostgreSQL-Cluster laeuft nicht. " +
+            "Starten Sie ihn mit '.\Start-VSTPostgreSQL.ps1 -Action Start'.")
+    }
+
+    if (-not (Test-PostgreSqlTcpPort)) {
+        throw "PostgreSQL antwortet nicht auf 127.0.0.1:$postgresPort."
+    }
+
+    $correlationFilter = if ($CorrelationId -eq [Guid]::Empty) {
+        ""
+    }
+    else {
+        "WHERE correlation_id = '$($CorrelationId.ToString('D'))'::uuid"
+    }
+    $databaseEntriesQuery = @"
+SELECT
+    selected.sequence_number AS "Sequenz",
+    to_char(
+        selected.occurred_at AT TIME ZONE 'UTC',
+        'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "Zeit (UTC)",
+    selected.correlation_id AS "Correlation-ID",
+    selected.event_id AS "Event-ID",
+    selected.previous_event_id AS "Vorgaenger-ID",
+    selected.responsible_service AS "Service",
+    selected.event_type AS "Event-Typ",
+    selected.status_code AS "Status",
+    selected.actor AS "Akteur",
+    jsonb_pretty(selected.payload) AS "Payload"
+FROM (
+    SELECT *
+    FROM public.audit_snapshots
+    $correlationFilter
+    ORDER BY sequence_number DESC
+    LIMIT $Limit
+) AS selected
+ORDER BY selected.sequence_number ASC;
+"@
+
+    $filterDescription = if ($CorrelationId -eq [Guid]::Empty) {
+        "ohne Correlation-ID-Filter"
+    }
+    else {
+        "fuer Correlation-ID $($CorrelationId.ToString('D'))"
+    }
+    Write-PostgreSqlStep (
+        "Bis zu $Limit Audit-Datenbankeintraege $filterDescription lesen")
+
+    $queryOutput = & $postgresPsqlPath `
+        "--host=127.0.0.1" `
+        "--port=$postgresPort" `
+        "--username=postgres" `
+        "--dbname=$postgresDatabaseName" `
+        "--no-password" `
+        "--set=ON_ERROR_STOP=1" `
+        "--pset=pager=off" `
+        "--expanded" `
+        "--command=$databaseEntriesQuery" 2>&1
+    $queryExitCode = $LASTEXITCODE
+    if ($queryExitCode -ne 0) {
+        $queryError = ($queryOutput | Out-String).Trim()
+        throw (
+            "Die Tabelle public.audit_snapshots konnte nicht gelesen werden " +
+            "(psql Exit-Code $queryExitCode). $queryError")
+    }
+
+    $queryOutput | ForEach-Object { Write-Host $_ }
+}
+
 if ($MyInvocation.InvocationName -eq ".") {
     return
 }
@@ -502,6 +618,11 @@ switch ($PostgreSqlAction) {
     }
     "Status" {
         Show-PostgreSqlStatus
+    }
+    "DatabaseEntries" {
+        Show-PostgreSqlDatabaseEntries `
+            -CorrelationId $PostgreSqlCorrelationId `
+            -Limit $PostgreSqlLimit
     }
     "Stop" {
         Write-PostgreSqlStep "PostgreSQL beenden"

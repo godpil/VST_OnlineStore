@@ -30,7 +30,11 @@
     Aktiviert vier deterministische, pro Bestellung auswählbare Fehlerszenarien.
 
 .PARAMETER CorrelationId
-    Correlation-ID für die Aktion PresentationSnapshots.
+    Correlation-ID für PresentationSnapshots oder als optionaler Filter für
+    DatabaseEntries.
+
+.PARAMETER Limit
+    Maximale Anzahl der neuesten Datenbankeinträge für DatabaseEntries.
 
 .PARAMETER Help
     Zeigt mit -h eine kompakte Übersicht aller Skriptparameter und Beispiele.
@@ -52,11 +56,14 @@
 
 .EXAMPLE
     .\Start-VSTOnlineStore.ps1 -Action FileSinks
+
+.EXAMPLE
+    .\Start-VSTOnlineStore.ps1 -Action DatabaseEntries -Limit 50
 #>
 
 [CmdletBinding()]
 param(
-    [ValidateSet("Start", "Status", "Stop", "StartService", "StopService", "FileSinks", "PresentationSnapshots")]
+    [ValidateSet("Start", "Status", "Stop", "StartService", "StopService", "FileSinks", "PresentationSnapshots", "DatabaseEntries")]
     [string]$Action = "Start",
 
     [Alias("Service")]
@@ -81,6 +88,9 @@ param(
     [switch]$PresentationMode,
 
     [Guid]$CorrelationId = [Guid]::Empty,
+
+    [ValidateRange(1, 1000)]
+    [int]$Limit = 100,
 
     [Alias("h")]
     [switch]$Help
@@ -171,7 +181,8 @@ Das Holzwerk - VST OnlineStore Verwaltung
 Syntax:
   .\Start-VSTOnlineStore.ps1 [-Action <Aktion>] [-ServiceName <Komponente>]
                               [-SkipBuild] [-NoBrowser] [-SkipCollector]
-                              [-PresentationMode] [-CorrelationId <Guid>] [-h]
+                              [-PresentationMode] [-CorrelationId <Guid>]
+                              [-Limit <1..1000>] [-h]
 
 Aktionen:
   Start          Gesamten Stack bauen, starten und pruefen (Standard)
@@ -182,6 +193,7 @@ Aktionen:
   FileSinks      Alle bekannten Datei- und Logsenken anzeigen
   PresentationSnapshots
                   Audit-Snapshots einer Bestellung sammeln und in Notepad++ oeffnen
+  DatabaseEntries Projektlokale Audit-Datenbankeintraege direkt und nur lesend anzeigen
 
 Parameter:
   -Action        Auszufuehrende Aktion; Standardwert ist Start
@@ -192,7 +204,8 @@ Parameter:
   -SkipCollector OpenTelemetry Collector beim Gesamtstart auslassen
   -PresentationMode
                   Vier deterministische Fehlerszenarien in der Website aktivieren
-  -CorrelationId  Bestellung fuer die Aktion PresentationSnapshots
+  -CorrelationId  Bestellung fuer PresentationSnapshots oder DatabaseEntries
+  -Limit          Maximale Datensatzanzahl fuer DatabaseEntries; Standard 100
   -h             Diese Hilfe anzeigen; es wird keine Aktion ausgefuehrt
 
 Komponenten:
@@ -217,6 +230,8 @@ Beispiele:
   .\Start-VSTOnlineStore.ps1 -Action FileSinks
   .\Start-VSTOnlineStore.ps1 -PresentationMode
   .\Start-VSTOnlineStore.ps1 -Action PresentationSnapshots -CorrelationId <Guid>
+  .\Start-VSTOnlineStore.ps1 -Action DatabaseEntries -Limit 50
+  .\Start-VSTOnlineStore.ps1 -Action DatabaseEntries -CorrelationId <Guid>
   .\Start-VSTOnlineStore.ps1 -Action Stop
 "@
 }
@@ -1182,6 +1197,11 @@ else {
         }
         "PresentationSnapshots" {
             Show-PresentationSnapshots
+        }
+        "DatabaseEntries" {
+            Show-PostgreSqlDatabaseEntries `
+                -CorrelationId $CorrelationId `
+                -Limit $Limit
         }
     }
 }

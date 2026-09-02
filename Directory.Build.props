@@ -1,0 +1,23 @@
+<Project>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <!--
+      Visual Studio und dotnet legen alle Release-Artefakte zentral ab.
+      Ein eigener Ordner je Projekt verhindert Dateikollisionen zwischen
+      den unabhängig ausführbaren Services und den Testprojekten.
+    -->
+    <OutputPath>$(MSBuildThisFileDirectory)ReleaseBuild\$(MSBuildProjectName)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <Target
+    Name="CopyReleaseBuildReadme"
+    AfterTargets="Build"
+    Condition="'$(Configuration)' == 'Release' and '$(MSBuildProjectName)' == 'StoreProxy'">
+    <MakeDir Directories="$(MSBuildThisFileDirectory)ReleaseBuild" />
+    <Copy
+      SourceFiles="$(MSBuildThisFileDirectory)docs\ReleaseBuild-README.md"
+      DestinationFiles="$(MSBuildThisFileDirectory)ReleaseBuild\README.md"
+      SkipUnchangedFiles="true" />
+  </Target>
+</Project>

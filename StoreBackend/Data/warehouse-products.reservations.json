@@ -86,5 +86,45 @@
     "status": "COMMITTED",
     "createdAtUtc": "2026-08-25T20:07:43.1941717Z",
     "completedAtUtc": "2026-08-25T20:07:44.2274381Z"
+  },
+  {
+    "reservationId": "18f09000-745f-432a-a180-93266025e34a",
+    "items": [
+      {
+        "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+        "quantity": 4
+      }
+    ],
+    "status": "COMMITTED",
+    "createdAtUtc": "2026-08-25T20:43:39.1686698Z",
+    "completedAtUtc": "2026-08-25T20:43:40.192888Z"
+  },
+  {
+    "reservationId": "84083843-f526-4a7b-bd07-fab85cbdfa48",
+    "items": [
+      {
+        "productId": "c3fad4e2-c4ca-40a2-a0f2-570ec19482c3",
+        "quantity": 1
+      },
+      {
+        "productId": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
+        "quantity": 1
+      }
+    ],
+    "status": "COMMITTED",
+    "createdAtUtc": "2026-08-25T21:10:47.2401711Z",
+    "completedAtUtc": "2026-08-25T21:10:48.272765Z"
+  },
+  {
+    "reservationId": "922c016d-1ae3-4aa6-8303-f1df6a791674",
+    "items": [
+      {
+        "productId": "d63f3cb9-e42e-4d3e-a84d-bfe557e049cc",
+        "quantity": 2
+      }
+    ],
+    "status": "COMMITTED",
+    "createdAtUtc": "2026-08-31T18:59:58.8200471Z",
+    "completedAtUtc": "2026-08-31T19:00:00.2605471Z"
   }
 ]

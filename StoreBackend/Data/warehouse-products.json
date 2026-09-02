@@ -11,7 +11,7 @@
     "name": "Buchenholz-Hocker",
     "price": 89.00,
     "image": "",
-    "availableQuantity": 8
+    "availableQuantity": 3
   },
   {
     "id": "70f70332-945f-4702-9bc2-1cf330f26d42",
@@ -25,14 +25,14 @@
     "name": "Eichen-Servierbrett",
     "price": 29.90,
     "image": "",
-    "availableQuantity": 9
+    "availableQuantity": 8
   },
   {
     "id": "d63f3cb9-e42e-4d3e-a84d-bfe557e049cc",
     "name": "Eichenbrett",
     "price": 24.95,
     "image": "",
-    "availableQuantity": 17
+    "availableQuantity": 15
   },
   {
     "id": "e51cf604-e6ec-42c4-c214-7920e3b6a4e5",

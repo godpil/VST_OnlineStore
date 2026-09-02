@@ -61,6 +61,8 @@ und sorgt für die Verwaltung des gesamten Stacks oder einzelner Komponenten:
 # PostgreSQL unabhängig vom restlichen Store verwalten
 .\Start-VSTPostgreSQL.ps1 -Action Start
 .\Start-VSTPostgreSQL.ps1 -Action Status
+.\Start-VSTPostgreSQL.ps1 -Action DatabaseEntries -Limit 50
+.\Start-VSTPostgreSQL.ps1 -Action DatabaseEntries -CorrelationId <Guid>
 .\Start-VSTPostgreSQL.ps1 -Action Stop
 
 # OpenTelemetry Collector unabhängig verwalten
@@ -70,6 +72,10 @@ und sorgt für die Verwaltung des gesamten Stacks oder einzelner Komponenten:
 
 # Alle bekannten Datei- und Logsenken anzeigen
 .\Start-VSTOnlineStore.ps1 -Action FileSinks
+
+# Audit-Einträge direkt aus dem projektlokalen PostgreSQL-Cluster lesen
+.\Start-VSTOnlineStore.ps1 -Action DatabaseEntries -Limit 50
+.\Start-VSTOnlineStore.ps1 -Action DatabaseEntries -CorrelationId <Guid>
 
 # Vorführmodus mit vier bestellungsbezogenen Fehlerszenarien
 .\Start-VSTOnlineStore.ps1 -PresentationMode
@@ -91,6 +97,16 @@ absoluten Pfad. Erfasst werden die täglich rollierenden Service-Logs,
 Standardausgabe und Standardfehler, die OTLP-JSONL-Datei, den PostgreSQL-Cluster,
 das PostgreSQL-Log, Warehouse-Daten und das Prozessmanifest.
 
+`DatabaseEntries` greift mit dem projektlokalen `psql` direkt und ausschließlich
+lesend auf `vst_audit.public.audit_snapshots` zu. Ohne `-CorrelationId` werden
+bis zu 100 der neuesten Datensätze ausgewählt und chronologisch ausgegeben;
+`-Limit` erlaubt Werte von 1 bis 1000. Mit einer Correlation-ID wird dieselbe
+Abfrage auf eine Bestellung begrenzt. Die Ausgabe enthält Sequenznummern,
+Zeitstempel, Event- und Vorgänger-IDs, Service, Ereignistyp, Status, Akteur und
+den formatierten JSON-Payload. Nur der projektlokale PostgreSQL-Cluster muss
+laufen; AuditService, ShopService und StoreProxy werden für diese Abfrage nicht
+benötigt.
+
 `-PresentationMode` blendet im Warenkorb vier deterministische Szenarien ein:
 Zahlungsablehnung, unzureichender Bestand, eine nach drei Versuchen gescheiterte
 Invoice-Verarbeitung und eine fehlgeschlagene Warehouse-Ausbuchung. Die Auswahl
@@ -98,6 +114,32 @@ gilt nur für die jeweilige Bestellung. Der Modus ist bei einem normalen Start
 ausgeschaltet. Mit `PresentationSnapshots` werden sämtliche über die öffentliche
 Audit-REST-Ressource gelesenen Snapshots einer Correlation-ID in
 `Logs/Presentation` zusammengeführt und sichtbar in Notepad++ geöffnet.
+
+Release-Build
+-------------
+
+Für einen Release-Build in Visual Studio wird in der Symbolleiste die
+Konfiguration `Release` ausgewählt und anschließend die gesamte Projektmappe
+erstellt. Die gemeinsame MSBuild-Konfiguration `Directory.Build.props` schreibt
+die Ausgaben aller Projekte nach `ReleaseBuild/<Projektname>`. Jeder Ordner
+enthält die jeweilige Assembly, ihre .NET-Abhängigkeiten, Laufzeitkonfiguration
+und die vom Projekt vorgesehenen Inhaltsdateien. Testprojekte werden ebenfalls
+in getrennten Unterordnern ausgegeben. Debug-Builds verwenden weiterhin die
+üblichen projektlokalen `bin/Debug`-Ordner.
+
+Der entsprechende Aufruf auf der Kommandozeile lautet:
+
+```powershell
+dotnet build .\VST_OnlineStore.slnx --configuration Release
+```
+
+Der Ordner `ReleaseBuild` enthält ausschließlich reproduzierbare Build-Artefakte
+und wird deshalb nicht in Git aufgenommen. Externe Laufzeitkomponenten wie
+RabbitMQ, PostgreSQL und der OpenTelemetry Collector werden weiterhin durch die
+vorhandenen Betriebs- beziehungsweise Subskripte bereitgestellt.
+Die bei jedem Release-Build erzeugte Datei `ReleaseBuild/README.md` beschreibt
+zusätzlich den vollständigen manuellen Betrieb ohne diese Skripte. Ihre
+versionsverwaltete Quelle ist [docs/ReleaseBuild-README.md](docs/ReleaseBuild-README.md).
 
 Service-Architektur
 -------------------
@@ -199,6 +241,18 @@ laufende Transaktionen zurückgerollt und die Datendateien konsistent geschlosse
 werden. Das lokale Trust-Verfahren ist auf die Entwicklungs- und
 Demonstrationsumgebung beschränkt; eine entfernte oder produktive Bereitstellung
 benötigt Benutzerrollen, SCRAM-Authentifizierung und ein Secret-Management.
+
+Die unveränderlichen Audit-Datensätze lassen sich ohne laufende Services direkt
+über beide Verwaltungsskripte lesen:
+
+```powershell
+.\Start-VSTOnlineStore.ps1 -Action DatabaseEntries -Limit 50
+.\Start-VSTPostgreSQL.ps1 -Action DatabaseEntries -CorrelationId <Guid>
+```
+
+Beide Varianten verwenden dieselbe feste, nur lesende Abfrage im
+PostgreSQL-Subskript und verweigern den Zugriff, falls Port `6688` nicht eindeutig
+dem projektlokalen Cluster zugeordnet werden kann.
 
 Strukturiertes Logging und OpenTelemetry
 ----------------------------------------

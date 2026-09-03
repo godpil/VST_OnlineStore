@@ -4,7 +4,7 @@
     "name": "Ahorn-Schneidebrett",
     "price": 34.50,
     "image": "",
-    "availableQuantity": 9
+    "availableQuantity": 8
   },
   {
     "id": "d40be5f3-d5db-41b3-b103-681fd2a593d4",
@@ -25,7 +25,7 @@
     "name": "Eichen-Servierbrett",
     "price": 29.90,
     "image": "",
-    "availableQuantity": 8
+    "availableQuantity": 7
   },
   {
     "id": "d63f3cb9-e42e-4d3e-a84d-bfe557e049cc",
@@ -46,13 +46,13 @@
     "name": "Nussbaumleiste",
     "price": 18.50,
     "image": "",
-    "availableQuantity": 5
+    "availableQuantity": 4
   },
   {
     "id": "b2e9d3d1-b3b9-4ef1-9fe1-46fdb08371b2",
     "name": "Zirbenholzschale",
     "price": 44.90,
     "image": "",
-    "availableQuantity": 15
+    "availableQuantity": 14
   }
 ]

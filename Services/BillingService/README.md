@@ -67,7 +67,7 @@ Neustart verloren. Eine dauerhafte operative Transaktionspersistenz ist nicht
 Teil der derzeitigen Testadapter; die unveränderlichen fachlichen
 Audit-Snapshots werden davon unabhängig weiterhin in PostgreSQL gespeichert.
 
-Im nur über den Gesamtstarter aktivierbaren `PresentationMode` führt das
+Im über das Start-Skript mit `-PresentationMode` aktivierbaren Modus führt das
 Szenario `payment-declined` zu einer deterministischen Ablehnung. Der
 BillingService auditiert diese Anbieterentscheidung; der ShopService gibt die
 Reservierung frei und beendet die Bestellung mit `PAYMENT_FAILED`. Refunds bei
@@ -78,7 +78,7 @@ späteren SAGA-Fehlern laufen weiterhin ausschließlich über die Payment-Fassad
 - .NET 10 SDK
 - RabbitMQ auf `localhost:5672`
 - freier TCP-Port `6684`
-- optional der vom Betriebsskript verwaltete OpenTelemetry Collector
+- optional der vom OpenTelemetry-Subscript verwaltete Collector
 
 Für echte PayPal- oder Stripe-Zahlungen wären zusätzliche Zugangsdaten,
 Webhooks und eine gesonderte Produktionsfreigabe erforderlich. Diese sind für

@@ -47,7 +47,7 @@ wurde, wird sie dabei nicht erstattet. Das Vorführszenario
 - freier TCP-Port `6685`
 - Schreibzugriff auf das Verzeichnis `Services/InvoiceService/Data`
 - optional ein SMTP-Server, falls `InvoiceEmail:Mode` auf `Smtp` gesetzt wird
-- optional der vom Betriebsskript verwaltete OpenTelemetry Collector
+- optional der vom OpenTelemetry-Subscript verwaltete Collector
 
 ## Start
 

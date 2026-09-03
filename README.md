@@ -37,11 +37,11 @@ Frühe Webfrontendansätze (inzwischen entfernt) - 01.06.26
 //Ab hier folgt eine Menge AutoGen Doku (inzwischen ist die Qualität aber annehmbar)
 
 
-Betriebsskript
---------------
+Start-Skript
+------------
 
-Das Skript `Start-VSTOnlineStore.ps1` stellt das Testskript für dieses Projekt dar,
-und sorgt für die Verwaltung des gesamten Stacks oder einzelner Komponenten:
+Das Start-Skript `Start-VSTOnlineStore.ps1` verwaltet den gesamten Stack oder
+einzelne Komponenten:
 
 ```powershell
 # Hilfe zu allen Parametern und Aktionen
@@ -73,6 +73,12 @@ und sorgt für die Verwaltung des gesamten Stacks oder einzelner Komponenten:
 # Alle bekannten Datei- und Logsenken anzeigen
 .\Start-VSTOnlineStore.ps1 -Action FileSinks
 
+# Live-Logfenster bei bereits laufendem Store oeffnen
+.\Start-VSTOnlineStore.ps1 -Action Logs
+
+# Optional ohne Browser und ohne Live-Logfenster starten
+.\Start-VSTOnlineStore.ps1 -NoBrowser -NoLogWindow
+
 # Audit-Einträge direkt aus dem projektlokalen PostgreSQL-Cluster lesen
 .\Start-VSTOnlineStore.ps1 -Action DatabaseEntries -Limit 50
 .\Start-VSTOnlineStore.ps1 -Action DatabaseEntries -CorrelationId <Guid>
@@ -92,10 +98,34 @@ einen anhand von Prozess-ID und Startzeit eindeutig als verwaltet erkannten
 Prozess. Abhängigkeiten werden bei der Einzelsteuerung bewusst nicht automatisch
 gestartet oder beendet.
 
+RabbitMQ wird vom Start-Skript als extern bereitgestellter Broker behandelt und
+nicht selbst gestartet oder beendet. Der Broker kann nativ oder in Docker
+laufen. Für einen lokalen Container muss dessen AMQP-Port als `5672:5672`
+veröffentlicht sein; die konfigurierten Zugangsdaten müssen mit dem Broker
+übereinstimmen.
+
 `FileSinks` zeigt pro Senke Status, Anzahl, Gesamtgröße, letzte Änderung und
 absoluten Pfad. Erfasst werden die täglich rollierenden Service-Logs,
 Standardausgabe und Standardfehler, die OTLP-JSONL-Datei, den PostgreSQL-Cluster,
 das PostgreSQL-Log, Warehouse-Daten und das Prozessmanifest.
+
+Nach erfolgreichem Start öffnet sich zusätzlich ein separates Live-Logfenster.
+Es zeigt zunächst die letzten 20 Zeilen je Datei und danach neue Meldungen
+aus `Logs/Startup/*.out.log`, `Logs/Startup/*.err.log` und
+`Logs/PostgreSQL/*.log`. Damit sind die Konsolenausgaben aller gestarteten
+Services, des StoreBackend und des OpenTelemetry Collectors sowie die
+PostgreSQL-Meldungen mit einer Quellenangabe gebündelt sichtbar. Die Ansicht
+aktualisiert sich alle 500 ms, erkennt neu angelegte beziehungsweise
+zurückgesetzte Logdateien und verändert die bestehenden Logsenken nicht.
+RabbitMQ-Logs sind nicht enthalten, da der Broker extern betrieben wird.
+
+`-NoLogWindow` unterdrückt das zusätzliche Fenster; `-NoBrowser` unterdrückt
+weiterhin nur den Browser. Mit `-Action Logs` lässt sich das Fenster wieder
+öffnen; ein bereits verwaltetes Fenster wird nicht doppelt gestartet.
+Das Schließen des Fensters oder `Strg+C` beendet nur die Ansicht. `-Action Stop`
+schließt auch das verwaltete Logfenster. Das Subscript `Watch-VSTLogs.ps1`
+kann außerdem direkt im aktuellen Terminal ausgeführt werden; mit `-Tail 0`
+zeigt es nur neu hinzukommende Meldungen an.
 
 `DatabaseEntries` greift mit dem projektlokalen `psql` direkt und ausschließlich
 lesend auf `vst_audit.public.audit_snapshots` zu. Ohne `-CorrelationId` werden
@@ -134,11 +164,11 @@ dotnet build .\VST_OnlineStore.slnx --configuration Release
 ```
 
 Der Ordner `ReleaseBuild` enthält ausschließlich reproduzierbare Build-Artefakte
-und wird deshalb nicht in Git aufgenommen. Externe Laufzeitkomponenten wie
-RabbitMQ, PostgreSQL und der OpenTelemetry Collector werden weiterhin durch die
-vorhandenen Betriebs- beziehungsweise Subskripte bereitgestellt.
+und wird deshalb nicht in Git aufgenommen. PostgreSQL und der OpenTelemetry
+Collector werden weiterhin durch ihre Subscripts bereitgestellt. RabbitMQ bleibt
+ein externer Broker und kann nativ oder in Docker betrieben werden.
 Die bei jedem Release-Build erzeugte Datei `ReleaseBuild/README.md` beschreibt
-zusätzlich den vollständigen manuellen Betrieb ohne diese Skripte. Ihre
+zusätzlich den vollständigen manuellen Betrieb ohne Start-Skript und Subscripts. Ihre
 versionsverwaltete Quelle ist [docs/ReleaseBuild-README.md](docs/ReleaseBuild-README.md).
 
 Service-Architektur
@@ -227,13 +257,13 @@ PostgreSQL
 ----------
 
 Der AuditService ist der einzige Service mit relationaler Persistenz. Das
-eigenständige Skript `Start-VSTPostgreSQL.ps1` lädt beim ersten Start PostgreSQL
+PostgreSQL-Subscript `Start-VSTPostgreSQL.ps1` lädt beim ersten Start PostgreSQL
 18.6 als gepinntes Windows-Binärarchiv von EDB, prüft dessen
 SHA-256-Prüfsumme und initialisiert einen ausschließlich lokal erreichbaren
 Cluster auf `127.0.0.1:6688`. Binaries und Daten liegen getrennt unter
 `Tools/PostgreSQL/18.6-1` beziehungsweise `Data/PostgreSQL/18` und werden nicht
-in Git aufgenommen. `Start-VSTOnlineStore.ps1` bindet diese Verwaltung ein und
-koordiniert sie beim Gesamtstart und beim Beenden des Stacks.
+in Git aufgenommen. Das Start-Skript `Start-VSTOnlineStore.ps1` bindet diese
+Verwaltung beim Start und beim Beenden des vollständigen Stacks ein.
 
 Die Datenbank `vst_audit` wird automatisch erstellt. Beim Beenden des Stacks
 wird PostgreSQL zuletzt und kontrolliert im Fast-Modus heruntergefahren, sodass
@@ -243,7 +273,7 @@ Demonstrationsumgebung beschränkt; eine entfernte oder produktive Bereitstellun
 benötigt Benutzerrollen, SCRAM-Authentifizierung und ein Secret-Management.
 
 Die unveränderlichen Audit-Datensätze lassen sich ohne laufende Services direkt
-über beide Verwaltungsskripte lesen:
+über das Start-Skript oder das PostgreSQL-Subscript lesen:
 
 ```powershell
 .\Start-VSTOnlineStore.ps1 -Action DatabaseEntries -Limit 50
@@ -251,7 +281,7 @@ Die unveränderlichen Audit-Datensätze lassen sich ohne laufende Services direk
 ```
 
 Beide Varianten verwenden dieselbe feste, nur lesende Abfrage im
-PostgreSQL-Subskript und verweigern den Zugriff, falls Port `6688` nicht eindeutig
+PostgreSQL-Subscript und verweigern den Zugriff, falls Port `6688` nicht eindeutig
 dem projektlokalen Cluster zugeordnet werden kann.
 
 Strukturiertes Logging und OpenTelemetry
@@ -283,11 +313,11 @@ Datei nach dem Muster
 vorherigen 13 Tage werden behalten; ältere Tagesdateien werden beim Start oder
 beim nächsten Tageswechsel entfernt.
 
-Das eigenständige Skript `Start-VSTOpenTelemetryCollector.ps1` verwaltet den
+Das OpenTelemetry-Subscript `Start-VSTOpenTelemetryCollector.ps1` verwaltet den
 nativen OpenTelemetry Collector für Windows. Beim ersten Start wird die gepinnte
 Version aus den offiziellen OpenTelemetry-Releases geladen und über die
-veröffentlichte SHA-256-Prüfsumme verifiziert. `Start-VSTOnlineStore.ps1` bindet
-diese Verwaltung beim Gesamtstart ein. Alle ASP.NET- und gRPC-Komponenten
+veröffentlichte SHA-256-Prüfsumme verifiziert. Das Start-Skript bindet diese
+Verwaltung beim Start des vollständigen Stacks ein. Alle ASP.NET- und gRPC-Komponenten
 exportieren ihre strukturierten Einträge zusätzlich per OTLP/gRPC. Die technische
 OTLP-Datei des Collectors liegt unter
 `Logs/OpenTelemetry/vst-online-store.jsonl`.

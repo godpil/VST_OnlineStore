@@ -40,11 +40,11 @@ Jede Lager- und Freigabeoperation erzeugt einen eigenen Audit-Snapshot.
 - laufender StoreBackend auf Port `6681`
 - RabbitMQ auf `localhost:5672`
 - freier TCP-Port `6683`
-- optional der vom Betriebsskript verwaltete OpenTelemetry Collector
+- optional der vom OpenTelemetry-Subscript verwaltete Collector
 
 ## Start
 
-Das Betriebsskript startet Abhängigkeiten bei einem Einzelstart nicht
+Das Start-Skript startet Abhängigkeiten bei einem Einzelstart nicht
 automatisch. Vom Repository-Wurzelverzeichnis aus ist daher folgende Reihenfolge
 sinnvoll:
 

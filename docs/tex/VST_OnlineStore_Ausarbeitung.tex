@@ -1,0 +1,1097 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[ngerman]{babel}
+\usepackage{fontspec}
+\setmainfont{lmroman10-regular.otf}[
+  BoldFont=lmroman10-bold.otf,
+  ItalicFont=lmroman10-italic.otf,
+  BoldItalicFont=lmroman10-bolditalic.otf
+]
+\setsansfont{lmsans10-regular.otf}[
+  BoldFont=lmsans10-bold.otf,
+  ItalicFont=lmsans10-oblique.otf,
+  BoldItalicFont=lmsans10-boldoblique.otf
+]
+\setmonofont{lmmono10-regular.otf}[
+  Scale=0.84,
+  AutoFakeBold=2,
+  AutoFakeSlant=0.2
+]
+
+\usepackage[a4paper,left=19mm,right=19mm,top=18mm,bottom=19mm,headheight=14pt]{geometry}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,backgrounds,shapes.geometric}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{lastpage}
+
+\definecolor{Primary}{HTML}{244A3B}
+\definecolor{PrimaryLight}{HTML}{E9F1ED}
+\definecolor{Accent}{HTML}{B46A3C}
+\definecolor{AccentLight}{HTML}{F6ECE5}
+\definecolor{Ink}{HTML}{1F2925}
+\definecolor{Muted}{HTML}{5F6D67}
+\definecolor{Line}{HTML}{C7D2CC}
+\definecolor{Success}{HTML}{2F7D4B}
+\definecolor{Warn}{HTML}{B7791F}
+\definecolor{Failure}{HTML}{A23B3B}
+\definecolor{Broker}{HTML}{E8EEF7}
+\definecolor{Database}{HTML}{EEEAF7}
+
+\newcommand{\littleGap}{\vspace{8mm}}
+\newcommand{\midGap}{\vspace{12mm}}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=Primary,
+  citecolor=Accent,
+  urlcolor=Accent,
+  pdftitle={Architektur und Umsetzung eines exemplarischen Online-Stores "Das Holzwerk"	Leading-Edge-Development},
+  pdfsubject={Vertiefung Softwaretechnik FHSWF2026 - Projektbericht},
+  pdfauthor={(B.Sc.) P. Förderer}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small Holzwerk-OnlineStore}
+\fancyhead[R]{\sffamily\small Technischer Projektbericht}
+\fancyfoot[L]{\sffamily\footnotesize Stand: 31. August 2026}
+\fancyfoot[R]{\sffamily\footnotesize Seite \thepage\ von \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\titleformat{\section}
+  {\Large\sffamily\bfseries\color{Primary}}
+  {\thesection}{0.7em}{}
+  [\vspace{-0.25em}\color{Line}\titlerule]
+\titleformat{\subsection}
+  {\large\sffamily\bfseries\color{Primary}}
+  {\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}
+  {\normalsize\sffamily\bfseries\color{Ink}}
+  {\thesubsubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{1.0em}{0.55em}
+\titlespacing*{\subsection}{0pt}{0.75em}{0.35em}
+\titlespacing*{\subsubsection}{0pt}{0.55em}{0.25em}
+
+\setlist[itemize]{leftmargin=1.25em,itemsep=1.5pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.45em,itemsep=1.5pt,topsep=3pt}
+\setlength{\tabcolsep}{5pt}
+\setlength{\emergencystretch}{2em}
+\renewcommand{\arraystretch}{1.14}
+\captionsetup{font=small,labelfont={bf,sf},textfont=it,skip=4pt}
+\setcounter{tocdepth}{2}
+\setcounter{secnumdepth}{3}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{R}{>{\raggedleft\arraybackslash}p{1.45cm}}
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\term}[1]{\textsf{\textbf{#1}}}
+\newcommand{\good}{\textcolor{Success}{\textbf{ja}}}
+\newcommand{\partialok}{\textcolor{Warn}{\textbf{teilweise}}}
+
+\lstdefinelanguage{json}{
+  basicstyle=\ttfamily\scriptsize,
+  string=[s]{"}{"},
+  stringstyle=\color{Accent},
+  showstringspaces=false,
+  breaklines=true,
+  literate=
+   *{0}{{{\color{Primary}0}}}{1}
+    {1}{{{\color{Primary}1}}}{1}
+    {2}{{{\color{Primary}2}}}{1}
+    {3}{{{\color{Primary}3}}}{1}
+    {4}{{{\color{Primary}4}}}{1}
+    {5}{{{\color{Primary}5}}}{1}
+    {6}{{{\color{Primary}6}}}{1}
+    {7}{{{\color{Primary}7}}}{1}
+    {8}{{{\color{Primary}8}}}{1}
+    {9}{{{\color{Primary}9}}}{1}
+}
+\lstset{
+  basicstyle=\ttfamily\scriptsize,
+  frame=single,
+  rulecolor=\color{Line},
+  backgroundcolor=\color{PrimaryLight!45},
+  keywordstyle=\color{Primary}\bfseries,
+  commentstyle=\color{Muted}\itshape,
+  stringstyle=\color{Accent},
+  numbers=none,
+  showstringspaces=false,
+  breaklines=true,
+  columns=fullflexible,
+  aboveskip=5pt,
+  belowskip=5pt,
+  xleftmargin=3pt,
+  xrightmargin=3pt
+}
+
+\tikzset{
+  actor/.style={
+    draw=Primary, fill=PrimaryLight, rounded corners=2pt,
+    minimum width=19mm, minimum height=8mm, align=center,
+    font=\sffamily\scriptsize\bfseries
+  },
+  component/.style={
+    draw=Primary, fill=white, rounded corners=2pt,
+    minimum width=24mm, minimum height=9mm, align=center,
+    font=\sffamily\scriptsize
+  },
+  service/.style={
+    component, fill=PrimaryLight
+  },
+  external/.style={
+    component, draw=Accent, fill=AccentLight
+  },
+  infrastructure/.style={
+    component, draw=Muted, fill=Broker
+  },
+  database/.style={
+    cylinder, shape border rotate=90, aspect=0.25,
+    draw=Muted, fill=Database, minimum width=23mm,
+    minimum height=10mm, align=center, font=\sffamily\scriptsize
+  },
+  flow/.style={
+    -{Latex[length=2mm]}, semithick, draw=Primary
+  },
+  async/.style={
+    -{Latex[length=2mm]}, semithick, dashed, draw=Accent
+  },
+  note/.style={
+    draw=Line, fill=white, rounded corners=2pt,
+    align=left, font=\sffamily\tiny, inner sep=3pt
+  },
+  decision/.style={
+    diamond, aspect=2.2, draw=Primary, fill=PrimaryLight,
+    align=center, font=\sffamily\tiny, inner sep=1.2pt
+  },
+  state/.style={
+    draw=Primary, fill=white, rounded corners=2pt,
+    minimum width=24mm, minimum height=7mm, align=center,
+    font=\sffamily\tiny
+  },
+  failedstate/.style={
+    state, draw=Failure, fill=Failure!7
+  },
+  successstate/.style={
+    state, draw=Success, fill=Success!7
+  }
+}
+
+\begin{document}
+
+\begin{titlepage}
+  \thispagestyle{empty}
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[Primary] (current page.north west)
+      rectangle ([yshift=-44mm]current page.north east);
+    \fill[Accent] ([yshift=-44mm]current page.north west)
+      rectangle ([yshift=-48mm]current page.north east);
+    \draw[Line,line width=0.8pt]
+      ([xshift=19mm,yshift=24mm]current page.south west)
+      -- ([xshift=-19mm,yshift=24mm]current page.south east);
+  \end{tikzpicture}
+
+  \vspace*{8mm}
+  {\color{white}\sffamily\bfseries\fontsize{15}{18}\selectfont
+    Vertiefung Software Technik - SS26 - Online-Store\par}
+  \vspace{22mm}
+
+  {\sffamily\bfseries\color{Primary}\fontsize{28}{33}\selectfont
+    Architektur und Umsetzung\\ 
+	eines exemplarischen Online-Stores\\ 
+	"Das Holzwerk" \\ 
+	Leading-Edge-Development\par}
+  \vspace{5mm}
+  {\sffamily\color{Muted}\Large
+    Projektbericht\par}
+
+\vfill
+  \begin{tabular}{ll}
+	Gegenstand: 		& Entwurf, Implementierung und Qualitätssicherung eines verteilten Onlineshops\\
+						& mit nachvollziehbaren Bestell- und Kompensationsabläufen\\
+	Technologiestand: 	& .NET10, gRPC, RabbitMQ, PostgreSQL, OpenTelemetry, OpenAPI 3.1\\
+    Dokumentstand: 		& 31. August 2026\\    
+	Autor: 				&	B.Sc. P. Förderer\\
+	E-Mail:				&	p.foerderer@fh-swf.de\\
+\end{tabular}
+\vspace{15mm}
+\end{titlepage}
+
+\pagenumbering{arabic}
+\setcounter{page}{2}
+
+\section*{Dokumentübersicht}
+\addcontentsline{toc}{section}{Dokumentübersicht}
+
+\begin{minipage}[t]{0.58\textwidth}
+  \tableofcontents
+\end{minipage}\hfill
+\begin{minipage}[t]{0.37\textwidth}
+  \vspace{11mm}
+  \colorbox{PrimaryLight}{%
+    \parbox{\dimexpr\linewidth-2\fboxsep\relax}{%
+      \sffamily\small\textbf{\color{Primary}Kurzfassung}\par
+      \vspace{3pt}
+      \rmfamily\small
+      Der Holzwerk-OnlineStore verbindet eine öffentliche REST-Fassade mit
+      internen gRPC-Services. RabbitMQ entkoppelt Rechnungserstellung und
+      Auditing; PostgreSQL speichert append-only Audit-Snapshots. Eine
+      Payment-Fassade kapselt austauschbare Provider. Der ShopService
+      orchestriert den Bestellprozess als SAGA und kompensiert Zahlungen und
+      Reservierungen bei Folgefehlern.
+    }}
+\end{minipage}
+
+\vspace{7mm}
+\begin{tabularx}{\textwidth}{@{}p{31mm}Y@{}}
+  \toprule
+  \textbf{\sffamily Merkmal} & \textbf{\sffamily Ausprägung}\\
+  \midrule
+  System- & Browserzugriffe ausschließlich über den StoreProxy; interne
+    Dienste über gRPC und RabbitMQ\\
+  Qualitätsfokus & Erweiterbarkeit, Nachvollziehbarkeit, Fehlertransparenz,
+    reproduzierbarer lokaler Betrieb\\
+  Persistenz & PostgreSQL für Audit-Snapshots; JSON-Dateien für Lager- und
+    Rechnungsdaten der Demonstrationsumgebung\\
+  Nachweis & 28 automatisierte Tests sowie End-to-End-Prüfungen der vier
+    deterministischen Präsentationsszenarien\\
+  \bottomrule
+\end{tabularx}
+
+\newpage
+\section{Einleitung}
+\littleGap
+\subsection{Problemstellung}
+Ein Bestellprozess wirkt aus Sicht des Kunden wie eine einzelne Aktion. Intern
+müssen jedoch Bestand, Zahlung, Rechnung und Protokollierung koordiniert werden.
+In einem verteilten System können diese Teilschritte unabhängig voneinander
+fehlschlagen oder zu spät antworten. Eine lokal erfolgreiche Zahlung bedeutet
+beispielsweise noch nicht, dass der Lagerbestand endgültig ausgebucht oder eine
+Rechnung erstellt wurde. Klassische Datenbanktransaktionen über alle
+Systemgrenzen hinweg wären technisch aufwendig, würden die Komponenten eng
+koppeln und passen nicht zu einem ereignisbasierten Rechnungs- und Auditingpfad.
+
+Das Projekt adressiert daher drei miteinander verbundene Fragen:
+
+\begin{itemize}
+  \item Wie lässt sich der Bestellprozess in fachlich getrennte Services
+    zerlegen, ohne die Konsistenzanforderungen zu verletzen?
+  \item Wie werden Fehler und Timeouts so behandelt, dass Kunde und Betreiber
+    einen eindeutigen Zustand erkennen können?
+  \item Wie bleibt die Historie eines Vorgangs über synchrone Aufrufe,
+    Nachrichten und Kompensationen hinweg nachvollziehbar?
+\end{itemize}
+
+\midGap
+
+\subsection{Ziele}
+
+Das Ergebnis soll eine lokal ausführbare Referenzimplementierung eines Onlineshops sein. Im Vordergrund stehen Architektur und Verhalten. Da es sich hier um ein exemplarisches Lernbeispiel handelt, wurden einige Freiheiten, wie zB. Payment-Provider Implementierung als Stub's oder ein generiertes Fronted, bereits in der Voraussetzung gewährt.\\
+Daraus ergeben sich folgende Ziele:
+
+\begin{enumerate}
+  \item Eine öffentliche, ressourcenorientierte REST-API mit OpenAPI-3.1-
+    Beschreibung und einheitlichen Problem-Details nach RFC~9457
+  \item Getrennte Verantwortlichkeiten für Orchestrierung, Lager, Zahlung,
+    Rechnung und Auditing
+  \item Eine konfigurierbare Payment-Fassade mit mehreren Providern und einem
+    Erweiterungspunkt nach dem Open/Closed Principle
+  \item Ein expliziter SAGA-Ablauf mit definierten terminalen Zuständen und
+    nachvollziehbaren Kompensationen
+  \item Eine unveränderliche, korrelationsbezogene Audit-Historie in
+    PostgreSQL sowie ergänzende technische Logs und Telemetrie
+  \item Reproduzierbarer Betrieb über PowerShell-Skripte und eine
+    vorführbare Fault Injection pro Bestellung
+\end{enumerate}
+
+\midGap
+
+\subsection{Abgrenzung}
+
+Die Implementierung ist eine Entwicklungs- und Demonstrationsumgebung. PayPal,
+Stripe und DemoPay sind lokale Stubs und bewegen kein echtes Geld. Die
+Rechnungsmail wird standardmäßig in eine Pickup-Outbox geschrieben; ein
+produktiver SMTP-Versand, Webhooks externer Provider, Authentifizierung,
+Autorisierung, Hochverfügbarkeit und Backupkonzepte sind
+nicht oder nur zum Teil, Gegenstand des Projekts. Nur Audit-Snapshots benötigen relationale
+Persistenz nach Voraussetzung. Lager- und Rechnungsdaten bleiben bewusst dateibasiert. Diese
+Abgrenzung verhindert, dass Infrastrukturthemen die Untersuchung der
+Architektur- \& Entwurfsmuster überlagern.\\
+Auch das Frontend (index.html, css- \& js-Files) durfte vernachlässigt werden und wurde durch 
+ChatGPT's-Codex-Plattform\cite{cgpt} generiert, um den Fokus nicht auch auf Webdesign und JavaScript zu legen.
+
+\newpage
+
+\section{Grundlagen}
+
+\littleGap
+
+\subsection{Microservices und Gateway}
+
+
+Die Services orientieren sich an fachlichen Verantwortlichkeiten. Der
+StoreProxy ist der einzige öffentliche Einstiegspunkt und leitet explizit
+freigegebene HTTP-Ressourcen an den ShopService weiter. Dadurch kennt der
+Browser weder interne Ports noch gRPC-Verträge. Der ShopService besitzt die
+Prozesssicht, während Warehouse-, Billing-, Invoice- und AuditService ihre
+jeweiligen Fachfunktionen kapseln. Diese Trennung unterstützt unabhängige
+Fehlerbehandlung und vermeidet direkte Zugriffe der Website auf interne
+Komponenten. Während die YARP-Middleware hier, zentrales Routing und LoadBalancing
+übernimmt.
+
+Die öffentliche API folgt dem Ressourcenstil: Bestellungen werden mit
+\texttt{POST} \path|/api/orders| erzeugt, Rechnungen über
+\texttt{GET} \path|/api/invoices/{invoiceId}/pdf| abgerufen und
+Audit-Historien über \texttt{GET}
+\path|/api/order-audits/{correlationId}/snapshots| gelesen. Aktionsnamen
+wie \code{/chargeOrder} oder \code{/getAudit} werden vermieden. OpenAPI 3.1
+beschreibt Requests, Antworten, Statuscodes und Fehlerfälle. Problem-Details
+nach RFC~9457 liefern neben \code{type}, \code{title}, \code{status},
+\code{detail} und \code{instance} stets eine \code{correlationID}
+\cite{rfc9457,openapi}.
+
+\midGap
+
+\subsection{Fassade und Provider-Strategien}
+
+Das Fassadenmuster bietet einem Client eine vereinfachte Schnittstelle zu einem
+komplexeren Teilsystem \cite{gamma}. Im Projekt ist die
+\code{PaymentFacade} der einzige Zugriffspunkt auf konkrete
+\code{IPaymentProvider}-Implementierungen. Sie vereinheitlicht die Operationen
+\code{ChargeAsync}, \code{RefundAsync} und \code{GetStatusAsync}, validiert die
+Providerwahl und behandelt Zeitüberschreitungen an einer Stelle.
+
+Die konkreten Adapter bilden quasi austauschbare Strategien im Sinne des Entwurfsmusters, 
+PayPal und Stripe sind initial aktiviert; DemoPay bleibt registriert, ist jedoch
+deaktiviert. Die Website trifft keine Vorauswahl. Der Kunde wählt den Provider
+für genau eine Bestellung, und der BillingService prüft diese Wahl erneut gegen
+die Konfiguration. Diese Konfiguration kann auch über die Datei: \emph{appsettings.json} des 
+Projekts \emph{BillingService}, zB. auch als Umgebungsvariable gesetzt werden. Zur Kenntlichmachung 
+der zusätzlichen Konfigurationsebene wurde DemoPay beispielhaft deaktiviert. Neue Adapter werden per 
+Tyediscovery registriert. Deshalb müssen weder Fassade noch Startcode verändert werden, solange der neue Typ die
+Schnittstelle \code{IPaymentProvider} implementiert.
+
+\midGap
+
+\subsection{SAGA statt verteilter ACID-Transaktion}
+
+Das SAGA-Pattern \emph{(dt. Sage, Erzählung)} zerlegt einen Geschäftsprozess in lokale Transaktionen und ordnet
+erfolgreichen Schritten passende Gegenaktionen zu \cite{richardson}. Im
+vorliegenden System orchestriert der ShopService diese Reihenfolge. Eine
+Bestandsreservierung wird bei abgelehnter Zahlung freigegeben. Ist die Zahlung
+bereits erfolgreich und scheitern anschließend Event-Publikation oder
+Lager-Commit, wird zuerst ein Refund über die Fassade versucht und danach die
+Reservierung storniert.\\
+Kompensation ist nicht mit einem technischen Rollback gleichzusetzen. Sie ist
+eine neue fachliche Operation, kann selbst fehlschlagen und muss deshalb einen
+eigenen Audit-Zustand besitzen. Der Endzustand
+\code{ROLLBACK_COMPLETED} bedeutet, dass alle vorgesehenen Gegenaktionen
+erfolgreich waren, wohingegen \code{ROLLBACK_FAILED} betriebliche Probleme signalisiert.\\
+\\
+In Abgrenzung zu typischen ACID-Transaktionen \emph{(Akronym aus: Atomicity, Consistency, Isolation, Durability)} wie sie auch gerne bei Datenbanktransaktionen verwendet werden, kann innerhalb verteilter nebenläufiger Systeme keine \emph{strenge} Konsistenz erzwungen werden, daher bietet das SAGA-Pattern eine abgeschwächte Form, der "`eventuellen Konsistenz"'.
+
+\midGap
+
+\subsection{Event Sourcing Light und Beobachtbarkeit}
+
+Vollständiges Event Sourcing rekonstruiert den aktuellen Aggregatzustand aus
+dem Ereignisstrom und verwendet Ereignisse als primäre Persistenz
+\cite{fowler}. Der OnlineStore verfolgt bewusst eine leichtere Variante:
+fachlich relevante Zustandsübergänge werden als append-only Audit-Snapshots
+gespeichert, die operativen Modelle von Lager, Zahlung und Rechnung werden
+jedoch nicht daraus wiederhergestellt. Der Begriff \emph{Event Sourcing Light}
+bezeichnet hier somit eine unveränderliche, geordnete Historie, nicht ein
+vollständiges Event-Sourcing-System.\\
+Auditing und technisches Monitoring bleiben getrennt. Audit-Snapshots erklären,
+\emph{was fachlich geschah}; JSONL-Logs, Traces und Metriken erklären,
+\emph{wie sich die Software technisch verhielt}. Eine durchgängige
+Correlation-ID verbindet HTTP-Request, gRPC-Aufrufe, RabbitMQ-Nachrichten,
+Logeinträge und Datenbankzeilen.
+\vspace{15mm}
+
+\subsection{Synchron und asynchron}
+Bestandsreservierung, Zahlung und Lager-Commit beeinflussen die unmittelbare
+Bestellantwort und werden synchron per gRPC ausgeführt. Rechnungserstellung und
+Auditing sind zeitlich entkoppelbar und laufen über RabbitMQ. Durable Queues,
+persistente Nachrichten, Publisher-Confirms, manuelle Acknowledgements und
+Dead-Letter-Queues ermöglichen eine At-least-once-Verarbeitung
+\cite{rabbitmq}. Daraus folgt Eventual Consistency: Eine Bestellung kann bereits
+abgeschlossen sein, während Rechnung oder Audit-Snapshot noch verarbeitet
+werden.
+
+\midGap
+
+\section{Systemarchitektur}
+\littleGap
+
+\subsection{Komponenten und Verantwortlichkeiten}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}p{30mm}p{14mm}Y@{}}
+  \toprule
+  \textbf{\sffamily Komponente} & \textbf{\sffamily Port} &
+    \textbf{\sffamily Verantwortung}\\
+  \midrule
+  StoreProxy & 6680 & Öffentlicher Einstieg, Website, YARP-Routing,
+    Rate Limits und Proxy-Fehlerbehandlung\\
+  StoreBackend & 6681 & Dateibasierte Produkt-, Bestands- und
+    Reservierungspersistenz\\
+  ShopService & 6682 & REST-Fassade, Readiness-Prüfung und
+    SAGA-Orchestrierung\\
+  WarehouseService & 6683 & Katalog, Reservieren, Ausbuchen und Freigeben\\
+  BillingService & 6684 & Payment-Fassade, Providerwahl, Charge, Refund und
+    Zahlungsereignis\\
+  InvoiceService & 6685 & Asynchrone Rechnung, PDF und E-Mail-Pickup-Outbox\\
+  AuditService & 6686 & Konsum, Validierung, Persistenz und Abfrage von
+    Audit-Snapshots\\
+  OTel Collector & 6687 & Zentrale Annahme technischer Logs, Traces und
+    Metriken\\
+  PostgreSQL & 6688 & Append-only Persistenz der Audit-Historie\\
+  RabbitMQ & 5672 & Transport von Zahlungs- und Audit-Ereignissen\\
+  \bottomrule
+\end{tabularx}
+\caption{Laufzeitkomponenten der lokalen Umgebung}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}
+  \node[actor] (customer) at (0,0) {Kunde\\Browser};
+  \node[service] (proxy) at (2.8,0) {StoreProxy\\REST + Website};
+  \node[service] (shop) at (5.6,0) {ShopService\\Orchestrator};
+  \node[service] (billing) at (8.5,0) {BillingService\\Payment-Fassade};
+  \node[external] (providers) at (11.4,0) {Provider-Stubs\\PayPal / Stripe};
+
+  \node[service] (warehouse) at (8.5,1.55)
+    {WarehouseService\\Bestand};
+  \node[component] (backend) at (11.4,1.55)
+    {StoreBackend\\JSON};
+  \node[infrastructure] (rabbit) at (8.5,-1.55)
+    {RabbitMQ\\Topic-Exchanges};
+  \node[service] (invoice) at (11.4,-1.55)
+    {InvoiceService\\PDF + Outbox};
+  \node[service] (audit) at (5.6,-3.05)
+    {AuditService\\Snapshot-Owner};
+  \node[database] (postgres) at (8.5,-3.05)
+    {PostgreSQL\\audit\_snapshots};
+  \node[infrastructure] (otel) at (11.4,-3.05)
+    {OpenTelemetry\\Logs + Traces};
+
+  \draw[flow] (customer) -- node[above,font=\sffamily\tiny]{HTTP} (proxy);
+  \draw[flow] (proxy) -- node[above,font=\sffamily\tiny]{YARP} (shop);
+  \draw[flow] (shop.north) |- node[pos=0.72,above,font=\sffamily\tiny]{gRPC}
+    (warehouse.west);
+  \draw[flow] (warehouse) -- node[above,font=\sffamily\tiny]{gRPC} (backend);
+  \draw[flow] (shop) -- node[above,font=\sffamily\tiny]{gRPC} (billing);
+  \draw[flow] (billing) -- node[above,font=\sffamily\tiny]{in-process} (providers);
+  \draw[async] (billing) -- node[right,font=\sffamily\tiny]{Events} (rabbit);
+  \draw[async] (rabbit) -- node[above,font=\sffamily\tiny]{payment.succeeded} (invoice);
+  \draw[async] (rabbit.west) -| node[pos=0.72,left,font=\sffamily\tiny]{audit.\#}
+    (audit.north);
+  \draw[flow] (audit) -- node[above,font=\sffamily\tiny]{EF Core / Npgsql} (postgres);
+
+  \node[note,below=3mm of customer,anchor=north west] (boundary)
+    {Öffentlich: nur StoreProxy\\Intern: gRPC + RabbitMQ};
+  \node[note,below=3mm of otel] {
+    Alle .NET-Services exportieren\\
+    technische Telemetrie per OTLP.};
+\end{tikzpicture}}
+\caption{Systemkontext und zentrale Kommunikationsbeziehungen}
+\label{fig:architecture}
+\end{figure}
+\newpage  	
+
+
+
+	 	 	
+\subsection{Interaktionen im Happy Path}
+
+Der erfolgreiche Ablauf folgt sieben fachlichen Schritten. Die Correlation-ID
+wird beim Eingang erzeugt und zugleich als \code{orderId} verwendet:
+
+\begin{enumerate}
+  \item Der StoreProxy leitet \code{POST /api/orders} weiter; der ShopService
+    prüft Betriebsbereitschaft und Request
+  \item Der WarehouseService reserviert die Artikel persistent im
+    StoreBackend
+  \item Der BillingService delegiert die Zahlung über die Payment-Fassade an
+    den ausgewählten Provider
+  \item Der Provider bestätigt; der BillingService protokolliert das Ergebnis
+  \item Der BillingService publiziert \code{payment.succeeded}; der
+    InvoiceService erstellt die Rechnung asynchron
+  \item Der WarehouseService bucht die reservierten Waren endgültig aus
+  \item Der ShopService schreibt \code{ORDER_COMPLETED} und antwortet mit
+    \code{201 Created}. Er wartet nicht auf das fertige PDF
+\end{enumerate}
+
+\littleGap
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[x=2.8cm,y=-0.72cm,font=\sffamily\tiny]
+  \foreach \x/\name in {
+    0/Kunde + Proxy,
+    1/ShopService,
+    2/Warehouse,
+    3/Billing + Fassade,
+    4/RabbitMQ,
+    5/InvoiceService} {
+      \node[component,minimum width=23mm] (p\x) at (\x,0) {\name};
+      \draw[Line,dashed] (\x,0.35) -- (\x,8.0);
+  }
+
+  \draw[flow] (0,1.0) -- node[above]{1: POST /api/orders} (1,1.0);
+  \draw[flow] (1,2.0) -- node[above]{2: ReserveCart} (2,2.0);
+  \draw[flow] (2,2.55) -- node[above]{reserviert} (1,2.55);
+  \draw[flow] (1,3.35) -- node[above]{3: ProcessPayment} (3,3.35);
+  \draw[flow] (3,3.9) -- node[above]{4: Transaktion erfolgreich} (1,3.9);
+  \draw[async] (3,4.75) -- node[above]{5: payment.succeeded} (4,4.75);
+  \draw[async] (4,5.35) -- node[above]{asynchrone Verarbeitung} (5,5.35);
+  \draw[flow] (1,6.15) -- node[above]{6: CommitCart} (2,6.15);
+  \draw[flow] (2,6.7) -- node[above]{Bestand ausgebucht} (1,6.7);
+  \draw[flow] (1,7.5) -- node[above]{7: 201 / COMPLETED} (0,7.5);
+
+  \node[note,anchor=west] at (4.1,6.2)
+    {Rechnung und E-Mail-Outbox\\laufen unabhängig weiter};
+\end{tikzpicture}}
+\caption{Happy-Path-Sequenz der implementierten Bestelllogik}
+\label{fig:happypath}
+\end{figure}
+
+\midGap
+
+\subsection{Schnittstellen und Betriebsmodell}
+
+Die internen Verträge der gRPC-Services, liegen als typische Protobuf-Dateien vor. Der öffentliche
+StoreProxy kennt diese Verträge aber nicht, sondern routet ausschließlich HTTP zum
+ShopService. YARP prüft dessen Health-Endpunkt aktiv, setzt eine kanonische
+\code{X-Correlation-ID} und übersetzt Weiterleitungsfehler in
+Problem-Details. Rate Limits begrenzen insbesondere Bestellungen auf zehn
+Requests pro Client und Minute. Der Checkout selbst wird wegen möglicher
+Zahlungswirkungen nicht automatisch wiederholt.\\
+Die Verwendung der YARP-Middleware \cite{yarp} ermöglicht völlig nativ, die
+Webanwendung zu routen (per ReverseProxy und Layer7-Routing), LoadBalancing zu nutzen,
+Health-Checks durchzuführen sowie die SSL/TLS-Zertifikatsverwaltung zu übernehmen (HTTP2.0).
+
+Das Startskript \emph{Start-VSTOnlineStore.ps1} verwaltet PostgreSQL, OpenTelemetry Collector und alle
+.NET-Services komfortabel und in definierter Reihenfolge. PostgreSQL wird beim Stop zuletzt
+kontrolliert beendet. RabbitMQ bleibt eine externe aber notwendige Komponente und muss installiert oder per
+Docker gehostet werden.\\
+Einzelne Komponenten können unabhängig gestartet und gestoppt werden; dadurch lassen
+sich Ausfälle und Wiederanlauf gezielt untersuchen.\\
+Website, Services und Komponenten können aber auch einzeln populiert und zur Ausführung gebracht werden,
+davon wurde aber unter dem Gesichtspunkt der Präsentationsfähigkeit (Live-Demo) Abstand genommen, aber 
+dennoch über den GIT-Ordner \emph{ReleaseBuild}, inklusive Anleitung für das manuelle Setup, berücksichtig.
+
+\newpage
+
+\section{Implementierung}
+\littleGap
+
+\subsection{Payment-Fassade}
+
+Der gRPC-Service \code{BillingOperationsGrpcService} ist die fachliche
+Servicegrenze, der konkrete Provider wird ausschließlich hinter der Fassade
+aufgerufen. Die Schnittstelle bietet für alle Adapter dieselben drei
+Operationen:
+
+\begin{lstlisting}[language={[Sharp]C},caption={Vereinfachter Providervertrag}]
+public interface IPaymentProvider
+{
+    Task<PaymentChargeResult> ChargeAsync(
+        Guid orderId, long amountInCents, string currency,
+        CancellationToken cancellationToken);
+
+    Task<PaymentRefundResult> RefundAsync(automa
+        string transactionId, long amountInCents,
+        CancellationToken cancellationToken);
+
+    Task<PaymentStatusResult> GetStatusAsync(
+        string transactionId, CancellationToken cancellationToken);
+}
+\end{lstlisting}
+
+\midGap
+
+\begin{figure}[H]
+\centering
+\resizebox{0.96\textwidth}{!}{%
+\begin{tikzpicture}[node distance=7mm and 10mm]
+  \node[service] (grpc) {BillingOperations\\gRPC-Service};
+  \node[service,right=of grpc] (facade) {PaymentFacade\\Validierung + Timeout};
+  \node[component,right=of facade] (contract) {IPaymentProvider\\Charge / Refund / Status};
+
+  \node[external,above right=7mm and 10mm of contract] (paypal)
+    {PayPalPaymentProvider\\aktiv};
+  \node[external,right=of contract] (stripe)
+    {StripePaymentProvider\\aktiv};
+  \node[external,below right=7mm and 10mm of contract,
+    draw=Muted,fill=black!4,text=Muted] (demo)
+    {SimulatedProvider\\deaktiviert};
+  \node[external,below=17mm of facade,dashed] (new)
+    {Neuer Adapter\\z.B. Klarna};
+
+  \draw[flow] (grpc) -- node[above,font=\sffamily\tiny]{nur über Fassade} (facade);
+  \draw[flow] (facade) -- node[above,font=\sffamily\tiny]{einheitlicher Vertrag} (contract);
+  \draw[flow] (contract) |- (paypal);
+  \draw[flow] (contract) -- (stripe);
+  \draw[flow] (contract) |- (demo);
+  \draw[async] (new) -| node[pos=0.25,below,font=\sffamily\tiny]
+    {automatische Typentdeckung} (contract);
+  \node[note,below=4mm of new] {
+    OCP: neuer Typ implementiert IPaymentProvider;\\
+    Fassade, gRPC-Vertrag und ShopService bleiben unverändert.};
+\end{tikzpicture}}
+\caption{Payment-Fassade und Erweiterung um einen Provider}
+\label{fig:facade}
+\end{figure}
+
+\littleGap
+
+\code{EnabledProviderKeys} steuert, welche registrierten Adapter für neue
+Bestellungen zulässig sind. \code{ActiveProviderKey} dient nur als
+serverseitiger Fallback für ältere oder interne Aufrufer. Ein Timeout wird
+zentral mit einem verknüpften CancellationToken umgesetzt und für jeden
+Provider in dieselbe Fehlersemantik übersetzt.
+
+Für Refund und Status merkt sich die Fassade den Provider einer Transaktion in
+einem nebenläufigen Dictionary. Dadurch bleibt der Aufrufer providerneutral.
+Diese Zuordnung ist gegenwärtig prozesslokal; ihre Persistierung ist eine
+bewusste offene Anforderung und wird in Kapitel~\ref{sec:reflection}
+kritisch bewertet.
+
+\midGap
+
+\newpage
+
+\subsection{AuditSnapshot-Schema}
+Jeder fachliche Zustand wird als \code{AuditSnapshot} abgebildet. Die
+Anwendung erzeugt zunächst einen Entwurf. Der AuditService ergänzt
+\code{previousEventID} und eine globale \code{sequenceNumber} atomar:
+
+\littleGap
+
+\begin{lstlisting}[language=json,caption={Logisches AuditSnapshot-Schema}]
+{
+  "eventID": "uuid",
+  "correlationID": "uuid",
+  "eventType": "PAYMENT",
+  "responsibleService": "ShopService",
+  "timestamp": "2026-08-25T10:15:22.184Z",
+  "payload": {
+    "phase": "PAYMENT_REFUND_REQUESTED",
+    "orderStatus": "IN_PROGRESS"
+  },
+  "previousEventID": "uuid | null",
+  "actor": "ShopService",
+  "statusCode": "COMPENSATING",
+  "sequenceNumber": 4711
+}
+\end{lstlisting}
+
+\littleGap
+
+PostgreSQL verwendet native \code{uuid}- und
+\code{timestamp with time zone}-Typen; der Payload liegt als \code{jsonb} vor.
+Primär-, Fremd-, Unique- und Check-Constraints sichern Struktur und Verkettung.
+Ein \emph{transaktionsgebundener Advisory Lock} serialisiert nur Ereignisse derselben
+Correlation-ID, und vermeidet gleichzeitig die Sperrung von Tabellen. Datenbanktrigger 
+lehnen \code{UPDATE}, \code{DELETE} und
+\code{TRUNCATE} ab. Damit wird Append-only nicht nur als
+Anwendungskonvention, sondern auch in der Datenbank durchgesetzt
+\cite{postgres}.
+
+\littleGap
+
+RabbitMQ kann Nachrichten im At-least-once-Modell erneut zustellen. Die
+\code{eventID} wirkt deshalb als Idempotenzschlüssel. Ein bereits vorhandenes,
+inhaltlich identisches Ereignis gilt als erfolgreiche Wiederholung; ein
+widersprüchliches Duplikat wird abgelehnt. Nur der AuditService besitzt das
+Schema. Andere Services publizieren Ereignisse und lesen Historien über die
+interne gRPC-Schnittstelle des AuditService.
+
+\littleGap
+
+\subsection{Kompensationslogik}
+
+\begin{figure}[H]
+\centering
+\resizebox{0.98\textwidth}{!}{%
+\begin{tikzpicture}
+  \node[state] (start) at (0,0) {Bestellung validiert};
+  \node[decision] (reserve) at (2.25,0) {Reserve\\erfolgreich?};
+  \node[decision] (charge) at (4.45,0) {Charge\\erfolgreich?};
+  \node[decision] (publish) at (6.65,0) {Event\\publiziert?};
+  \node[decision] (commit) at (8.85,0) {Commit\\erfolgreich?};
+  \node[successstate] (complete) at (11.05,0) {COMPLETED};
+
+  \node[failedstate] (stockfail) at (2.05,-1.55) {OUT\_OF\_STOCK};
+  \node[state] (release1) at (4.55,-1.55)
+    {STOCK\_RELEASE\\REQUESTED};
+  \node[failedstate] (payfail) at (4.55,-2.85) {PAYMENT\_FAILED};
+
+  \node[state] (refund) at (7.75,-1.55)
+    {PAYMENT\_REFUND\\REQUESTED};
+  \node[state] (release2) at (7.75,-2.85)
+    {STOCK\_RELEASE\\REQUESTED};
+  \node[failedstate] (rollback) at (7.75,-4.15)
+    {ROLLBACK\_COMPLETED / FAILED};
+
+  \node[note] (invoice) at (10.7,1.5)
+    {Nach durable Event:\\
+     3 Invoice-Versuche, dann DLQ + Auditfehler;\\
+     keine automatische Zahlungserstattung};
+
+  \draw[flow] (start) -- (reserve);
+  \draw[flow] (reserve) -- node[above,font=\sffamily\tiny]{ja} (charge);
+  \draw[flow] (charge) -- node[above,font=\sffamily\tiny]{ja} (publish);
+  \draw[flow] (publish) -- node[above,font=\sffamily\tiny]{ja} (commit);
+  \draw[flow] (commit) -- node[above,font=\sffamily\tiny]{ja} (complete);
+
+  \draw[flow] (reserve) -- node[right,font=\sffamily\tiny]{nein} (stockfail);
+  \draw[flow] (charge) -- node[right,font=\sffamily\tiny]{nein} (release1);
+  \draw[flow] (release1) -- (payfail);
+  \draw[flow] (publish) -- node[right,font=\sffamily\tiny]{nein} (refund);
+  \draw[flow] (commit.south) |- node[pos=0.25,right,font=\sffamily\tiny]{nein}
+    (refund.north);
+  \draw[flow] (refund) -- (release2);
+  \draw[flow] (release2) -- (rollback);
+  \draw[async] (publish.north) |- (invoice.west);
+\end{tikzpicture}}
+\caption{SAGA-Entscheidungen und fachliche Gegenaktionen}
+\label{fig:saga}
+\end{figure}
+
+\midGap
+
+Jeder Gegenlauf beginnt mit einem eigenen Snapshot im Status
+\code{COMPENSATING}, der Erfolgsfall wird mit \code{COMPENSATED} und ein Fehler mit
+\code{FAILURE} gespeichert. Eine Zahlungsablehnung führt nur zur
+Lagerfreigabe, weil noch keine erfolgreiche Zahlung existiert. Nach erfolgreicher
+Zahlung werden bei fehlgeschlagener Event-Publikation oder fehlgeschlagenem
+Commit, Refund und Lagerfreigabe, nacheinander ausgeführt. Ein technisch nicht
+bestätigter Commit wird genau einmal \emph{idempotent} wiederholt, bevor die
+Kompensation beginnt.\\
+Ist \code{payment.succeeded} hingegen bereits dauerhaft im Broker angenommen,
+gehört die Rechnungserstellung denoch zur asynchronen Verarbeitung und wird bei Fehlschlag, maximal dreimal
+nacheinander ausgeführt. Die Phasen \path|INVOICE_RETRY_SCHEDULED|,
+\path|INVOICE_RETRY_EXHAUSTED| und
+\path|INVOICE_PROCESSING_FAILED| werden auditiert; anschließend gelangt die
+Nachricht in die DLQ \emph{(engl. Dead Letter Queue)}. Die Zahlung wird in diesem Fall nicht rückgängig gemacht,
+weil der Bestellabschluss bereits fachlich bestätigt und die Nachricht
+dauerhaft vorhanden ist.
+
+\midGap
+
+\subsection{Fault Injection und Präsentationsmodus}
+
+Der Schalter \code{-PresentationMode} aktiviert vier deterministische,
+bestellungsbezogene Szenarien. Die Website zeigt sie im Warenkorb an und
+überträgt den Schlüssel über REST, gRPC und RabbitMQ. Im normalen
+Start ist der Modus deaktiviert; eine unbeabsichtigte globale Störung wird damit
+vermieden.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}p{34mm}Yp{34mm}@{}}
+  \toprule
+  \textbf{\sffamily Szenario} & \textbf{\sffamily Erwarteter Ablauf} &
+    \textbf{\sffamily Endzustand}\\
+  \midrule
+  Zahlung abgelehnt & Reservierung freigeben; kein Rechnungsevent &
+    \code{PAYMENT_FAILED}\\
+  Bestand fehlt & Nach Reserve-Ablehnung keine Zahlung und keine Rechnung &
+    \code{OUT_OF_STOCK}\\
+  Invoice nicht verfügbar & Drei Versuche, Fehler-Snapshots und DLQ; kein
+    Refund & Bestellung \code{COMPLETED}, Invoice fehlerhaft\\
+  Warehouse-Commit fehlerhaft & Refund über Fassade, danach Reservierung wieder freigeben & \code{ROLLBACK_COMPLETED}\\
+  \bottomrule
+\end{tabularx}
+\caption{Deterministische Vorführszenarien}
+\end{table}
+
+Mit der Aktion \code{PresentationSnapshots} werden alle Snapshots einer
+Correlation-ID per ShopService über die öffentliche Audit-Ressource gelesen 
+\emph{(GET http://localhost:6680/api/order-audits/{correlationId}/snapshots)}, 
+formatiert in \code{Logs/Presentation} abgelegt und in Notepad++ geöffnet. Damit zeigt die
+Präsentation nicht nur die sichtbare Fehlerreaktion, sondern auch den
+internen Kompensationslauf.
+
+\midGap
+
+\section{Qualitätssicherung}
+
+\littleGap
+
+\subsection{Teststrategie}
+
+Die Testpyramide konzentriert schnelle Unit-Tests auf fachliche Regeln und
+Integrationstests auf die Orchestrierung:
+
+\begin{itemize}
+  \item \term{Payment-Fassade:} Erfolg, Ablehnung, Timeout je Provider,
+    Konfiguration, Providerwahl, deaktivierter Adapter, Refund, Status und
+    automatische Adaptererkennung.
+  \item \term{StoreBackend:} persistente und idempotente Reservierung,
+    Commit sowie einmalige Freigabe.
+  \item \term{Shop-Integration:} Happy Path, Bestands- und Zahlungsfehler,
+    Readiness, Downstream-Ausfall, Timeouts, Event-Publikationsfehler,
+    Commit-Retry, Kompensation, Providerpropagation und Präsentationsmodus.
+  \item \term{End-to-End:} Start des realen lokalen Stacks, Checkout über die
+    Website und Abfrage der in PostgreSQL gespeicherten Snapshot-Kette.
+\end{itemize}
+
+Die Billing-Unit-Tests verwenden kontrollierte Provider-Doubles. Die
+Shop-Integrationstests ersetzen gRPC-Clients und Audit-Recorder gezielt, sodass
+Aufrufreihenfolge, Nichtaufrufe und terminale Zustände beobachtbar sind.
+Technische Fehler werden nicht nur anhand des HTTP-Status bewertet: Die Tests
+prüfen zusätzlich Refund-, Release- und Audit-Aufrufe. Dadurch kann eine
+oberflächlich korrekte Fehlerantwort keinen fehlenden SAGA-Schritt verdecken.
+
+\midGap
+
+\subsection{Automatisierte Testergebnisse}
+
+Der abschließende Release-Build wurde mit .NET10-64bit erfolgreich ausgeführt.
+
+\begin{table}[H]
+\centering
+\begin{tabularx}{0.84\textwidth}{@{}Y>{\centering\arraybackslash}p{14mm}
+  >{\centering\arraybackslash}p{14mm}>{\centering\arraybackslash}p{14mm}@{}}
+  \toprule
+  \textbf{\sffamily Testprojekt} &
+    \textbf{\sffamily Erfolg} &
+    \textbf{\sffamily Fehler} &
+    \textbf{\sffamily Gesamt}\\
+  \midrule
+  StoreBackend.UnitTests & 2 & 0 & 2\\
+  BillingService.UnitTests & 10 & 0 & 10\\
+  ShopService.IntegrationTests & 16 & 0 & 16\\
+  \midrule
+  \textbf{Gesamt} & \textbf{28} & \textbf{0} & \textbf{28}\\
+  \bottomrule
+\end{tabularx}
+\caption{Testergebnis des Release-Builds}
+\end{table}
+
+\littleGap
+
+Nach Abschluss wurde die Produktversion für alle Komponenten auf Version 1.0 gesetzt. Ein fehlerfreier Release-Build populiert außerdem alle notwendigen Komponenten (außer RabbitMQ) im Verzeichnis \code{..\MASTER\VST_OnlineStore\ReleaseBuild}, ein Zip-File mit dessen Inhalt wurde unter GIT ebenfalls deployed (\code{VST_OnlineStore-1.0.0-win-x64.zip}).
+
+\subsection{Nachweise der Fehlerszenarien}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{@{}p{34mm}p{34mm}Y@{}}
+  \toprule
+  \textbf{\sffamily Fehlerfall} & \textbf{\sffamily Sichtbares Ergebnis} &
+    \textbf{\sffamily Nachgewiesene interne Reaktion}\\
+  \midrule
+  Zahlung abgelehnt & HTTP 422,\newline
+    \code{PAYMENT_FAILED} & Separate Release-Anforderung,
+    persistente Freigabe und terminaler Snapshot; kein Commit\\
+  Unzureichender Bestand & HTTP 409,\newline
+    \code{OUT_OF_STOCK} & Abbruch nach Reserve-Ablehnung; Billing und Invoice
+    nicht aufgerufen\\
+  Invoice nicht verfügbar & Bestellung bleibt\newline
+    \code{COMPLETED} & Versuche 1 und 2 eingeplant, Versuch 3 ausgeschöpft,
+    Verarbeitungsfehler auditiert; kein Refund\\
+  Warehouse-Commit fehlerhaft & HTTP 502,\newline
+    \code{ROLLBACK_COMPLETED} & Refund über Fassade, Lagerfreigabe und je ein
+    Snapshot für angeforderte und abgeschlossene Kompensationen\\
+  \bottomrule
+\end{tabularx}
+\caption{End-to-End-Beobachtung im Präsentationsmodus}
+\end{table}
+
+\littleGap
+
+Bei der Website-Prüfung des Warehouse-Fehlers wurden 22 chronologische
+Snapshots unter derselben Correlation-ID aus PostgreSQL gelesen. Die Kette
+enthielt unter anderem \code{STOCK_COMMIT_FAILED},
+\code{PAYMENT_REFUND_REQUESTED}, \code{PAYMENT_REFUNDED},
+\code{STOCK_RELEASE_REQUESTED}, \code{STOCK_RELEASED} und den terminalen
+Bestellstatus. Gleichzeitig waren die providerbezogene Erstattung im
+Billing-Log und Release-Aufrufe in Warehouse- und Backend-Logs auffindbar.
+
+\midGap
+
+\subsection{Bewertung und verbleibende Testlücken}
+
+Die Tests decken die entscheidenden Kontrollflüsse ab, erreichen aber keine
+Produktionsvalidierung, außerdem werden PostgreSQL und RabbitMQ in den
+Shop-Integrationstests, durch kontrollierte Grenzen (MOCK's) ersetzt.\\
+Softwareprojekte dieser Größe die länger betrieben und somit auch gepflegt werden müssen,
+benötigen einen konsequenten Aufbau einer Testumgebung nach ISTQB\cite{istqb} und V-Modell.
+Diese Umgebung wächst mit den Anforderungen des Projekts auf jeder Ebene. 
+Aufgrund der verteilten Umgebung werden zusätzlich Last-, Stress- und Penetrationstests notwendig, 
+auch \emph{Chaos-Engineering} und Partitions/Netzwerktests können zur Robustheit beitragen.
+
+\midGap
+
+\newpage
+
+\section{Reflexion}
+\label{sec:reflection}
+
+\littleGap
+
+\subsection{Gute Entscheidungen}
+
+\begin{itemize}  
+	\item \term{Zentrale Microservice-Architektur:}
+    Alle wesentliche Zugriffe laufen über einen zentralen Shop-Service und dieser
+		meldet nur zum StoreProxy durch. Die Architektur vermittelt eine gute Übersichtlichkeit
+		und kann sowhol synchron als auch dynamisch asynchrone (Teil-)Prozesse durchführen und
+		kann orchestriert werden.
+  \item \term{Die Payment-Fassade stellt eine belastbare Grenze dar:}
+    Kein Billing-Aufrufer greift direkt auf konkrete Adapter zu. Providerwahl,
+    Timeout, Refund und Status sind einheitlich, und neue Adapter werden ohne
+    Änderung bestehenden Fassadencodes entdeckt.
+  \item \term{Fehler sind fachlich und technisch nachvollziehbar:}
+    Correlation-ID, strukturierte Logs, OTLP-Daten und append-only
+    Audit-Snapshots ergänzen sich. Auch Kompensationsschritte sind
+    eigenständige Ereignisse.
+  \item \term{Fault Injection:}
+    Setzt an den tatsächlichen Servicegrenzen an. Sie
+    simuliert keine bloßen Frontendmeldungen, sondern löst Refund, Release,
+    Retry und DLQ-Verhalten aus.
+  \item \term{Stubs für Payment-Provider, E-Mail und DB-Client sind bereits als Adapter bzw. Strategie entworfen:}
+    Die entsprechenden Slots für diese Komponenten sind bereits gegeben, Kapselung und Erweiterbarkeit wurden berücksichtigt.
+\end{itemize}
+
+\midGap
+
+\subsection{Weniger gute Entscheidungen}
+
+\begin{enumerate}
+  \item \term{Verwendung des \emph{TransactionalOutboxPattern}:} Zwischen erfolgreicher
+    Zahlung und RabbitMQ-Publikation besteht eine \emph{Dual-Write-Grenze}.
+    Publisher-Confirms und Refund reduzieren das Risiko, eine persistente
+    Outbox im BillingService würde den Übergang jedoch noch robuster machen.  
+  \item \term{Containerisierte Infrastruktur:} Die PowerShell-Skripte
+    ermöglichen einen guten Windows-Demobetrieb, sind jedoch weniger portabel
+    als Docker Compose oder eine containerbasierte Testumgebung. PostgreSQL,
+    RabbitMQ und Collector sollten für CI reproduzierbar gekapselt werden. Dieses
+		Feature konnte leider nicht mehr berücksichtigt werden, war aber geplant.
+  \item \term{Infrastrukturtests früher einplanen:} Viele Fehlerlücken wurden
+    erst durch manuelles Abschalten einzelner Services sichtbar. Frühe
+    automatisierte Ausfalltests hätten Readiness, Timeout und Kompensation
+    schneller zusammengeführt.
+  \item \term{Retry-Richtlinie:} Drei Invoice-Versuche erfüllen zwar die 
+		Anforderung, produktionstauglicher sind jedoch Techniken wie exponentielles Backoff mit Jitter,
+		Metriken, Alarmierung und ein kontrollierter Redrive-Prozess für die DLQ.
+\end{enumerate}
+
+\midGap
+
+\subsection{Eingegangene Kompromisse}
+
+\begin{enumerate}
+  \item \term{Hybrid aus gRPC und Events:} 
+		Zwischen erfolgreicher synchroner Konsistenz für checkoutkritische Schritte, aber \emph{"`eventual consistency"'} bei Rechnung und 
+		Auditing, nach Voraussetzung
+  \item \term{Event Sourcing Light}
+		Sehr gute Historie leider ohne vollständige Aggregate-Rekonstruktion; operative Daten bleiben separate Wahrheit		
+  \item \term{Provider-Stubs} 
+		Deterministische Tests ohne Geldbewegung; keine Aussage über Webhooks, Provider-SLAs.(War geplant)
+  \item \term{Dateiablage für Lager und Rechnung:}
+		Einfache, sichtbare Demonstration; keine horizontale Skalierung und eingeschränkte Parallelität, dafür gute Handhabbarkeit
+  \item \term{Pickup-Outbox statt echter E-Mail} 
+		Sichere und reproduzierbare Rechnungserzeugung; Versandzustellung wird nicht validiert, dafür vorbereitet mit \emph{Mailkit-Package}
+  \item \term{Orchestrierte SAGA:} 
+		Ablauf und Kompensation sind zentral verständlich; der ShopService trägt dafür wie geplant mehr Prozesswissen und stellt das Zentrum dar
+	\item \term{Datenbank, E-Mail} 
+		Die Komponenten funktionieren zwar nur eingeschränkt (DB-Cluster-Instanz, E-Mails werden nur in Ordner geschrieben/kein echter SMTP-Client); Aber die Komponenten sind leistungsfähig (QuestPDF/Mailkit) und der Datenbankadapter kapselt mit EF.Core
+\end{enumerate}
+
+\midGap
+
+
+\subsection{Fazit}
+
+Die Realisierung des Online-Stores mit aktueller Technologie und Systemen zeigt auf, wie stark sich grade die Webentwicklung in den letzten 20 Jahren verändert hat. Wo früher noch eine Website mit einem DOM und Model ausreichend war, sind inzwischen wesentliche Neuerungen Stand aktueller Technik, dies schlägt sich auch in der Projektgröße und Umfang nieder. Aufgrund der zahlreichen Anwendungsfälle die durch verteilte Systeme abgebildet werden können, steigt die Anzahl der Techniken, des notwendigen Konfigurationsmanagment und Modellwissens.\\
+Wesentlich sind allerdings die Architekturmerkmale und das technische Verständnis hinsichtlich einer Microservice-Architektur. Auch wenn diese Umsetzung exemplarisch ist, war der Lerneffekt deutlich, die Realisierung eines Online-Stores "`State-of-the-Art"' stellt in der Tat eine gute Übung dar, um aktuelle Technologien, Topologien und Entwurfsmuster zu verwenden bzw. zu verstehen.\\
+
+\midGap
+
+\newpage
+
+\section*{Literatur und Standards}
+\addcontentsline{toc}{section}{Literatur und Standards}
+\small
+\begin{thebibliography}{9}
+
+\bibitem{cgpt}
+ChatGPT-Codex Agent, zur Erstellung des Web-Frontend's
+\url{https://chatgpt.com/de-DE/codex/}
+
+\bibitem{rfc9457}
+IETF:
+\emph{RFC 9457 - Problem Details for HTTP APIs}, 2023.
+\url{https://www.rfc-editor.org/rfc/rfc9457}
+
+\bibitem{openapi}
+OpenAPI Initiative:
+\emph{OpenAPI Specification 3.1}.
+\url{https://spec.openapis.org/oas/v3.1.0}
+
+\bibitem{gamma}
+E. Gamma, R. Helm, R. Johnson und J. Vlissides:
+\emph{Design Patterns: Elements of Reusable Object-Oriented Software}.
+Addison-Wesley, 1994.
+
+\bibitem{richardson}
+C. Richardson
+\emph{Microservices Patterns}. Manning, 2018,
+Kapitel 4: Managing transactions with sagas.
+
+\bibitem{istqb}
+ International Software Testing Qualifications Board
+\url{https://istqb.org}
+
+\bibitem{ef}
+EntityFrameworkCore
+\url{https://learn.microsoft.com/de-de/ef/core/get-started/overview/first-app?tabs=netcore-cli}
+
+\bibitem{yarp}
+Microsofts 'Yet Another Reverse Proxy' für .NET
+\url{https://dotnet.github.io/yarp/}
+
+\bibitem{fowler}
+M. Fowler:
+\emph{Event Sourcing}, 2005.
+\url{https://martinfowler.com/eaaDev/EventSourcing.html}
+
+\bibitem{rabbitmq}
+RabbitMQ:
+\emph{Consumer Acknowledgements and Publisher Confirms}.
+\url{https://www.rabbitmq.com/docs/confirms}
+
+\bibitem{postgres}
+PostgreSQL Global Development Group:
+\emph{PostgreSQL 18 Documentation}.
+\url{https://www.postgresql.org/docs/18/}
+
+\end{thebibliography}
+
+\end{document}

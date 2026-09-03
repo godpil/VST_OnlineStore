@@ -74,11 +74,12 @@ manuell übertragene Szenarioangabe wird abgelehnt.
 - indirekt StoreBackend auf Port `6681` für den WarehouseService
 - RabbitMQ auf `localhost:5672`
 - freier TCP-Port `6682`
-- optional der vom Betriebsskript verwaltete OpenTelemetry Collector
+- optional der vom OpenTelemetry-Subscript verwaltete Collector
 
 ## Start
 
-Für den vollständigen Aufrufpfad ist der Gesamtstart die einfachste Variante:
+Für den vollständigen Aufrufpfad ist der Start des gesamten Stacks über das
+Start-Skript die einfachste Variante:
 
 ```powershell
 .\Start-VSTOnlineStore.ps1 -NoBrowser

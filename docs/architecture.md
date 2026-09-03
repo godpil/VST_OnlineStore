@@ -93,7 +93,8 @@ die Anbindung realer externer Zahlungssysteme.
 
 Das Kontextdiagramm zeigt die Systemgrenze, die Akteure sowie alle externen
 Infrastrukturbeziehungen. Der Kunde nutzt die Web- und REST-Funktionen.
-Entwicklung und Betrieb verwenden Startskripte, OpenAPI/Swagger und Tests. Die
+Entwicklung und Betrieb verwenden das Start-Skript, die Subscripts,
+OpenAPI/Swagger und Tests. Die
 Zahlungsanbieter-Stubs repräsentieren simulierte externe Zahlungssysteme.
 
 ![Systemkontext des Holzwerk OnlineStore](diagrams/system-context.svg)
@@ -384,8 +385,9 @@ wird PostgreSQL 18 projektlokal auf Port 6688 betrieben; die Datenbank heißt
 
 #### Konsequenzen
 
-- PostgreSQL benötigt Installation, Start, Backup und Überwachung. Das Skript
-  `Start-VSTPostgreSQL.ps1` automatisiert dies für die lokale Umgebung.
+- PostgreSQL benötigt Installation, Start, Backup und Überwachung. Das
+  PostgreSQL-Subscript `Start-VSTPostgreSQL.ps1` automatisiert dies für die
+  lokale Umgebung.
 - Schemaänderungen müssen als EF-Core-Migrationen versioniert werden.
 - Der AuditService bleibt der einzige Eigentümer des Schemas; direkte Zugriffe
   anderer Services sind nicht zulässig.
@@ -463,23 +465,27 @@ bereitgestellt.
 - .NET 10 SDK beziehungsweise Runtime,
 - RabbitMQ auf `localhost:5672`,
 - freie Ports `6680` bis `6688`,
-- PowerShell für die bereitgestellten Betriebsskripte.
+- PowerShell für das Start-Skript und die Subscripts.
 
-Gesamtstart aus dem Repository-Wurzelverzeichnis:
+Start des vollständigen Stacks über das Start-Skript aus dem
+Repository-Wurzelverzeichnis:
 
 ```powershell
 .\Start-VSTOnlineStore.ps1
 ```
 
-PostgreSQL und der OpenTelemetry Collector können unabhängig verwaltet werden:
+PostgreSQL und der OpenTelemetry Collector können über ihre Subscripts
+unabhängig verwaltet werden:
 
 ```powershell
 .\Start-VSTPostgreSQL.ps1 -Action Start
 .\Start-VSTOpenTelemetryCollector.ps1 -Action Start
 ```
 
-RabbitMQ wird als extern installierter Windows-Dienst vorausgesetzt. Das
-Gesamtstartskript prüft seine Erreichbarkeit, startet ihn aber nicht selbst.
+RabbitMQ wird als extern bereitgestellter Broker vorausgesetzt und kann nativ
+oder in Docker betrieben werden. Bei einem lokalen Container muss Port 5672 auf
+den Host-Port 5672 veröffentlicht sein. Das Start-Skript prüft die
+Erreichbarkeit, startet oder beendet den Broker aber nicht selbst.
 
 ## 10. Pflege der Dokumentation
 

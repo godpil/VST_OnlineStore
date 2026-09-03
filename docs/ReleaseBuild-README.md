@@ -1,7 +1,7 @@
 # VST OnlineStore 1.0 – manueller Betrieb
 
-Diese Anleitung beschreibt den manuellen Start des Release-Builds ohne
-`Start-VSTOnlineStore.ps1` und ohne dessen Subskripte. Alle Befehle sind für
+Diese Anleitung beschreibt den manuellen Start des Release-Builds ohne das
+Start-Skript `Start-VSTOnlineStore.ps1` und ohne dessen Subscripts. Alle Befehle sind für
 PowerShell unter Windows angegeben. Für jeden dauerhaft laufenden Prozess wird
 ein eigenes Terminal benötigt.
 
@@ -21,7 +21,7 @@ Erforderlich sind:
 
 - Windows x64
 - .NET 10 SDK oder ASP.NET Core Runtime 10
-- ein lokal laufender RabbitMQ-Broker mit Erlang auf `localhost:5672`
+- ein auf `localhost:5672` erreichbarer RabbitMQ-Broker, nativ oder in Docker
 - PostgreSQL 18 mit den Programmen `pg_ctl`, `initdb`, `createdb` und `psql`
 - OpenTelemetry Collector Contrib 0.157.0 für die zentrale Logsammlung
 - freie TCP-Ports 5672 und 6680 bis 6688
@@ -49,8 +49,10 @@ dann sind die Pfade in den folgenden Befehlen anzupassen.
 
 ### 2.1 RabbitMQ
 
-Wenn RabbitMQ als Windows-Dienst installiert ist, muss eine PowerShell mit den
-nötigen Rechten geöffnet werden:
+Das Projekt setzt nur einen erreichbaren AMQP-Endpunkt voraus. RabbitMQ kann
+nativ als Windows-Dienst oder in einem Docker-Container betrieben werden.
+
+Für die native Variante wird eine PowerShell mit den nötigen Rechten geöffnet:
 
 ```powershell
 Get-Service -Name RabbitMQ
@@ -58,10 +60,29 @@ Start-Service -Name RabbitMQ
 Test-NetConnection -ComputerName localhost -Port 5672
 ```
 
+Eine mögliche Docker-Variante veröffentlicht AMQP auf demselben Host-Port. Der
+Management-Port 15672 ist für den OnlineStore nicht erforderlich, ermöglicht
+aber den Zugriff auf die RabbitMQ-Weboberfläche:
+
+```powershell
+docker run --detach `
+    --name vst-rabbitmq `
+    --publish 5672:5672 `
+    --publish 15672:15672 `
+    --env RABBITMQ_DEFAULT_USER=vst `
+    --env RABBITMQ_DEFAULT_PASS=<Passwort> `
+    --volume vst-rabbitmq-data:/var/lib/rabbitmq `
+    rabbitmq:management
+
+Test-NetConnection -ComputerName localhost -Port 5672
+```
+
 Die Standardkonfiguration verwendet den virtuellen Host `/` sowie lokal die
 Zugangsdaten `guest` / `guest`. Bei einer abweichenden Installation müssen die
 `RabbitMq`-Werte in den `appsettings.json`-Dateien der Release-Komponenten oder
-mittels Umgebungsvariablen angepasst werden.
+mittels Umgebungsvariablen angepasst werden. Für Docker wird ein eigener
+Benutzer empfohlen, weil RabbitMQ den Standardbenutzer `guest` normalerweise
+auf lokale Verbindungen innerhalb des Brokers beschränkt.
 
 ### 2.2 PostgreSQL
 
@@ -150,6 +171,16 @@ $ProjectRoot = "C:\MASTER\VST_OnlineStore"
 $ReleaseRoot = Join-Path $ProjectRoot "ReleaseBuild"
 $env:OTEL_EXPORTER_OTLP_ENDPOINT = "http://localhost:6687"
 $env:VST_STRUCTURED_LOG_DIRECTORY = Join-Path $ProjectRoot "Logs"
+```
+
+Wurde der oben gezeigte Docker-Benutzer verwendet, müssen in jedem
+Service-Terminal zusätzlich dessen Zugangsdaten gesetzt werden:
+
+```powershell
+$env:RabbitMq__HostName = "localhost"
+$env:RabbitMq__Port = "5672"
+$env:RabbitMq__UserName = "vst"
+$env:RabbitMq__Password = "<Passwort>"
 ```
 
 Für den optionalen Vorführmodus muss zusätzlich vor dem Start jedes Services

@@ -50,11 +50,12 @@ in `StoreProxy/appsettings.json`.
 - für einen vollständigen ShopService-Aufruf dessen interne Abhängigkeiten
 - RabbitMQ auf `localhost:5672` für Audit-Ereignisse
 - freier TCP-Port `6680`
-- optional der vom Betriebsskript verwaltete OpenTelemetry Collector
+- optional der vom OpenTelemetry-Subscript verwaltete Collector
 
 ## Start
 
-Für Website und API wird der Gesamtstart empfohlen:
+Für Website und API wird der Start des vollständigen Stacks über das
+Start-Skript empfohlen:
 
 ```powershell
 .\Start-VSTOnlineStore.ps1

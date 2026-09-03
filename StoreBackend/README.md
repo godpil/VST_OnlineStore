@@ -26,19 +26,19 @@ fachlichen REST-Endpunkt.
 - .NET 10 SDK
 - freier TCP-Port `6681`
 - RabbitMQ auf `localhost:5672` für Audit-Ereignisse
-- optional der vom Betriebsskript verwaltete OpenTelemetry Collector
+- optional der vom OpenTelemetry-Subscript verwaltete Collector
 
 ## Start
 
 Alle Befehle werden im Wurzelverzeichnis des Repositorys ausgeführt.
 
-Bevorzugt über das Betriebsskript:
+Bevorzugt über das Start-Skript:
 
 ```powershell
 .\Start-VSTOnlineStore.ps1 -Action StartService -ServiceName StoreBackend
 ```
 
-Das Skript stellt Pakete wieder her, baut das Projekt und verwaltet den Prozess.
+Das Start-Skript stellt Pakete wieder her, baut das Projekt und verwaltet den Prozess.
 Mit bereits aktuellem Build kann `-SkipBuild` ergänzt werden. Direkt über das
 .NET SDK lässt sich der Service so starten:
 
@@ -47,7 +47,7 @@ dotnet restore .\StoreBackend\StoreBackend.csproj
 dotnet run --project .\StoreBackend\StoreBackend.csproj --launch-profile StoreBackend
 ```
 
-Ein durch das Betriebsskript gestarteter Prozess wird so beendet:
+Ein durch das Start-Skript gestarteter Prozess wird so beendet:
 
 ```powershell
 .\Start-VSTOnlineStore.ps1 -Action StopService -ServiceName StoreBackend

@@ -60,9 +60,9 @@ Bestellungen verwenden dieselbe Abschluss-Ereigniskategorie mit dem Zustand
 - RabbitMQ auf `localhost:5672`
 - PostgreSQL auf `127.0.0.1:6688`
 - freier TCP-Port `6686`
-- optional der vom Betriebsskript verwaltete OpenTelemetry Collector
+- optional der vom OpenTelemetry-Subscript verwaltete Collector
 
-Das eigenständige Skript `Start-VSTPostgreSQL.ps1` lädt PostgreSQL 18.6 beim
+Das PostgreSQL-Subscript `Start-VSTPostgreSQL.ps1` lädt PostgreSQL 18.6 beim
 ersten Start als geprüftes Windows-Binärarchiv herunter, initialisiert einen
 projektlokalen Datencluster unter `Data/PostgreSQL/18` und erstellt die
 Datenbank automatisch. Der Cluster akzeptiert ausschließlich Verbindungen über

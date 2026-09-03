@@ -32,3 +32,20 @@ Die Testprojekte lassen sich auch einzeln ausführen:
 dotnet test .\Tests\BillingService.UnitTests\BillingService.UnitTests.csproj
 dotnet test .\Tests\ShopService.IntegrationTests\ShopService.IntegrationTests.csproj
 ```
+
+Die Live-Logansicht hat zusätzlich einen eigenständigen PowerShell-Test ohne
+weitere Pakete. Er verwendet ausschließlich temporäre Dateien und startet
+oder stoppt keine Services:
+
+```powershell
+.\Tests\Scripts\Watch-VSTLogs.Tests.ps1
+.\Tests\Scripts\Start-VSTLogWindow.Tests.ps1
+```
+
+Geprüft werden Quellenfilter, anfänglicher Rückblick, neue Meldungen, geteilte
+UTF-8-Zeichen und Zeilen, zurückgesetzte Logdateien, kurzzeitige Dateisperren
+und die Quellenangaben in der Konsolenausgabe.
+Ein separater PowerShell-Prozess prüft außerdem den direkten `-File`-Start
+ohne expliziten Logpfad, wie er beim Öffnen des Logfensters verwendet wird.
+Die Start-/Stop-Tests ersetzen alle Prozessaktionen durch Testfunktionen und
+prüfen das automatische Öffnen, `-NoLogWindow`, Fehlerisolation und Aufräumen.

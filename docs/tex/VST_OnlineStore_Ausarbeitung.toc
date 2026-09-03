@@ -1,0 +1,32 @@
+\babel@toc {ngerman}{}\relax 
+\contentsline {section}{Dokumentübersicht}{2}{Doc-Start}%
+\contentsline {section}{\numberline {1}Einleitung}{3}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Problemstellung}{3}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Ziele}{3}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Abgrenzung}{3}{subsection.1.3}%
+\contentsline {section}{\numberline {2}Grundlagen}{4}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Microservices und Gateway}{4}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Fassade und Provider-Strategien}{4}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}SAGA statt verteilter ACID-Transaktion}{4}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Event Sourcing Light und Beobachtbarkeit}{4}{subsection.2.4}%
+\contentsline {subsection}{\numberline {2.5}Synchron und asynchron}{5}{subsection.2.5}%
+\contentsline {section}{\numberline {3}Systemarchitektur}{5}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Komponenten und Verantwortlichkeiten}{5}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Interaktionen im Happy Path}{6}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Schnittstellen und Betriebsmodell}{6}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Implementierung}{7}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Payment-Fassade}{7}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}AuditSnapshot-Schema}{8}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Kompensationslogik}{8}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Fault Injection und Präsentationsmodus}{9}{subsection.4.4}%
+\contentsline {section}{\numberline {5}Qualitätssicherung}{9}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Teststrategie}{9}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Automatisierte Testergebnisse}{10}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Nachweise der Fehlerszenarien}{10}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Bewertung und verbleibende Testlücken}{10}{subsection.5.4}%
+\contentsline {section}{\numberline {6}Reflexion}{11}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Gute Entscheidungen}{11}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Weniger gute Entscheidungen}{11}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Eingegangene Kompromisse}{11}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Fazit}{12}{subsection.6.4}%
+\contentsline {section}{Literatur und Standards}{13}{subsection.6.4}%

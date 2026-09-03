@@ -1,12 +1,12 @@
 <#
 .SYNOPSIS
-    Installiert und verwaltet den projektlokalen PostgreSQL-Server.
+    PostgreSQL-Subscript für den projektlokalen Datenbankserver.
 
 .DESCRIPTION
     Laedt PostgreSQL beim ersten Start als geprueftes Windows-Binaerarchiv,
     initialisiert den lokalen Datencluster und verwaltet die Datenbank
-    vst_audit auf Port 6688. Das Skript kann eigenstaendig ausgefuehrt oder
-    vom Startskript des OnlineStores eingebunden werden.
+    vst_audit auf Port 6688. Das Subscript kann eigenstaendig ausgefuehrt oder
+    vom Start-Skript des OnlineStores eingebunden werden.
 
 .PARAMETER PostgreSqlAction
     Start (Standard), Status, Stop oder DatabaseEntries. Kann über den kurzen
@@ -85,7 +85,7 @@ function Write-PostgreSqlStep {
 
 function Show-PostgreSqlScriptHelp {
     Write-Host @"
-Das Holzwerk - PostgreSQL-Verwaltung
+Das Holzwerk - PostgreSQL-Subscript
 
 Syntax:
   .\Start-VSTPostgreSQL.ps1 [-Action <Start|Status|Stop|DatabaseEntries>]
@@ -580,7 +580,9 @@ ORDER BY selected.sequence_number ASC;
     Write-PostgreSqlStep (
         "Bis zu $Limit Audit-Datenbankeintraege $filterDescription lesen")
 
-    $queryOutput = & $postgresPsqlPath `
+    # SQL ueber stdin uebergeben: Windows PowerShell 5.1 verliert sonst die
+    # eingebetteten Anfuehrungszeichen bei der nativen Argumentuebergabe.
+    $queryOutput = $databaseEntriesQuery | & $postgresPsqlPath `
         "--host=127.0.0.1" `
         "--port=$postgresPort" `
         "--username=postgres" `
@@ -589,7 +591,7 @@ ORDER BY selected.sequence_number ASC;
         "--set=ON_ERROR_STOP=1" `
         "--pset=pager=off" `
         "--expanded" `
-        "--command=$databaseEntriesQuery" 2>&1
+        "--file=-" 2>&1
     $queryExitCode = $LASTEXITCODE
     if ($queryExitCode -ne 0) {
         $queryError = ($queryOutput | Out-String).Trim()
@@ -598,7 +600,9 @@ ORDER BY selected.sequence_number ASC;
             "(psql Exit-Code $queryExitCode). $queryError")
     }
 
-    $queryOutput | ForEach-Object { Write-Host $_ }
+    # Datensaetze bleiben in der Konsole sichtbar und lassen sich zugleich
+    # ueber die normale PowerShell-Pipeline weitergeben oder in Dateien umleiten.
+    Write-Output $queryOutput
 }
 
 if ($MyInvocation.InvocationName -eq ".") {

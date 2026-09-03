@@ -6,11 +6,14 @@
     Start fuehrt einen Restore und Build aus, initialisiert und startet den
     projektlokalen PostgreSQL-Server, startet alle benoetigten Prozesse in
     Abhaengigkeitsreihenfolge, prueft den vollstaendigen API-Pfad und oeffnet
-    anschliessend die Website im Standardbrowser. RabbitMQ wird ohne Docker als
-    extern installierter Windows-Dienst auf Port 5672 vorausgesetzt.
+    anschliessend ein Live-Logfenster sowie die Website im Standardbrowser.
+    RabbitMQ wird als extern
+    bereitgestellter Broker auf localhost:5672 vorausgesetzt und kann nativ
+    oder in einem Docker-Container betrieben werden.
 
 .PARAMETER Action
-    Start (Standard), Status, Stop, StartService, StopService oder FileSinks.
+    Start (Standard), Status, Stop, StartService, StopService, Logs, FileSinks,
+    PresentationSnapshots oder DatabaseEntries.
 
 .PARAMETER ServiceName
     Komponente für StartService oder StopService. Neben den Anwendungen kann
@@ -22,6 +25,9 @@
 
 .PARAMETER NoBrowser
     Startet und prueft die Anwendung, ohne den Browser zu oeffnen.
+
+.PARAMETER NoLogWindow
+    Startet die Anwendung, ohne das separate Live-Logfenster zu oeffnen.
 
 .PARAMETER SkipCollector
     Startet die Anwendung ohne den OpenTelemetry Collector.
@@ -37,7 +43,8 @@
     Maximale Anzahl der neuesten Datenbankeinträge für DatabaseEntries.
 
 .PARAMETER Help
-    Zeigt mit -h eine kompakte Übersicht aller Skriptparameter und Beispiele.
+    Zeigt mit -h eine kompakte Übersicht aller Parameter des Start-Skripts und
+    Beispiele.
 
 .EXAMPLE
     .\Start-VSTOnlineStore.ps1
@@ -63,7 +70,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet("Start", "Status", "Stop", "StartService", "StopService", "FileSinks", "PresentationSnapshots", "DatabaseEntries")]
+    [ValidateSet("Start", "Status", "Stop", "StartService", "StopService", "Logs", "FileSinks", "PresentationSnapshots", "DatabaseEntries")]
     [string]$Action = "Start",
 
     [Alias("Service")]
@@ -82,6 +89,8 @@ param(
     [switch]$SkipBuild,
 
     [switch]$NoBrowser,
+
+    [switch]$NoLogWindow,
 
     [switch]$SkipCollector,
 
@@ -102,17 +111,21 @@ $projectRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
 $solutionPath = Join-Path $projectRoot "VST_OnlineStore.slnx"
 $runtimeDirectory = Join-Path $projectRoot "Logs\Startup"
 $processManifestPath = Join-Path $runtimeDirectory "holzwerk-processes.json"
-$collectorManagementScriptPath = Join-Path $projectRoot "Start-VSTOpenTelemetryCollector.ps1"
-if (-not (Test-Path -LiteralPath $collectorManagementScriptPath)) {
-    throw "OpenTelemetry-Verwaltungsskript nicht gefunden: $collectorManagementScriptPath"
+$logWindowStatePath = Join-Path $runtimeDirectory "log-window-process.json"
+$logViewerSubscriptPath = Join-Path $projectRoot "Watch-VSTLogs.ps1"
+$collectorSubscriptPath = Join-Path $projectRoot "Start-VSTOpenTelemetryCollector.ps1"
+if (-not (Test-Path -LiteralPath $collectorSubscriptPath)) {
+    throw "OpenTelemetry-Subscript nicht gefunden: $collectorSubscriptPath"
 }
-. $collectorManagementScriptPath
-$postgresManagementScriptPath = Join-Path $projectRoot "Start-VSTPostgreSQL.ps1"
-if (-not (Test-Path -LiteralPath $postgresManagementScriptPath)) {
-    throw "PostgreSQL-Verwaltungsskript nicht gefunden: $postgresManagementScriptPath"
+. $collectorSubscriptPath
+$postgresSubscriptPath = Join-Path $projectRoot "Start-VSTPostgreSQL.ps1"
+if (-not (Test-Path -LiteralPath $postgresSubscriptPath)) {
+    throw "PostgreSQL-Subscript nicht gefunden: $postgresSubscriptPath"
 }
-. $postgresManagementScriptPath
+. $postgresSubscriptPath
 $rabbitMqPort = 5672
+$rabbitMqManagementPort = 15672
+$rabbitMqManagementUrl = "http://localhost:$rabbitMqManagementPort/"
 $websiteUrl = "http://localhost:6680/"
 $apiReadinessUrl = "http://localhost:6680/api/products?featured=true"
 $paymentProvidersReadinessUrl = "http://localhost:6680/api/payment-providers"
@@ -176,20 +189,21 @@ function Write-Step {
 
 function Show-ScriptHelp {
     Write-Host @"
-Das Holzwerk - VST OnlineStore Verwaltung
+Das Holzwerk - VST OnlineStore Start-Skript
 
 Syntax:
   .\Start-VSTOnlineStore.ps1 [-Action <Aktion>] [-ServiceName <Komponente>]
-                              [-SkipBuild] [-NoBrowser] [-SkipCollector]
+                              [-SkipBuild] [-NoBrowser] [-NoLogWindow] [-SkipCollector]
                               [-PresentationMode] [-CorrelationId <Guid>]
                               [-Limit <1..1000>] [-h]
 
 Aktionen:
   Start          Gesamten Stack bauen, starten und pruefen (Standard)
   Status         Status, Ports und verwaltete Prozess-IDs anzeigen
-  Stop           Alle durch das Skript verwalteten Prozesse beenden
+  Stop           Alle durch das Start-Skript verwalteten Prozesse beenden
   StartService   Genau eine Komponente starten
   StopService    Genau eine verwaltete Komponente beenden
+  Logs           Separates Live-Logfenster oeffnen, ohne Services zu starten
   FileSinks      Alle bekannten Datei- und Logsenken anzeigen
   PresentationSnapshots
                   Audit-Snapshots einer Bestellung sammeln und in Notepad++ oeffnen
@@ -200,8 +214,9 @@ Parameter:
   -ServiceName   Komponente fuer StartService oder StopService
   -Service       Kurzalias fuer -ServiceName
   -SkipBuild     Restore und Build beim Start ueberspringen
-  -NoBrowser     Browser beim Gesamtstart nicht oeffnen
-  -SkipCollector OpenTelemetry Collector beim Gesamtstart auslassen
+  -NoBrowser     Browser beim Start des vollstaendigen Stacks nicht oeffnen
+  -NoLogWindow   Beim Start kein separates Live-Logfenster oeffnen
+  -SkipCollector OpenTelemetry Collector beim Start des vollstaendigen Stacks auslassen
   -PresentationMode
                   Vier deterministische Fehlerszenarien in der Website aktivieren
   -CorrelationId  Bestellung fuer PresentationSnapshots oder DatabaseEntries
@@ -214,12 +229,14 @@ Komponenten:
   StoreProxy
 
 Voraussetzung:
-  Ein lokal installierter RabbitMQ-Broker muss ohne Docker auf Port 5672 laufen.
+  Ein extern bereitgestellter RabbitMQ-Broker muss auf localhost:5672 erreichbar
+  sein. Er kann nativ oder in Docker laufen; beim Containerbetrieb muss der
+  AMQP-Port 5672 auf denselben Host-Port veroeffentlicht sein.
   Die .NET-Anbindung erfolgt mittels des NuGet-Pakets RabbitMQ.Client.
   PostgreSQL wird beim ersten Start als geprueftes Binaerarchiv heruntergeladen,
   projektlokal initialisiert und auf Port 6688 gestartet. Die Implementierung
-  liegt im eigenstaendigen Skript Start-VSTPostgreSQL.ps1.
-  Der OpenTelemetry Collector wird durch das eigenstaendige Skript
+  liegt im PostgreSQL-Subscript Start-VSTPostgreSQL.ps1.
+  Der OpenTelemetry Collector wird durch das OpenTelemetry-Subscript
   Start-VSTOpenTelemetryCollector.ps1 installiert und verwaltet.
 
 Beispiele:
@@ -228,6 +245,8 @@ Beispiele:
   .\Start-VSTOnlineStore.ps1 -Action StartService -ServiceName AuditService -SkipBuild
   .\Start-VSTOnlineStore.ps1 -Action StopService -Service AuditService
   .\Start-VSTOnlineStore.ps1 -Action FileSinks
+  .\Start-VSTOnlineStore.ps1 -Action Logs
+  .\Start-VSTOnlineStore.ps1 -NoBrowser -NoLogWindow
   .\Start-VSTOnlineStore.ps1 -PresentationMode
   .\Start-VSTOnlineStore.ps1 -Action PresentationSnapshots -CorrelationId <Guid>
   .\Start-VSTOnlineStore.ps1 -Action DatabaseEntries -Limit 50
@@ -267,7 +286,7 @@ function Assert-RabbitMqAvailable {
         return
     }
 
-    throw "RabbitMQ ist auf localhost:$rabbitMqPort nicht erreichbar. Bitte den nativ installierten RabbitMQ-Windows-Dienst starten. Docker wird von diesem Projekt nicht verwendet."
+    throw "RabbitMQ ist auf localhost:$rabbitMqPort nicht erreichbar. Bitte den extern bereitgestellten Broker starten und bei Docker die Portfreigabe 5672:5672 prüfen."
 }
 
 function Wait-ServicePort {
@@ -438,13 +457,90 @@ function Show-ApplicationStatus {
     }
 
     $rabbitMqRow = [PSCustomObject]@{
-        Component = "RabbitMQ (external)"
+        Component = "RabbitMQ AMQP (extern)"
         Port = $rabbitMqPort
         PortStatus = if (Test-TcpPort -Port $rabbitMqPort) { "offen" } else { "geschlossen" }
         ProcessId = "external"
     }
 
-    @($rabbitMqRow, $postgresRow, $collectorRow) + @($rows) | Format-Table -AutoSize
+    # Die Weboberflaeche ist optional und keine Voraussetzung fuer den Shopbetrieb.
+    $rabbitMqManagementRow = [PSCustomObject]@{
+        Component = "RabbitMQ Web-UI (optional)"
+        Port = $rabbitMqManagementPort
+        PortStatus = if (Test-TcpPort -Port $rabbitMqManagementPort) { "offen" } else { "geschlossen" }
+        ProcessId = "external"
+    }
+
+    $logWindow = Get-LogWindowEntry
+    $logWindowIsRunning = $null -ne $logWindow -and (Test-ManifestProcess -Entry $logWindow)
+    $logWindowRow = [PSCustomObject]@{
+        Component = "Live-Logfenster"
+        Port = "-"
+        PortStatus = if ($logWindowIsRunning) { "offen" } else { "geschlossen" }
+        ProcessId = if ($logWindowIsRunning) { $logWindow.ProcessId } else { "-" }
+    }
+    @($rabbitMqRow, $rabbitMqManagementRow, $postgresRow, $collectorRow) + @($rows) + @($logWindowRow) |
+        Format-Table -AutoSize
+
+    Write-Output "RabbitMQ-Weboberflaeche: $rabbitMqManagementUrl"
+    Write-Output "Port $rabbitMqPort dient der Nachrichtenuebertragung (AMQP), nicht dem Browserzugriff."
+    Write-Output "Die Weboberflaeche benoetigt das Management-Plugin und bei Docker die Portfreigabe ${rabbitMqManagementPort}:${rabbitMqManagementPort}."
+    Write-Output "Lokale Standard-Anmeldung: guest / guest (sofern nicht geaendert)."
+}
+
+function Get-LogWindowEntry {
+    if (Test-Path -LiteralPath $logWindowStatePath) {
+        Get-Content -LiteralPath $logWindowStatePath -Raw | ConvertFrom-Json
+    }
+}
+
+function Start-LogWindow {
+    $existing = Get-LogWindowEntry
+    if ($null -ne $existing -and (Test-ManifestProcess -Entry $existing)) {
+        Write-Host "Das Live-Logfenster ist bereits geoeffnet (PID $($existing.ProcessId))."
+        return $null
+    }
+    if (-not (Test-Path -LiteralPath $logViewerSubscriptPath)) {
+        throw "Live-Log-Subscript nicht gefunden: $logViewerSubscriptPath"
+    }
+
+    New-Item -ItemType Directory -Path $runtimeDirectory -Force | Out-Null
+    $powerShellPath = Join-Path $PSHOME "pwsh.exe"
+    if (-not (Test-Path -LiteralPath $powerShellPath)) {
+        $powerShellPath = Join-Path $PSHOME "powershell.exe"
+    }
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = $powerShellPath
+    # Nur dieser neue Prozess erhaelt die Freigabe fuer das lokale Subscript;
+    # die systemweite PowerShell-Ausfuehrungsrichtlinie bleibt unveraendert.
+    $startInfo.Arguments = '-NoLogo -NoProfile -ExecutionPolicy Bypass -File "{0}"' -f $logViewerSubscriptPath
+    $startInfo.WorkingDirectory = $projectRoot
+    $startInfo.UseShellExecute = $true
+    $startInfo.WindowStyle = [Diagnostics.ProcessWindowStyle]::Normal
+    $process = [Diagnostics.Process]::Start($startInfo)
+    try {
+        $entry = [PSCustomObject]@{
+            Name = "LogWindow"
+            ProcessId = $process.Id
+            StartTimeUtc = $process.StartTime.ToUniversalTime().ToString("O")
+        }
+        $entry | ConvertTo-Json | Set-Content -LiteralPath $logWindowStatePath -Encoding UTF8
+    }
+    catch {
+        if (-not $process.HasExited) { $process.Kill() }
+        throw
+    }
+    Write-Host "Live-Logfenster geoeffnet (PID $($entry.ProcessId))." -ForegroundColor Green
+    return $entry
+}
+
+function Stop-LogWindow {
+    $entry = Get-LogWindowEntry
+    if ($null -ne $entry -and (Test-ManifestProcess -Entry $entry)) {
+        Write-Host "Schliesse Live-Logfenster (PID $($entry.ProcessId)) ..."
+        Stop-ManagedEntry -Entry $entry
+    }
+    Remove-Item -LiteralPath $logWindowStatePath -Force -ErrorAction SilentlyContinue
 }
 
 function Stop-ManagedEntry {
@@ -527,8 +623,10 @@ function Stop-Application {
             "projektlokalen PostgreSQL-Prozess. Der fremde Prozess wurde nicht beendet.")
     }
 
+    Stop-LogWindow
+
     if (-not $stoppedComponent) {
-        Write-Host "Keine vom Startskript verwalteten Prozesse gefunden."
+        Write-Host "Keine vom Start-Skript verwalteten Prozesse gefunden."
     }
 
     Remove-Item -LiteralPath $processManifestPath -Force -ErrorAction SilentlyContinue
@@ -664,7 +762,7 @@ function Start-SelectedComponent {
             "noch nicht offen"
         }
         Write-Host `
-            "$($component.Name) wird bereits durch das Skript verwaltet (PID $($manifestEntry.ProcessId), Port $portStatus)." `
+            "$($component.Name) wird bereits durch das Start-Skript verwaltet (PID $($manifestEntry.ProcessId), Port $portStatus)." `
             -ForegroundColor Yellow
         return
     }
@@ -764,7 +862,7 @@ function Stop-SelectedComponent {
     }
 
     if ($null -eq $manifestEntry) {
-        Write-Host "$($component.Name) wird nicht durch das Skript verwaltet."
+        Write-Host "$($component.Name) wird nicht durch das Start-Skript verwaltet."
         if (Test-TcpPort -Port $component.Port) {
             Write-Host `
                 "Port $($component.Port) ist trotzdem belegt; der fremde Prozess wird nicht beendet." `
@@ -920,8 +1018,12 @@ function Show-FileSinks {
         -FilePattern "*.eml"
     $rows += Get-FileSinkSummary `
         -Category "Process manifest" `
-        -Owner "Start script" `
+        -Owner "Start-Skript" `
         -Path $processManifestPath
+    $rows += Get-FileSinkSummary `
+        -Category "Process state" `
+        -Owner "Live-Logfenster" `
+        -Path $logWindowStatePath
     $rows += Get-FileSinkSummary `
         -Category "Process state" `
         -Owner "OpenTelemetryCollector" `
@@ -1133,6 +1235,7 @@ function Start-Application {
 
     Write-Step "PostgreSQL, Collector, Backend, Services und Proxy starten"
     $startedProcesses = @()
+    $startedLogWindow = $null
     try {
         $startedProcesses += Start-PostgreSqlServer
 
@@ -1150,6 +1253,16 @@ function Start-Application {
         $productCount = Wait-ApplicationApi
         Write-Host "$productCount Produkte, Branding, Warenkorb, Payment-Provider, Service-Orchestrierung, Rechnungsfelder und Audit-Abfrage erfolgreich ueber den Proxy geladen." -ForegroundColor Green
 
+        if (-not $NoLogWindow) {
+            try {
+                $startedLogWindow = Start-LogWindow
+            }
+            catch {
+                Write-Warning ("Das Live-Logfenster konnte nicht geoeffnet werden: " +
+                    $_.Exception.Message + " Der Store bleibt gestartet; die Logdateien werden weiter geschrieben.")
+            }
+        }
+
         if (-not $NoBrowser) {
             Write-Step "Website oeffnen"
             Start-Process -FilePath $browserUrl
@@ -1159,9 +1272,14 @@ function Start-Application {
         Write-Host "PresentationMode: $(if ($PresentationMode.IsPresent) { 'aktiv' } else { 'aus' })"
         Write-Host "Status: .\Start-VSTOnlineStore.ps1 -Action Status"
         Write-Host "Dateisenken: .\Start-VSTOnlineStore.ps1 -Action FileSinks"
+        Write-Host "Live-Logs: .\Start-VSTOnlineStore.ps1 -Action Logs"
         Write-Host "Stop:   .\Start-VSTOnlineStore.ps1 -Action Stop"
     }
     catch {
+        if ($null -ne $startedLogWindow) {
+            Stop-ManagedEntry -Entry $startedLogWindow -SuppressErrors
+            Remove-Item -LiteralPath $logWindowStatePath -Force -ErrorAction SilentlyContinue
+        }
         [Array]::Reverse($startedProcesses)
         foreach ($entry in $startedProcesses) {
             Stop-ManagedEntry -Entry $entry -SuppressErrors
@@ -1194,6 +1312,9 @@ else {
         }
         "FileSinks" {
             Show-FileSinks
+        }
+        "Logs" {
+            $null = Start-LogWindow
         }
         "PresentationSnapshots" {
             Show-PresentationSnapshots

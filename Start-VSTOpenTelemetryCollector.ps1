@@ -1,12 +1,12 @@
 <#
 .SYNOPSIS
-    Installiert und verwaltet den projektlokalen OpenTelemetry Collector.
+    OpenTelemetry-Subscript für den projektlokalen Collector.
 
 .DESCRIPTION
     Laedt den OpenTelemetry Collector beim ersten Start als geprueftes
     Windows-Binaerarchiv, startet ihn mit der Projektkonfiguration und verwaltet
-    seinen Prozess auf Port 6687. Das Skript kann eigenstaendig ausgefuehrt oder
-    vom Startskript des OnlineStores eingebunden werden.
+    seinen Prozess auf Port 6687. Das Subscript kann eigenstaendig ausgefuehrt
+    oder vom Start-Skript des OnlineStores eingebunden werden.
 
 .PARAMETER OpenTelemetryAction
     Start (Standard), Status oder Stop. Kann ueber den kurzen Parameternamen
@@ -57,7 +57,7 @@ function Write-OpenTelemetryStep {
 
 function Show-OpenTelemetryScriptHelp {
     Write-Host @"
-Das Holzwerk - OpenTelemetry Collector Verwaltung
+Das Holzwerk - OpenTelemetry-Subscript
 
 Syntax:
   .\Start-VSTOpenTelemetryCollector.ps1 [-Action <Start|Status|Stop>] [-h]

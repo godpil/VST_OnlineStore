@@ -476,3 +476,5 @@ BillingService geschrieben. Fachlich entstehen zusätzlich Audit-Snapshots für
 `PAYMENT_PROVIDER_SELECTED`, `PAYMENT_COMPLETED`, Ablehnungen und technische
 Provider-Fehler. Zugangsdaten oder Zahlungsinstrumente werden weder in den Logs
 noch im Audit-Payload gespeichert.
+
+--Projektende erreicht
